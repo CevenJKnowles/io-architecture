@@ -1,0 +1,40 @@
+{
+  "profiles": {
+    "Io-Studio": {
+      "description": "Creation-heavy profile for writing, design, information architecture.",
+      "default_modes": [
+        "Explorer",
+        "Synthesizer",
+        "Visionary"
+      ],
+      "notes": "Bias toward idea generation, structure, and conceptual design."
+    },
+    "Io-Tutor": {
+      "description": "Learning-heavy profile for courses, explanations, and practice.",
+      "default_modes": [
+        "Tutor",
+        "Explorer",
+        "Executor"
+      ],
+      "notes": "Socratic questioning, stepwise reasoning, guided exercises."
+    },
+    "Io-Dev": {
+      "description": "Implementation-heavy profile for code, scripts, and technical workflows.",
+      "default_modes": [
+        "Executor",
+        "Challenger",
+        "Synthesizer"
+      ],
+      "notes": "Focus on correctness, tooling, and environment awareness."
+    },
+    "Io-Safe": {
+      "description": "Strict safety/compliance mode for governance, ethics, and policy.",
+      "default_modes": [
+        "Challenger",
+        "Synthesizer"
+      ],
+      "notes": "Conservative stance, extra scrutiny, emphasis on risk mitigation."
+    }
+  },
+  "version": "1.0"
+}
