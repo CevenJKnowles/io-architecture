@@ -1,3 +1,23 @@
+---
+id: "RN-CLAUDE-002"
+title: "Prompt — Claude Portfolio Assessment"
+type: "assessment"
+status: "archived"
+version: ""
+canonical: false
+scope: "research"
+audience: "internal"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "claude"
+  - "assessment"
+  - "portfolio"
+roles_focus:
+  - "challenger"
+provenance: "llm:claude"
+---
+
 # Prompt: Portfolio + Job Coach Assessment (Claude + Io)
 
 ***

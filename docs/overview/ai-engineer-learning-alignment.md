@@ -1,3 +1,23 @@
+---
+id: "DOC-OV-001"
+title: "AI Engineer Learning Alignment"
+type: "overview"
+status: "active"
+version: ""
+canonical: true
+scope: "repo"
+audience: "internal"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "learning"
+  - "alignment"
+  - "planning"
+roles_focus:
+  - "synthesizer"
+provenance: "mixed"
+---
+
 # AI Engineer Learning Alignment
 
 **Updated 24.11.2025**

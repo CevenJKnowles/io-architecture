@@ -1,10 +1,21 @@
 ---
-title: IO-II System Overview
-subtitle: Comprehensive Memory Index — Alignments, Protocols, Modules & Blueprints
-author: Ceven J. Knowles
-created: 2025-11-25
-updated: 2025-11-25
-tags: [IO-II, blueprint, alignment, protocol, memory, system-map]
+id: "IO3-OV-001"
+title: "IO-III Overview (2025-11-25)"
+type: "overview"
+status: "archived"
+version: ""
+canonical: true
+scope: "io-iii"
+audience: "internal"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "io-iii"
+  - "overview"
+  - "history"
+roles_focus:
+  - "meta"
+provenance: "mixed"
 ---
 
 # IO-II SYSTEM OVERVIEW  

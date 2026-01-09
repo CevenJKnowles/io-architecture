@@ -1,3 +1,23 @@
+---
+id: "RN-CLAUDE-003"
+title: "Repository Strategy (Claude)"
+type: "strategy"
+status: "archived"
+version: ""
+canonical: false
+scope: "research"
+audience: "internal"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "claude"
+  - "strategy"
+  - "repository"
+roles_focus:
+  - "synthesizer"
+provenance: "llm:claude"
+---
+
 ## Repository Strategy
 
 ### 1. `prompt-engineering-specialization` (EXISTS)

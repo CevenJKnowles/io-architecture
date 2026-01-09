@@ -1,9 +1,21 @@
 ---
+id: "DOC-OV-003"
 title: "Portfolio Structure Summary"
-subtitle: "Unified Plan from Steps #1–3"
-author: "Ceven J. Knowles"
-date: "2025-11-24"
-tags: ["portfolio", "prompt-engineering", "learning-path", "ai-workflow", "vanderbilt"]
+type: "overview"
+status: "active"
+version: ""
+canonical: true
+scope: "repo"
+audience: "portfolio"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "portfolio"
+  - "structure"
+  - "knowledgehub"
+roles_focus:
+  - "synthesizer"
+provenance: "human"
 ---
 
 # Portfolio Structure Summary

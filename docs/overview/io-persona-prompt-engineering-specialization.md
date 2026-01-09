@@ -1,3 +1,24 @@
+---
+id: "DOC-OV-002"
+title: "Io Persona — Prompt Engineering Specialization"
+type: "overview"
+status: "active"
+version: ""
+canonical: true
+scope: "repo"
+audience: "internal"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "prompt-engineering"
+  - "coursework"
+  - "persona"
+roles_focus:
+  - "synthesizer"
+  - "executor"
+provenance: "mixed"
+---
+
 # 🧩 **Io — Persona Configuration Overview (Current State)**
 
 **Version:** Io Persona Specification Summary – Session-End Snapshot\

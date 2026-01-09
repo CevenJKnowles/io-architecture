@@ -1,3 +1,23 @@
+---
+id: "RN-CLAUDE-001"
+title: "Claude Questions"
+type: "research-note"
+status: "archived"
+version: ""
+canonical: false
+scope: "research"
+audience: "internal"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "claude"
+  - "questions"
+  - "research"
+roles_focus:
+  - "explorer"
+provenance: "llm:claude"
+---
+
 1. **What AI-related projects have you completed or are currently working on?** (Personal experiments, coursework projects, client work?)
 
 **Answer:** **Aside from my online learning paths and courses, I have an ongoing project: The IO Persona. Using ChatGPT as the basis, I have developed a persona across several iterations: IO-I (past with 2 version updates - online in ChatGPT Interface), IO-II (Currently in v1.3 and about to upgrade to v1.4 - online using ChatGPT Plus), and IO-III (planned local LLM inplementation & Development over LM Studio, assisted by IO-II)**

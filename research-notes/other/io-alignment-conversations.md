@@ -1,3 +1,23 @@
+---
+id: "RN-OTHER-001"
+title: "Io Alignment Conversations"
+type: "research-note"
+status: "archived"
+version: ""
+canonical: false
+scope: "research"
+audience: "internal"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "alignment"
+  - "history"
+  - "notes"
+roles_focus:
+  - "meta"
+provenance: "mixed"
+---
+
 # Clarifying Questions and Answers
 
 **1. Time Horizon & Capacity:** Very agressive. I want to complete the Prompt Engineering courses . I will complete the Vanderbilt Learning path by December 1st, 2025. Today is November 24th.

@@ -1,3 +1,25 @@
+---
+id: "IO3-ARCH-001"
+title: "IO-III LLM Architecture"
+type: "architecture"
+status: "active"
+version: ""
+canonical: true
+scope: "io-iii"
+audience: "portfolio"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "io-iii"
+  - "llm"
+  - "routing"
+  - "runtime"
+roles_focus:
+  - "synthesizer"
+  - "governance"
+provenance: "mixed"
+---
+
 # IO-III LLM Architecture
 
 ---

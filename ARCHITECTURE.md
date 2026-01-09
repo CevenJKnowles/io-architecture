@@ -1,3 +1,26 @@
+---
+id: "ARCH-001"
+title: "IO Persona Architecture"
+type: "architecture"
+status: "locked"
+version: "1.3"
+canonical: true
+scope: "repo"
+audience: "portfolio"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "io"
+  - "architecture"
+  - "governance"
+  - "io-iii"
+roles_focus:
+  - "governance"
+  - "synthesizer"
+  - "challenger"
+provenance: "mixed"
+---
+
 # Architecture
 
 ## 1. Purpose and Scope

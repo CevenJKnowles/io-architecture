@@ -1,3 +1,25 @@
+---
+id: "IO1-OV-001"
+title: "IO-I — Origin and Lessons Learned"
+type: "overview"
+status: "archived"
+version: ""
+canonical: true
+scope: "io-i"
+audience: "portfolio"
+created: "2026-01-08"
+updated: "2026-01-08"
+tags:
+  - "io-i"
+  - "lineage"
+  - "lessons-learned"
+  - "governance"
+roles_focus:
+  - "meta"
+  - "governance"
+provenance: "mixed"
+---
+
 # IO-I — Origin and Lessons Learned
 
 ## Status
