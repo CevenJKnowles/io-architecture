@@ -11,3 +11,12 @@ __pycache__/
 *.swp
 *.tmp
 *.bak
+
+# --- IO-III runtime artifacts (local-only) ---
+/IO-III/runtime/logs/
+/IO-III/runtime/state/
+/IO-III/tests/results/
+
+# Optional local env files (never commit)
+.env
+.env.*
