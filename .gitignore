@@ -38,3 +38,12 @@ __pycache__/
 # ==============================
 .env
 .env.*
+
+# ==============================
+# IO-II test results (generated, local-only)
+# ==============================
+/IO-II/tests/results/*
+
+# Allow documentation inside otherwise-ignored directory
+!/IO-II/tests/results/
+!/IO-II/tests/results/README.md
