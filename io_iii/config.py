@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
+import subprocess
 import yaml
-
-
-DEFAULT_IO3_CONFIG_DIR = Path("/home/cjk/Dev/IO/io-persona-blueprint/IO-III/runtime/config")
 
 
 @dataclass(frozen=True)
@@ -26,9 +24,43 @@ class IO3Config:
         }
 
 
+def _repo_root() -> Optional[Path]:
+    """
+    Returns the git repo root if available, else None.
+    """
+    try:
+        p = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=False,
+        )
+        if p.returncode != 0:
+            return None
+        root = (p.stdout or "").strip()
+        return Path(root) if root else None
+    except Exception:
+        return None
+
+
+def default_config_dir() -> Path:
+    """
+    Portable default config dir:
+      <repo_root>/IO-III/runtime/config
+
+    Falls back to your current absolute path if git is unavailable.
+    """
+    root = _repo_root()
+    if root is not None:
+        return root / "IO-III" / "runtime" / "config"
+
+    # Fallback (keeps your current machine working even if git is unavailable)
+    return Path("/home/cjk/Dev/IO/io-persona-blueprint/IO-III/runtime/config")
+
+
 def _load_yaml(path: Path) -> Dict[str, Any]:
     if not path.exists():
-        # Explicit, readable failure.
         raise FileNotFoundError(f"Missing config file: {path}")
     with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
@@ -37,11 +69,11 @@ def _load_yaml(path: Path) -> Dict[str, Any]:
     return data
 
 
-def load_io3_config(config_dir: Path | None = None) -> IO3Config:
+def load_io3_config(config_dir: Optional[Path] = None) -> IO3Config:
     """
     Load IO-III runtime configuration from YAML files in config_dir.
     """
-    cfg_dir = config_dir or DEFAULT_IO3_CONFIG_DIR
+    cfg_dir = config_dir or default_config_dir()
 
     providers = _load_yaml(cfg_dir / "providers.yaml")
     logging = _load_yaml(cfg_dir / "logging.yaml")

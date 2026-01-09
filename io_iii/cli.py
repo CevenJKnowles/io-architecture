@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-from .config import load_io3_config, DEFAULT_IO3_CONFIG_DIR
+from .config import load_io3_config, default_config_dir
 from .routing import resolve_route
 from .providers.null_provider import NullProvider
 
@@ -39,14 +39,14 @@ def cmd_validate(_: argparse.Namespace) -> int:
 
 
 def cmd_config_show(args: argparse.Namespace) -> int:
-    cfg_dir = Path(args.config_dir) if args.config_dir else DEFAULT_IO3_CONFIG_DIR
+    cfg_dir = Path(args.config_dir) if args.config_dir else default_config_dir()
     cfg = load_io3_config(cfg_dir)
     _print_json(cfg.to_dict())
     return 0
 
 
 def cmd_route(args: argparse.Namespace) -> int:
-    cfg_dir = Path(args.config_dir) if args.config_dir else DEFAULT_IO3_CONFIG_DIR
+    cfg_dir = Path(args.config_dir) if args.config_dir else default_config_dir()
     cfg = load_io3_config(cfg_dir)
     selection = resolve_route(routing_cfg=cfg.routing, mode=args.mode)
     _print_json(
@@ -60,7 +60,7 @@ def cmd_route(args: argparse.Namespace) -> int:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    cfg_dir = Path(args.config_dir) if args.config_dir else DEFAULT_IO3_CONFIG_DIR
+    cfg_dir = Path(args.config_dir) if args.config_dir else default_config_dir()
     cfg = load_io3_config(cfg_dir)
     selection = resolve_route(routing_cfg=cfg.routing, mode=args.mode)
 
@@ -101,7 +101,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config-dir",
         dest="config_dir",
         default=None,
-        help=f"Config directory (default: {DEFAULT_IO3_CONFIG_DIR})",
+        help=f"Config directory (default: {default_config_dir()})",
     )
 
     sub = p.add_subparsers(dest="cmd", required=True)
