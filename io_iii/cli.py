@@ -1,131 +1,159 @@
-from __future__ import annotations
-
 import argparse
 import json
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any, Dict
 
-from .config import load_io3_config, default_config_dir
-from .routing import resolve_route
-from .providers.null_provider import NullProvider
+from io_iii.config import load_io3_config, default_config_dir
+from io_iii.routing import resolve_route
+from io_iii.providers.null_provider import NullProvider
 
 
-VALID_MODES = [
-    "executor",
-    "challenger",
-    "synthesizer",
-    "explorer",
-    "visionary",
-]
-
-
-def _print_json(obj: Any) -> None:
-    print(json.dumps(obj, indent=2, sort_keys=True))
-
-
-def cmd_validate(_: argparse.Namespace) -> int:
+def _to_jsonable(obj: Any) -> Any:
     """
-    Runs the invariant validator script.
+    Best-effort conversion to JSON-serializable structures.
+    Handles dicts/lists/primitives and dataclass-like objects with __dict__.
     """
-    validator = Path("/home/cjk/Dev/IO/io-persona-blueprint/IO-III/runtime/scripts/validate_invariants.py")
-    if not validator.exists():
-        print(f"ERROR: validator not found at: {validator}", file=sys.stderr)
-        return 2
+    if obj is None:
+        return None
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, dict):
+        return {k: _to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_jsonable(v) for v in obj]
+    if hasattr(obj, "__dict__"):
+        return {k: _to_jsonable(v) for k, v in vars(obj).items()}
+    return str(obj)
 
-    p = subprocess.run([sys.executable, str(validator)])
-    return p.returncode
+
+def _print(obj: Any) -> None:
+    print(json.dumps(_to_jsonable(obj), indent=2))
 
 
-def cmd_config_show(args: argparse.Namespace) -> int:
-    cfg_dir = Path(args.config_dir) if args.config_dir else default_config_dir()
+def _get_cfg_dir(args) -> Path:
+    """
+    Portability rule:
+    - If --config-dir is provided, use it.
+    - Otherwise use default_config_dir() (portable resolver in io_iii/config.py).
+    """
+    if getattr(args, "config_dir", None):
+        return Path(args.config_dir)
+    return default_config_dir()
+
+
+def cmd_config_show(args) -> int:
+    cfg_dir = _get_cfg_dir(args)
     cfg = load_io3_config(cfg_dir)
-    _print_json(cfg.to_dict())
+
+    payload = {
+        "config_dir": str(cfg.config_dir),
+        "logging": cfg.logging,
+        "providers": cfg.providers,
+        "routing": cfg.routing,
+    }
+    _print(payload)
     return 0
 
 
-def cmd_route(args: argparse.Namespace) -> int:
-    cfg_dir = Path(args.config_dir) if args.config_dir else default_config_dir()
+def cmd_route(args) -> int:
+    cfg_dir = _get_cfg_dir(args)
     cfg = load_io3_config(cfg_dir)
-    selection = resolve_route(routing_cfg=cfg.routing, mode=args.mode)
-    _print_json(
-        {
-            "mode": selection.mode,
-            "route_id": selection.route_id,
-            "route": selection.route,
-        }
+
+    selection = resolve_route(
+        routing_cfg=cfg.routing,
+        mode=args.mode,
+        providers_cfg=cfg.providers,
+        supported_providers={"null"},  # v0.2 safety gate
     )
+
+    payload = {
+        "mode": selection.mode,
+        "route": {
+            "primary_target": selection.primary_target,
+            "secondary_target": selection.secondary_target,
+            "selected_target": selection.selected_target,
+            "selected_provider": selection.selected_provider,
+            "fallback_used": selection.fallback_used,
+            "fallback_reason": selection.fallback_reason,
+            "boundaries": selection.boundaries,
+        },
+        "route_id": selection.mode,
+    }
+
+    _print(payload)
     return 0
 
 
-def cmd_run(args: argparse.Namespace) -> int:
-    cfg_dir = Path(args.config_dir) if args.config_dir else default_config_dir()
+def cmd_run(args) -> int:
+    cfg_dir = _get_cfg_dir(args)
     cfg = load_io3_config(cfg_dir)
-    selection = resolve_route(routing_cfg=cfg.routing, mode=args.mode)
 
-    # Provider resolution (v0.2: NullProvider only)
-    provider_name = selection.route.get("provider", "null")
-    if provider_name != "null":
-        print(
-            "ERROR: v0.2 runtime supports only provider='null'.\n"
-            f"Got provider={provider_name!r} from route_id={selection.route_id!r}.",
-            file=sys.stderr,
-        )
-        return 2
+    selection = resolve_route(
+        routing_cfg=cfg.routing,
+        mode=args.mode,
+        providers_cfg=cfg.providers,
+        supported_providers={"null"},  # v0.2 safety gate
+    )
 
     provider = NullProvider()
-    result = provider.run(mode=args.mode, route_id=selection.route_id, meta={"config_dir": str(cfg.config_dir)})
 
-    _print_json(
-        {
-            "result": {
-                "provider": result.provider,
-                "mode": result.mode,
-                "route_id": result.route_id,
-                "message": result.message,
-                "meta": result.meta,
-            },
-            "logging_policy": cfg.logging,
-        }
+    meta: Dict[str, Any] = {
+        "config_dir": str(cfg.config_dir),
+        "selected_primary": selection.primary_target,
+        "selected_secondary": selection.secondary_target,
+        "selected_target": selection.selected_target,
+        "selected_provider": selection.selected_provider,
+        "fallback_used": selection.fallback_used,
+        "fallback_reason": selection.fallback_reason,
+        "routing_source": "routing_table.yaml",
+    }
+
+    result = provider.run(
+        mode=selection.mode,
+        route_id=selection.mode,
+        meta=meta,
     )
+
+    payload = {
+        "logging_policy": cfg.logging,
+        "result": {
+            "message": getattr(result, "message", "NullProvider executed (no model invocation)."),
+            "meta": getattr(result, "meta", meta),
+            "mode": selection.mode,
+            "provider": "null",
+            "route_id": selection.mode,
+        },
+    }
+
+    _print(payload)
     return 0
 
 
-def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
-        prog="io-iii",
-        description="IO-III runtime entrypoint (v0.2): config + routing + NullProvider",
-    )
-    p.add_argument(
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(prog="io-iii")
+    parser.add_argument(
         "--config-dir",
-        dest="config_dir",
         default=None,
-        help=f"Config directory (default: {default_config_dir()})",
+        help="Path to IO-III runtime config directory (optional; defaults to repo-relative IO-III/runtime/config).",
     )
 
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = parser.add_subparsers(dest="cmd", required=True)
 
-    sp = sub.add_parser("validate", help="Run invariant validator")
-    sp.set_defaults(func=cmd_validate)
+    p_cfg = sub.add_parser("config")
+    p_cfg.add_argument("show", nargs="?")
+    p_cfg.set_defaults(func=cmd_config_show)
 
-    sp = sub.add_parser("config", help="Config operations")
-    sub2 = sp.add_subparsers(dest="subcmd", required=True)
-    sp_show = sub2.add_parser("show", help="Print merged IO-III runtime config as JSON")
-    sp_show.set_defaults(func=cmd_config_show)
+    p_route = sub.add_parser("route")
+    p_route.add_argument("mode")
+    p_route.set_defaults(func=cmd_route)
 
-    sp = sub.add_parser("route", help="Resolve routing for a mode and print selection")
-    sp.add_argument("mode", choices=VALID_MODES, help="Routing mode")
-    sp.set_defaults(func=cmd_route)
+    p_run = sub.add_parser("run")
+    p_run.add_argument("mode")
+    p_run.set_defaults(func=cmd_run)
 
-    sp = sub.add_parser("run", help="Run IO-III (v0.2: NullProvider only)")
-    sp.add_argument("mode", choices=VALID_MODES, help="Run mode")
-    sp.set_defaults(func=cmd_run)
-
-    return p
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
     args = parser.parse_args(argv)
     return int(args.func(args))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

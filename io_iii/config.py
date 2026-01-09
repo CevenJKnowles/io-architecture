@@ -46,17 +46,14 @@ def _repo_root() -> Optional[Path]:
 
 def default_config_dir() -> Path:
     """
-    Portable default config dir:
-      <repo_root>/IO-III/runtime/config
+    Portable default config dir resolver.
 
-    Falls back to your current absolute path if git is unavailable.
+    Strategy:
+    - Resolve repo root relative to this file location.
+    - Return <repo_root>/IO-III/runtime/config
     """
-    root = _repo_root()
-    if root is not None:
-        return root / "IO-III" / "runtime" / "config"
-
-    # Fallback (keeps your current machine working even if git is unavailable)
-    return Path("/home/cjk/Dev/IO/io-persona-blueprint/IO-III/runtime/config")
+    repo_root = Path(__file__).resolve().parents[1]
+    return repo_root / "IO-III" / "runtime" / "config"
 
 
 def _load_yaml(path: Path) -> Dict[str, Any]:
@@ -77,7 +74,7 @@ def load_io3_config(config_dir: Optional[Path] = None) -> IO3Config:
 
     providers = _load_yaml(cfg_dir / "providers.yaml")
     logging = _load_yaml(cfg_dir / "logging.yaml")
-    routing = _load_yaml(cfg_dir / "routing.yaml")
+    routing = _load_yaml(cfg_dir / "routing_table.yaml")
 
     return IO3Config(
         config_dir=cfg_dir,
