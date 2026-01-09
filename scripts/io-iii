@@ -1,4 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd /home/cjk/Dev/IO/io-persona-blueprint
-exec python3 -m io_iii "$@"
+
+# Determine repo root (portable)
+REPO_ROOT="$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "${REPO_ROOT}" ]]; then
+  echo "ERROR: Unable to determine repo root. Are you inside a git repo?" >&2
+  exit 2
+fi
+
+CONFIG_DIR_DEFAULT="${REPO_ROOT}/IO-III/runtime/config"
+
+# Always run from repo root so Python can import the local package.
+cd "${REPO_ROOT}"
+
+# If user already provided --config-dir, do not override.
+if printf '%s\n' "$@" | grep -q -- '--config-dir'; then
+  exec python3 -m io_iii "$@"
+else
+  exec python3 -m io_iii --config-dir "${CONFIG_DIR_DEFAULT}" "$@"
+fi
