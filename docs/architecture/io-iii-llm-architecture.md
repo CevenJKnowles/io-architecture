@@ -22,6 +22,10 @@ provenance: "mixed"
 
 # IO-III LLM Architecture
 
+> **Canonical decision:**  
+> This document follows **ADR-001 — LLM Runtime Control Plane Selection**.  
+> Path: `./ADR/ADR-001-llm-runtime-control-plane-selection.md`
+
 ---
 
 ## Scope
