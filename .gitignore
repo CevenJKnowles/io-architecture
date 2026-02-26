@@ -47,3 +47,4 @@ __pycache__/
 # Allow documentation inside otherwise-ignored directory
 !/IO-II/tests/results/
 !/IO-II/tests/results/README.md
+*.bak
