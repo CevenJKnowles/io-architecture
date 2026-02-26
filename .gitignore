@@ -48,3 +48,4 @@ __pycache__/
 !/IO-II/tests/results/
 !/IO-II/tests/results/README.md
 *.bak
+.venv/
