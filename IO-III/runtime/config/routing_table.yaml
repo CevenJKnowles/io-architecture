@@ -1,44 +1,126 @@
-# IO-III Routing Table (Canonical)
-# Implements:
-# - ADR-002 (mode-driven routing + primary/secondary)
-# - ADR-004 (no implicit cloud routing; local-first by default)
+# =============================================================================
+# IO-III Canonical Routing Table
+# =============================================================================
+# PURPOSE:
+# - Deterministic, mode-driven routing
+# - Enforces role separation (no overlap)
+# - Supports a single-voice output with internal Challenger validation
+#
+# NOTE:
+# - Master role is implemented in Python (io_iii/*) and is not a model.
+# - This file is canonical and validated by invariants.
+# =============================================================================
 
-schema: "io-iii-routing-table"
-version: "v1.0"
+routing_table:
+  # ---------------------------------------------------------------------------
+  # Global rules (do not improvise)
+  # ---------------------------------------------------------------------------
+  rules:
+    selection_method: mode
 
-rules:
-  # Routing is explicit and mode-driven only (no inference).
-  selection_method: "mode"
+    # Hard boundaries: what each stage is allowed to do
+    boundaries:
+      data:
+        allowed:
+          - parse
+          - extract
+          - normalize
+          - structure
+        forbidden:
+          - interpret
+          - infer
+          - rewrite_intent
+          - style
 
-  # Fallback triggers are operational only (not quality-based).
-  fallback_triggers:
-    - "runtime_failure"
-    - "timeout"
-    - "context_overflow"
-    - "model_unavailable"
+      reasoning:
+        allowed:
+          - interpret
+          - infer
+          - reason
+          - decide
+        forbidden:
+          - style
+          - format_for_delivery
 
-  # Hard boundaries (governance)
-  boundaries:
-    challenger_user_facing: false   # Challenger outputs are internal-only by default
-    single_voice_output: true       # Only one user-facing output per request cycle
+      challenger:
+        allowed:
+          - critique
+          - detect_errors
+          - propose_corrections
+        forbidden:
+          - final_output_voice
+          - style
 
-modes:
-  executor:
-    primary: "local:ministral-3"
-    secondary: "local:mistral"
+      draft:
+        allowed:
+          - format_for_delivery
+          - clarity
+          - tone
+          - structure_output
+        forbidden:
+          - new_reasoning
+          - introduce_new_facts
 
-  explorer:
-    primary: "local:llama3.1"
-    secondary: "local:gemma"
+      fast:
+        allowed:
+          - lightweight_transform
+          - quick_checks
+        forbidden:
+          - deep_reasoning
+          - reinterpret_intent
 
-  challenger:
-    primary: "local:deepseek-r1"
-    secondary: "local:llama3.1"
+  # ---------------------------------------------------------------------------
+  # Model assignments (replaceable components)
+  # ---------------------------------------------------------------------------
+  models:
+    data:
+      provider: ollama
+      name: gemma:latest
 
-  synthesizer:
-    primary: "local:llama3.1"
-    secondary: "local:ministral-3"
+    reasoning:
+      provider: ollama
+      name: deepseek-r1:latest
 
-  visionary:
-    primary: "local:llama3.1"
-    secondary: "local:deepseek-r1"
+    challenger:
+      provider: ollama
+      name: deepseek-r1:latest
+
+    draft:
+      provider: ollama
+      name: Qwen3:8b
+
+    fast:
+      provider: ollama
+      name: mistral:latest
+
+  # ---------------------------------------------------------------------------
+  # Mode pipelines (deterministic call sequence)
+  # ---------------------------------------------------------------------------
+  modes:
+    executor:
+      pipeline:
+        - data
+        - reasoning
+        - challenger
+        - draft
+
+    explorer:
+      pipeline:
+        - reasoning
+        - challenger
+        - draft
+
+    challenger:
+      pipeline:
+        - reasoning
+        - challenger
+
+  # ---------------------------------------------------------------------------
+  # Internal defaults
+  # ---------------------------------------------------------------------------
+  defaults:
+    # Challenger is always internal-only
+    challenger_visibility: internal_only
+
+    # If a mode isn't specified (should be rare), fall back deterministically
+    fallback_mode: executor
