@@ -1,6 +1,7 @@
 # ADR-008 — Challenger Enforcement Layer (Audit + Gate)
 
-Status: Proposed  
+Status: Accepted
+Related: ADR-009 — Audit Gate Contract v1.0
 Date: 2026-02-26  
 Scope: IO-III Runtime Execution Path (`run` command)
 

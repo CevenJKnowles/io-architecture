@@ -1,7 +1,7 @@
 # Architecture Decision Records (ADR)
 
 This directory contains **canonical architecture and governance decisions**
-for the `io-persona-blueprint` repository.
+for the `io-architecture` repository.
 
 ADRs capture decisions that would otherwise cause silent divergence between
 architecture, implementation, and documentation.
@@ -28,3 +28,9 @@ architecture, implementation, and documentation.
 
 - **ADR-007 — Memory, Persistence, and Drift Control**  
   Path: `./ADR/ADR-007-memory-persistence-and-drift-control.md`
+
+- **ADR-008 — Challenger Enforcement Layer (Audit + Gate)**  
+  Path: `./ADR/ADR-008-challenger-enforcement-layer.md`
+
+- **ADR-009 — Audit Gate Contract v1.0**  
+  Path: `./ADR/ADR-009-audit-gate-contract-v1.0.md`
