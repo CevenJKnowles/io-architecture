@@ -8,6 +8,12 @@ from io_iii.routing import resolve_route
 from io_iii.providers.null_provider import NullProvider
 from io_iii.providers.ollama_provider import OllamaProvider
 
+# -----------------------------
+# Audit Gate Hard Limits (ADR-009)
+# -----------------------------
+MAX_AUDIT_PASSES = 1
+MAX_REVISION_PASSES = 1
+
 
 def _to_jsonable(obj: Any) -> Any:
     if obj is None:
@@ -36,8 +42,7 @@ def _get_cfg_dir(args) -> Path:
 # -----------------------------
 # Challenger Enforcement (ADR-008)
 # -----------------------------
-
-def _run_challenger(cfg, user_prompt: str, draft_text: str):
+def _run_challenger(cfg, user_prompt: str, draft_text: str) -> dict:
     from io_iii.routing import _parse_target
 
     selection = resolve_route(
@@ -49,7 +54,12 @@ def _run_challenger(cfg, user_prompt: str, draft_text: str):
 
     # Fail-safe: if challenger unavailable, auto-pass
     if selection.selected_provider != "ollama" or not selection.selected_target:
-        return {"verdict": "pass", "issues": [], "high_risk_claims": [], "suggested_fixes": []}
+        return {
+            "verdict": "pass",
+            "issues": [],
+            "high_risk_claims": [],
+            "suggested_fixes": [],
+        }
 
     _, model = _parse_target(selection.selected_target)
     provider = OllamaProvider.from_config(cfg.providers)
@@ -81,16 +91,28 @@ def _run_challenger(cfg, user_prompt: str, draft_text: str):
     raw = provider.generate(model=model, prompt=audit_prompt).strip()
 
     try:
-        return json.loads(raw)
+        parsed = json.loads(raw)
+        # Minimal normalization: ensure required keys exist
+        if not isinstance(parsed, dict):
+            raise ValueError("Challenger output is not a JSON object")
+        parsed.setdefault("verdict", "pass")
+        parsed.setdefault("issues", [])
+        parsed.setdefault("high_risk_claims", [])
+        parsed.setdefault("suggested_fixes", [])
+        return parsed
     except Exception:
         # Never block execution
-        return {"verdict": "pass", "issues": [], "high_risk_claims": [], "suggested_fixes": []}
+        return {
+            "verdict": "pass",
+            "issues": [],
+            "high_risk_claims": [],
+            "suggested_fixes": [],
+        }
 
 
 # -----------------------------
 # CLI Commands
 # -----------------------------
-
 def cmd_config_show(args) -> int:
     cfg_dir = _get_cfg_dir(args)
     cfg = load_io3_config(cfg_dir)
@@ -177,13 +199,30 @@ def cmd_run(args) -> int:
             "revised": False,
         }
 
+        # Hard-limit counters (ADR-009)
+        audit_passes = 0
+        revision_passes = 0
+
         # Challenger pass (optional)
         if getattr(args, "audit", False):
+            if audit_passes >= MAX_AUDIT_PASSES:
+                raise RuntimeError(
+                    f"AUDIT_LIMIT_EXCEEDED: audit_passes={audit_passes} max={MAX_AUDIT_PASSES}"
+                )
+            audit_passes += 1
+
             audit = _run_challenger(cfg, prompt, text)
             audit_meta["audit_used"] = True
             audit_meta["audit_verdict"] = audit.get("verdict")
 
+            # Single bounded revision
             if audit.get("verdict") == "needs_work":
+                if revision_passes >= MAX_REVISION_PASSES:
+                    raise RuntimeError(
+                        f"REVISION_LIMIT_EXCEEDED: revision_passes={revision_passes} max={MAX_REVISION_PASSES}"
+                    )
+                revision_passes += 1
+
                 revision_prompt = (
                     "You are IO-III Executor performing a single controlled revision.\n"
                     "Address the challenger feedback below.\n"
