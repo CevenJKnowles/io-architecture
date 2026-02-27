@@ -1,15 +1,30 @@
 # ==============================
-# System / editor files
+# System / OS files
 # ==============================
 .DS_Store
 Thumbs.db
+.directory
 
 # ==============================
 # Python & Jupyter
 # ==============================
 __pycache__/
-*.pyc
+*.py[cod]
 .ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ==============================
+# Virtual environments
+# ==============================
+.venv/
+venv/
+.env
+.env.*
+.direnv/
 
 # ==============================
 # Temp / backup files
@@ -34,12 +49,6 @@ __pycache__/
 !/IO-III/tests/results/README.md
 
 # ==============================
-# Local environment files (never commit)
-# ==============================
-.env
-.env.*
-
-# ==============================
 # IO-II test results (generated, local-only)
 # ==============================
 /IO-II/tests/results/*
@@ -47,5 +56,3 @@ __pycache__/
 # Allow documentation inside otherwise-ignored directory
 !/IO-II/tests/results/
 !/IO-II/tests/results/README.md
-*.bak
-.venv/
