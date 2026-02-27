@@ -97,3 +97,4 @@ def test_audit_and_revision_are_bounded(monkeypatch, capsys):
     assert '"audit_meta"' in captured
     assert '"audit_used": true' in captured
     assert '"audit_verdict": "needs_work"' in captured
+    assert '"persona_contract_version"' in captured

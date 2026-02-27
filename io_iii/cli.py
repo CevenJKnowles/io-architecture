@@ -7,6 +7,7 @@ from io_iii.config import load_io3_config, default_config_dir
 from io_iii.routing import resolve_route
 from io_iii.providers.null_provider import NullProvider
 from io_iii.providers.ollama_provider import OllamaProvider
+from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
 
 # -----------------------------
 # Audit Gate Hard Limits (ADR-009)
@@ -183,12 +184,7 @@ def cmd_run(args) -> int:
             prompt = sys.stdin.read().strip() or "Say hello in one short sentence."
 
         # Executor pass
-        system_identity = (
-            "You are IO-III, a structured local AI execution engine designed "
-            "for deterministic routing, verifiable reasoning boundaries, "
-            "and disciplined output generation. "
-            "Respond concisely and with technical precision."
-        )
+        system_identity = EXECUTOR_PERSONA_CONTRACT
 
         final_prompt = f"{system_identity}\n\nUser:\n{prompt}\n\nIO-III:"
         text = provider.generate(model=model, prompt=final_prompt).strip()
@@ -239,7 +235,7 @@ def cmd_run(args) -> int:
 
         result = {
             "message": text,
-            "meta": {},
+            "meta": {"persona_contract_version": PERSONA_CONTRACT_VERSION},
             "provider": "ollama",
             "model": model,
         }
