@@ -3,6 +3,7 @@
 IO-III Architecture defines the governance-first control-plane specification for IO-III — a deterministic, bounded LLM runtime system designed around architectural guarantees rather than emergent autonomy.
 
 This repository contains the formal specification layer (ADR set, invariant definitions, routing contracts, and validation logic).  
+
 It does **not** contain a runtime execution engine.
 
 ---
