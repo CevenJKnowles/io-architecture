@@ -9,19 +9,25 @@ notes: "Inventory of legacy artifacts. Legacy content is preserved and not modif
 
 # IO-II Legacy Map
 
-This document inventories legacy IO-II artifacts and explains how to use them.
+This document inventories legacy IO-II artefacts and explains how to use them.
+
+---
+---
 
 ## Location
 
 - Legacy directory: `IO-II/legacy/persona-blueprints/`
 
+---
+
 ## Policy
 
 - Legacy files are not rewritten.
-- Curated docs in `IO-II/docs/` may summarize and link to legacy.
+- Curated docs in `IO-II/docs/` may summarise and link to legacy.
+
+---
 
 ## Inventory (snapshot)
-
 ```text
 IO-II/legacy/persona-blueprints/cross_model_prompts_v1_0.md
 IO-II/legacy/persona-blueprints/deployment_profiles_v1_0.json

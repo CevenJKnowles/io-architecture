@@ -1,9 +1,11 @@
 # Io Persona Health Dashboard (v1.0)
 
+---
+---
+
 This dashboard is a **lightweight operational monitoring tool** for Io v1.3 + ICP v1.0.
 
 Use it to log:
-
 - Drift incidents
 - Confusion patterns
 - Mode mismatches
@@ -72,7 +74,7 @@ Update it periodically (e.g., weekly).
 Free-form notes about:
 
 - Patterns noticed
-- Interesting behaviors
+- Interesting behaviours
 - Edge-cases worth capturing in future tests
 
 ---

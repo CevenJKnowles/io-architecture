@@ -1,10 +1,10 @@
 # Io Persona / ICP Config Directory Structure (GitHub Layout)
 
+---
+---
+
 This is a **suggested** repository layout for storing the Io Persona v1.3 and
 Io–Ceven Collaborative Protocol (ICP v1.0) configuration files.
-
-You can adapt names and paths, but keeping a consistent structure makes it
-easier to reuse across tools and hosts.
 
 ```text
 your-repo-root/
