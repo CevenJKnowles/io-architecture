@@ -1,7 +1,12 @@
+# FILE: architecture/runtime/config/routing_table.yaml
+
 routing_table:
   rules:
     selection_method: mode
     boundaries:
+      challenger_user_facing: false
+      single_voice_output: true
+
       data:
         allowed: [parse, extract, normalize, structure]
         forbidden: [interpret, infer, rewrite_intent, style]
@@ -47,3 +52,19 @@ routing_table:
     challenger:
       primary: "local:deepseek-r1:latest"
       secondary: "local:deepseek-r1:latest"
+
+    synthesizer:
+      primary: "local:qwen3:8b"
+      secondary: "local:mistral:latest"
+
+    visionary:
+      primary: "local:qwen3:8b"
+      secondary: "local:deepseek-r1:latest"
+
+    fast:
+      primary: "local:mistral:latest"
+      secondary: "local:qwen3:8b"
+
+    draft:
+      primary: "local:qwen3:8b"
+      secondary: "local:mistral:latest"

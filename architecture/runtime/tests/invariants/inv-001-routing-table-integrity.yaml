@@ -1,3 +1,6 @@
+# --rmd
+# FILE: architecture/runtime/tests/invariants/inv-001-routing-table-integrity.yaml
+
 schema: "io-iii-invariant-spec"
 version: "v1.0"
 
@@ -12,24 +15,26 @@ assertions:
   - name: "Routing selection is mode-driven"
     type: "yaml_equals"
     file: "./architecture/runtime/config/routing_table.yaml"
-    path: "rules.selection_method"
+    path: "routing_table.rules.selection_method"
     expected: "mode"
 
   - name: "All modes defined"
     type: "yaml_has_keys"
     file: "./architecture/runtime/config/routing_table.yaml"
-    path: "modes"
+    path: "routing_table.modes"
     expected_keys:
       - "executor"
       - "explorer"
       - "challenger"
       - "synthesizer"
       - "visionary"
+      - "draft"
+      - "fast"
 
   - name: "Each mode has primary and secondary"
     type: "yaml_each_has_keys"
     file: "./architecture/runtime/config/routing_table.yaml"
-    path: "modes"
+    path: "routing_table.modes"
     each_item_required_keys:
       - "primary"
       - "secondary"
@@ -37,11 +42,11 @@ assertions:
   - name: "Challenger is not user-facing"
     type: "yaml_equals"
     file: "./architecture/runtime/config/routing_table.yaml"
-    path: "rules.boundaries.challenger_user_facing"
+    path: "routing_table.rules.boundaries.challenger_user_facing"
     expected: false
 
   - name: "Single-voice guarantee is enabled"
     type: "yaml_equals"
     file: "./architecture/runtime/config/routing_table.yaml"
-    path: "rules.boundaries.single_voice_output"
+    path: "routing_table.rules.boundaries.single_voice_output"
     expected: true

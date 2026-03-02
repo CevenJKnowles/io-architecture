@@ -4,6 +4,6 @@ title: "Cloud Providers Disabled by Default (IO-II)"
 assertions:
   - name: "cloud.enabled must be false"
     type: "yaml_equals"
-    file: "./IO-II/runtime/config/providers.yaml"
+    file: "./history/io-ii/runtime/config/providers.yaml"
     path: "providers.cloud.enabled"
     expected: false
