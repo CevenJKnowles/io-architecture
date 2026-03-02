@@ -144,19 +144,3 @@ Future expansion must preserve the deterministic control plane and bounded execu
 IO-III prioritizes **structural guarantees** over feature velocity.
 
 ---
-
-# Answers
-
-1. Neutralise all instances of my name. As this is the public-facing repo, it should reflect the highest standards of professionalism.
-2. (B) - but I want to discuss what best practices are for the purposes of this repo and the presentation of these older versions of IO before making changes.
-3. (A) - It should merely give context and overview of the trajectory of this project. It's chronology is interesting and showcases my process, albeit to a lesser position in the information hierarchy.
-
-if you understand so far, then I have some questions ofr you before we continue.
-
----
-
-1. Repo information and formatting is extremely high priority for me. Based upon your observations and this repo's requirements, what strategy would you suggest to reduce the noise these 2 directories create?
-2. What information is relevant and should be considered necessary for the public-facing repo?
-3. Should we create a sub-directory tree to better sort information?
-4. I already have these 2 directories archived elsewhere. Would it make sense to use all the information in them to create better directory files that have proper YAML headers, file nomenclature, and other repo-consistent changes instead of editing each? This could potentially reduce unnecessary noise and streamline the presentation of information.
-5. In the case of IO-II, tha tis you. Since you are the collaborator for IO-III and partially responsible for the design, as well as this being a brilliant test case study of your ability to ccollaboratewith me - should we consider any special additions to that directory?
