@@ -50,10 +50,10 @@ def default_config_dir() -> Path:
 
     Strategy:
     - Resolve repo root relative to this file location.
-    - Return <repo_root>/IO-III/runtime/config
+    - Return <repo_root>/architecture/runtime/config
     """
     repo_root = Path(__file__).resolve().parents[1]
-    return repo_root / "IO-III" / "runtime" / "config"
+    return repo_root / "architecture" / "runtime" / "config"
 
 
 def _load_yaml(path: Path) -> Dict[str, Any]:
@@ -68,7 +68,7 @@ def _load_yaml(path: Path) -> Dict[str, Any]:
 
 def load_io3_config(config_dir: Optional[Path] = None) -> IO3Config:
     """
-    Load IO-III runtime configuration from YAML files in config_dir.
+    Load IO-III runtime configuration (architecture/runtime) from YAML files in config_dir.
     """
     cfg_dir = config_dir or default_config_dir()
 
