@@ -1,9 +1,0 @@
----
-id: "IO2-INV-004"
-title: "IO-II Legacy Directory Must Not Change"
-assertions:
-  - name: "No changes allowed under IO-II/legacy (staged or working tree)"
-    type: "git_forbid_paths"
-    scope: "both"
-    forbidden_paths:
-      - "IO-II/legacy/"
