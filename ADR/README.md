@@ -1,3 +1,22 @@
+---
+id: "ADR-000"
+title: "README | ADR"
+type: "adr"
+status: "active"
+version: "<v1.0|...>"
+canonical: true
+scope: "io-iii"
+audience: "internal"
+created: "2026-01-09"
+updated: "2026-03-03"
+tags:
+  - "governance"
+  - "adr"
+roles_focus:
+  - "governance"
+provenance: "human"
+---
+
 # Architecture Decision Records (ADR)
 
 This directory contains **canonical architecture and governance decisions**
