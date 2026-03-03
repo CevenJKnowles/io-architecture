@@ -10,6 +10,8 @@ from io_iii.routing import resolve_route
 from io_iii.providers.null_provider import NullProvider
 from io_iii.providers.ollama_provider import OllamaProvider
 from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
+from io_iii.core.engine import run as engine_run
+from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState
 
 # -----------------------------
 # Audit Gate Hard Limits (ADR-009)
@@ -172,117 +174,75 @@ def cmd_run(args) -> int:
         supported_providers={"null", "ollama"},
     )
 
+    # Prompt source (CLI concern)
+    prompt = getattr(args, "prompt", None)
+    if not prompt:
+        import sys
+        prompt = sys.stdin.read().strip() or "Say hello in one short sentence."
+
+    # Build SessionState (control-plane; no prompt text stored)
+    route = RouteInfo(
+        mode=selection.mode,
+        primary_target=selection.primary_target,
+        secondary_target=selection.secondary_target,
+        selected_target=selection.selected_target,
+        selected_provider=selection.selected_provider,
+        fallback_used=selection.fallback_used,
+        fallback_reason=selection.fallback_reason,
+        boundaries=selection.boundaries,
+    )
+
+    state = SessionState(
+        request_id=request_id,
+        started_at_ms=int(time.time() * 1000),
+        mode=selection.mode,
+        config_dir=str(cfg.config_dir),
+        route=route,
+        audit=AuditGateState(audit_enabled=bool(getattr(args, "audit", False))),
+        status="ok",
+        provider=selection.selected_provider,
+        model=None,
+        route_id=selection.mode,
+        persona_contract_version=PERSONA_CONTRACT_VERSION,
+        persona_id=None,
+        logging_policy=cfg.logging,
+    )
+
     try:
-        if selection.selected_provider == "ollama":
-            from io_iii.routing import _parse_target
-
-            provider = OllamaProvider.from_config(cfg.providers)
-
-            if not selection.selected_target:
-                raise ValueError("No selected_target available for ollama route")
-
-            _, model = _parse_target(selection.selected_target)
-
-            prompt = getattr(args, "prompt", None)
-            if not prompt:
-                import sys
-                prompt = sys.stdin.read().strip() or "Say hello in one short sentence."
-
-            # Executor pass
-            system_identity = EXECUTOR_PERSONA_CONTRACT
-
-            final_prompt = f"{system_identity}\n\nUser:\n{prompt}\n\nIO-III:"
-            text = provider.generate(model=model, prompt=final_prompt).strip()
-
-            audit_meta = {
-                "audit_used": False,
-                "audit_verdict": None,
-                "revised": False,
-            }
-
-            # Hard-limit counters (ADR-009)
-            audit_passes = 0
-            revision_passes = 0
-
-            # Challenger pass (optional)
-            if getattr(args, "audit", False):
-                if audit_passes >= MAX_AUDIT_PASSES:
-                    raise RuntimeError(
-                        f"AUDIT_LIMIT_EXCEEDED: audit_passes={audit_passes} max={MAX_AUDIT_PASSES}"
-                    )
-                audit_passes += 1
-
-                audit = _run_challenger(cfg, prompt, text)
-                audit_meta["audit_used"] = True
-                audit_meta["audit_verdict"] = audit.get("verdict")
-
-                # Single bounded revision
-                if audit.get("verdict") == "needs_work":
-                    if revision_passes >= MAX_REVISION_PASSES:
-                        raise RuntimeError(
-                            f"REVISION_LIMIT_EXCEEDED: revision_passes={revision_passes} max={MAX_REVISION_PASSES}"
-                        )
-                    revision_passes += 1
-
-                    revision_prompt = (
-                        "You are IO-III Executor performing a single controlled revision.\n"
-                        "Address the challenger feedback below.\n"
-                        "You MUST NOT introduce new facts.\n"
-                        "Preserve user intent.\n\n"
-                        f"USER_PROMPT:\n{prompt}\n\n"
-                        f"ORIGINAL_DRAFT:\n{text}\n\n"
-                        f"CHALLENGER_FEEDBACK:\n{json.dumps(audit, indent=2)}\n\n"
-                        "Produce the improved final answer only."
-                    )
-
-                    text = provider.generate(model=model, prompt=revision_prompt).strip()
-                    audit_meta["revised"] = True
-
-            result = {
-                "message": text,
-                "meta": {"persona_contract_version": PERSONA_CONTRACT_VERSION},
-                "provider": "ollama",
-                "model": model,
-            }
-
-        else:
-            provider = NullProvider()
-            result_obj = provider.run(
-                mode=selection.mode,
-                route_id=selection.mode,
-                meta={},
-            )
-            result = {
-                "message": getattr(result_obj, "message", ""),
-                "meta": getattr(result_obj, "meta", {}),
-                "provider": "null",
-            }
-            audit_meta = None
+        state2, result = engine_run(
+            cfg=cfg,
+            session_state=state,
+            user_prompt=prompt,
+            audit=bool(getattr(args, "audit", False)),
+            challenger_fn=_run_challenger,
+            ollama_provider_factory=OllamaProvider.from_config,
+        )
 
         payload = {
             "logging_policy": cfg.logging,
             "result": {
-                "message": result["message"],
-                "meta": result["meta"],
-                "mode": selection.mode,
-                "provider": result["provider"],
-                "model": result.get("model"),
-                "route_id": selection.mode,
+                "message": result.message,
+                "meta": result.meta,
+                "mode": state2.mode,
+                "provider": result.provider,
+                "model": result.model,
+                "route_id": state2.route_id,
             },
-            "audit_meta": audit_meta,
+            "audit_meta": result.audit_meta,
         }
 
-        # Metadata logging (NO prompt/response content)
+        # Metadata logging (NO prompt/response content; prompt_hash is safe)
         latency_ms = int((time.perf_counter() - t0) * 1000)
         append_metadata(
             cfg.logging,
             {
                 "request_id": request_id,
-                "mode": selection.mode,
-                "provider": result.get("provider"),
-                "model": result.get("model"),
+                "mode": state2.mode,
+                "provider": result.provider,
+                "model": result.model,
                 "status": "ok",
                 "latency_ms": latency_ms,
+                "prompt_hash": result.prompt_hash,
                 "fallback_used": getattr(selection, "fallback_used", None),
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
@@ -311,6 +271,7 @@ def cmd_run(args) -> int:
             },
         )
         raise
+
 def cmd_about(args) -> int:
     cfg_dir = _get_cfg_dir(args)
     cfg = load_io3_config(cfg_dir)
