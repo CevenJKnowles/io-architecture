@@ -7,7 +7,7 @@ version: ""
 canonical: true
 scope: "io-iii"
 audience: "portfolio"
-created: "2025-11-25"
+created: "2025-12-03"
 updated: "2026-03-03"
 tags:
   - "overview"
@@ -189,3 +189,5 @@ Honesty | Fairness | Integrity | Authenticity | Clarity | Inclusion.
 
 > **End of Overview**  
 > *This document represents the current persistent structure of Io’s memory objects, alignments, and calibration frameworks as of 2025-11-25 (CET).*
+
+test test test
