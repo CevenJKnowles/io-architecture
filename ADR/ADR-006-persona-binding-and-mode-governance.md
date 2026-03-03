@@ -1,6 +1,6 @@
 ---
 id: "ADR-006"
-title: "ARD 006 | Persona Binding and Mode Governance"
+title: "Persona Binding and Mode Governance"
 type: "adr"
 status: "active"
 version: "v1.0"
@@ -26,7 +26,7 @@ roles_focus:
 provenance: "human"
 ---
 
-# ADR-006 — Persona Binding and Mode Governance
+# ADR-006 | Persona Binding and Mode Governance
 
 ## Context
 
