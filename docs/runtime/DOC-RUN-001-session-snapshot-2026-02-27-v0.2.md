@@ -1,11 +1,30 @@
-# IO-III Runtime Session Snapshot  
-Date: 2026-02-27  
-Version: v0.2  
-Status: Control Plane Stabilized
+---
+id: "DOC-RUN-001"
+title: "Session Snapshot"
+type: "runtime"
+status: "active"
+version: "v0.2"
+canonical: true
+scope: "io-iii"
+audience: "internal"
+created: "2026-02-27"
+updated: "2026-03-03"
+tags:
+ - "runtime"
+ - "snapshot"
+roles_focus:
+ - "executor"
+provenance: "human"
+---
+
+# IO-III Runtime Session Snapshot 
+Date: 2026-02-27 
+Version: v0.2 
+Status: Control Plane Stabilised
 
 ---
 
-## 1. Current System Architecture
+## Current System Architecture
 
 ### Execution Chain
 CLI → Config Loader → Deterministic Routing → Executor → (Optional) Audit Gate → Unified Output
@@ -22,7 +41,7 @@ CLI → Config Loader → Deterministic Routing → Executor → (Optional) Audi
 
 ---
 
-## 2. Implemented Contracts
+## Implemented Contracts
 
 ### ADR-008 — Challenger Enforcement
 - Challenger runs only when `--audit` flag enabled
@@ -45,7 +64,7 @@ Audit is:
 
 ---
 
-## 3. Persona Injection (v0.1)
+## Persona Injection (v0.1)
 
 Lightweight executor identity contract:
 - Static contract string
@@ -59,7 +78,7 @@ Establish stable execution identity without adding behavioral autonomy.
 
 ---
 
-## 4. Test Coverage
+## Test Coverage
 
 Current regression coverage:
 - Audit runs at most once
@@ -72,7 +91,7 @@ Minimal tests guarding structural contracts only.
 
 ---
 
-## 5. Architectural Boundaries (Frozen)
+## Architectural Boundaries (Frozen)
 
 The following are NOT implemented:
 - Persistent memory layer
@@ -98,7 +117,7 @@ Create a formal runtime container for:
 - audit state
 - persona version
 
-No behavior change yet.
+No behaviour change yet.
 Foundation only.
 
 ---
@@ -123,7 +142,7 @@ No implementation.
 ---
 
 ## Task 4 — Declarative Model Role Registry
-Formalize role → model binding in a static registry
+Formalise role → model binding in a static registry
 Separate from routing table.
 
 Goal:
@@ -155,7 +174,7 @@ Move orchestration into runtime core before adding new capabilities.
 
 IO-III v0.2 is now structurally disciplined.
 
-Control plane stabilized.
+Control plane stabilised.
 Expansion readiness: high.
 Autonomy level: intentionally constrained.
 

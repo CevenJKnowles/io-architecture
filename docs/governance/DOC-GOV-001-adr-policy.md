@@ -1,18 +1,17 @@
 ---
-id: "GOV-ADR-POLICY"
+id: "DOC-GOV-001"
 title: "ADR Policy"
 type: "governance"
 status: "active"
-version: "v1.0"
+version: ""
 canonical: true
-scope: "repo"
+scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-03-03"
 tags:
-  - "adr"
   - "governance"
-  - "decision-records"
+  - "adr"
 roles_focus:
   - "governance"
   - "executor"

@@ -1,6 +1,6 @@
 ---
 id: "ADR-004"
-title: "ADR 004 | Cloud Provider Enablement and Key Security"
+title: "Cloud Provider Enablement and Key Security"
 type: "adr"
 status: "active"
 version: "v1.0"
@@ -23,7 +23,7 @@ roles_focus:
 provenance: "human"
 ---
 
-# ADR-004 — Cloud Provider Enablement and Key Security
+# ADR-004 | Cloud Provider Enablement and Key Security
 
 ## Context
 
