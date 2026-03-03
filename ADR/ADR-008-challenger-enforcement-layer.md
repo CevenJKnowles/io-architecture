@@ -1,4 +1,4 @@
-# ADR-008 — Challenger Enforcement Layer (Audit + Gate)
+# ADR-008 | Challenger Enforcement Layer (Audit + Gate)
 
 Status: Accepted
 Related: ADR-009 — Audit Gate Contract v1.0

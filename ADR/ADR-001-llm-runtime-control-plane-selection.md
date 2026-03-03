@@ -1,6 +1,6 @@
 ---
 id: "ADR-001"
-title: "LLM Runtime Control Plane Selection"
+title: "ADR 001 | LLM Runtime Control Plane Selection"
 type: "adr"
 status: "active"
 version: "v1.0"
@@ -22,7 +22,7 @@ roles_focus:
 provenance: "human"
 ---
 
-# ADR-001 — LLM Runtime Control Plane Selection
+# ADR-001 | LLM Runtime Control Plane Selection
 
 ## Context
 

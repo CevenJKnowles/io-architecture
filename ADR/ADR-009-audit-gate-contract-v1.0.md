@@ -1,4 +1,4 @@
-# ADR-009 — Audit Gate Contract v1.0
+# ADR-009 | Audit Gate Contract v1.0
 
 - Status: ACCEPTED
 - Date: 2026-02-27

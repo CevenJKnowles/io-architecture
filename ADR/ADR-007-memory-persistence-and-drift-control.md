@@ -1,6 +1,6 @@
 ---
 id: "ADR-007"
-title: "Memory, Persistence, and Drift Control"
+title: "ADR 007 | Memory, Persistence, and Drift Control"
 type: "adr"
 status: "active"
 version: "v1.0"

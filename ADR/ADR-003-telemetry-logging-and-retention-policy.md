@@ -1,6 +1,6 @@
 ---
 id: "ADR-003"
-title: "Telemetry, Logging, and Retention Policy"
+title: " ADR 003 | Telemetry, Logging, and Retention Policy"
 type: "adr"
 status: "draft"
 version: "v0.1"

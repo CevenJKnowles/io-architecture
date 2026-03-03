@@ -1,6 +1,6 @@
 ---
 id: "ADR-002"
-title: "Model Routing and Fallback Policy"
+title: "ARD 002 | Model Routing and Fallback Policy"
 type: "adr"
 status: "active"
 version: "v1.0"

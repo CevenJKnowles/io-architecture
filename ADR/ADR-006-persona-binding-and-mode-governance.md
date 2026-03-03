@@ -1,6 +1,6 @@
 ---
 id: "ADR-006"
-title: "Persona Binding and Mode Governance"
+title: "ARD 006 | Persona Binding and Mode Governance"
 type: "adr"
 status: "active"
 version: "v1.0"
