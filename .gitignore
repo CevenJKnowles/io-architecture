@@ -53,6 +53,11 @@ venv/
 # ==============================
 /history/io-ii/tests/results/*
 
+# ==============================
+# Private non-public workspace
+# ==============================
+.io_private/
+
 # Allow documentation inside otherwise-ignored directory
 !/history/io-ii/tests/results/
 !/history/io-ii/tests/results/README.md
