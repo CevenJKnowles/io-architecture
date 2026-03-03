@@ -1,9 +1,21 @@
 ---
-title: IO-III Blueprint v.0.1
-author: Ceven J. Knowles
-created: 2025-11-25
-updated: 2025-11-25
-tags: [IO-III, blueprint, map, domains, contracts]
+id: "DOC-BPLN-001"
+title: "IO-III Blueprint Concept 1"
+type: "blueprint"
+status: "active"
+version: "v0"
+canonical: true
+scope: "io-iii"
+audience: "internal"
+created: "2025-11-25"
+updated: "2026-03-03"
+tags:
+  - "blueprint"
+  - "io-iii"
+roles_focus:
+  - "visionary"
+  - "synthesizer"
+provenance: "human"
 ---
 
 # Instructions

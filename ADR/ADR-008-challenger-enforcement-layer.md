@@ -1,8 +1,25 @@
+---
+id: "ADR-008"
+title: "Challenger Enforcement Layer"
+type: "adr"
+status: "active"
+version: "v1.0"
+canonical: true
+scope: "io-iii"
+audience: "internal"
+created: "2026-02-26"
+updated: "2026-03-03"
+tags:
+  - "governance"
+  - "adr"
+roles_focus:
+  - "governance"
+provenance: "human"
+---
+
 # ADR-008 | Challenger Enforcement Layer (Audit + Gate)
 
-Status: Accepted
 Related: ADR-009 — Audit Gate Contract v1.0
-Date: 2026-02-26  
 Scope: IO-III Runtime Execution Path (`run` command)
 
 ---

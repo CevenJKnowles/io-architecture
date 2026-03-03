@@ -1,6 +1,6 @@
 ---
 id: "ADR-005"
-title: "ADR 005 | Evaluation and Regression Testing Policy"
+title: "Evaluation and Regression Testing Policy"
 type: "adr"
 status: "active"
 version: "v1.0"
@@ -23,7 +23,7 @@ roles_focus:
 provenance: "human"
 ---
 
-# ADR-005 — Evaluation and Regression Testing Policy
+# ADR-005 | Evaluation and Regression Testing Policy
 
 ## Context
 

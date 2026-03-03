@@ -1,29 +1,20 @@
 ---
-id: IOIII-NOTES-001
-title: IO-III Working Notes
-type: working_notes
-status: active
-version: v0.1
-created: 2026-02-26
-updated: 2026-02-26
-author: Ceven Jupiter Knowles
-project: IO-III
-layer: DOC
-scope: non_canonical
+id: "DOC-NOTE-001"
+title: "IO-III Notes"
+type: "working_notes"
+status: "active"
+version: "v0.1"
+canonical: false
+scope: "io-iii"
+audience: "internal"
+created: "2026-02-26"
+updated: "2026-03-03"
 tags:
-  - io-iii
-  - working-notes
-  - architecture
-  - risks
-  - todos
-governance:
-  canonical: false
-  mutable: true
-  review_required: false
-description: >
-  Non-canonical working notes for IO-III. Contains temporary reasoning,
-  risk tracking, TODOs, and intermediate architectural thinking.
-  Content is not authoritative and may change without version control constraints.
+  - "notes"
+  - "working"
+roles_focus:
+  - "explorer"
+provenance: "human"
 ---
 
 # IO-III Working Notes v0.1

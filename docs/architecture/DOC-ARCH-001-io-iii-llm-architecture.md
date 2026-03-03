@@ -1,5 +1,5 @@
 ---
-id: "IO3-ARCH-001"
+id: "DOC-ARCH-001"
 title: "IO-III LLM Architecture"
 type: "architecture"
 status: "active"
@@ -7,17 +7,16 @@ version: ""
 canonical: true
 scope: "io-iii"
 audience: "portfolio"
-created: "2026-01-08"
-updated: "2026-01-08"
+created: "2025-12-16"
+updated: "2026-03-03"
 tags:
+  - "architecture"
   - "io-iii"
   - "llm"
-  - "routing"
-  - "runtime"
 roles_focus:
   - "synthesizer"
-  - "governance"
-provenance: "mixed"
+  - "executor"
+provenance: "human"
 ---
 
 # IO-III LLM Architecture
