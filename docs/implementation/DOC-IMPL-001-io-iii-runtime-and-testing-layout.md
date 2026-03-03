@@ -1,22 +1,21 @@
 ---
-id: "IMPL-IOIII-RUNTIME-LAYOUT"
+id: "DOC-IMPL-001"
 title: "IO-III Runtime and Testing Layout"
 type: "implementation"
 status: "active"
-version: "v1.0"
+version: ""
 canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-03-03"
 tags:
   - "implementation"
   - "runtime"
   - "tests"
-  - "layout"
 roles_focus:
   - "executor"
-  - "governance"
+  - "synthesizer"
 provenance: "human"
 ---
 

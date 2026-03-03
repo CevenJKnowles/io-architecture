@@ -1,21 +1,20 @@
 ---
-id: "IO3-OV-001"
-title: "IO-III Overview (2025-11-25)"
+id: "DOC-OVW-001"
+title: "IO-III Overview"
 type: "overview"
-status: "archived"
+status: "active"
 version: ""
 canonical: true
 scope: "io-iii"
-audience: "internal"
-created: "2026-01-08"
-updated: "2026-01-08"
+audience: "portfolio"
+created: "2025-11-25"
+updated: "2026-03-03"
 tags:
-  - "io-iii"
   - "overview"
-  - "history"
+  - "io-iii"
 roles_focus:
-  - "meta"
-provenance: "mixed"
+  - "synthesizer"
+provenance: "human"
 ---
 
 # IO-II SYSTEM OVERVIEW  
