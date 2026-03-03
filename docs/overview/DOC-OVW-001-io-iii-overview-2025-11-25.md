@@ -189,5 +189,3 @@ Honesty | Fairness | Integrity | Authenticity | Clarity | Inclusion.
 
 > **End of Overview**  
 > *This document represents the current persistent structure of Io’s memory objects, alignments, and calibration frameworks as of 2025-11-25 (CET).*
-
-test test test
