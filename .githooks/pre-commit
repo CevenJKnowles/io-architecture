@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Update YAML front matter fields for staged Markdown files:
+# - created: date of first commit introducing the file (or today if new/untracked)
+# - updated: today's date (commit-time)
+#
+# Only operates on files that already have YAML front matter (--- ... ---).
+# Skips files without front matter to avoid injecting unknown schemas.
+
+TODAY="$(date +%F)"  # YYYY-MM-DD
+
+# Get staged .md files (Added/Copied/Modified/Renamed)
+mapfile -t FILES < <(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.md$' || true)
+
+if [[ ${#FILES[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+skipped=()
+
+for f in "${FILES[@]}"; do
+  # Must exist in working tree (renames should still be present)
+  if [[ ! -f "$f" ]]; then
+    continue
+  fi
+
+  # Only process if file starts with YAML front matter fence
+  first_line="$(head -n 1 "$f" || true)"
+  if [[ "$first_line" != "---" ]]; then
+    skipped+=("$f")
+    continue
+  fi
+
+  # Find end of front matter (second ---)
+  fm_end_line="$(awk 'NR>1 && $0=="---" {print NR; exit}' "$f" || true)"
+  if [[ -z "$fm_end_line" ]]; then
+    skipped+=("$f")
+    continue
+  fi
+
+  # Determine "created" from git history:
+  # - Use first commit where file was added (diff-filter=A)
+  # - Follow renames where possible
+  created="$(git log --follow --diff-filter=A --format=%as -1 -- "$f" 2>/dev/null || true)"
+  if [[ -z "$created" ]]; then
+    created="$TODAY"
+  fi
+
+  updated="$TODAY"
+
+  # Extract front matter for editing
+  fm="$(head -n "$fm_end_line" "$f")"
+
+  # If created/updated keys exist, replace their values; else insert them.
+  if grep -qE '^created:\s*' <<<"$fm"; then
+    fm="$(sed -E "s/^created:\s*.*/created: \"${created}\"/" <<<"$fm")"
+  else
+    # Insert created near other date fields if possible; otherwise append before closing ---
+    fm="$(awk -v c="created: \"${created}\"" '
+      BEGIN{inserted=0}
+      {
+        if(!inserted && $0 ~ /^updated:\s*/){ print c; inserted=1 }
+        print
+      }
+      END{
+        if(!inserted){
+          # Insert just before final --- line
+        }
+      }' <<<"$fm")"
+    # If still not inserted, place before last line (which is ---)
+    if ! grep -qE '^created:\s*' <<<"$fm"; then
+      fm="$(awk -v c="created: \"${created}\"" '
+        {lines[NR]=$0}
+        END{
+          for(i=1;i<NR;i++) print lines[i]
+          print c
+          print lines[NR]
+        }' <<<"$fm")"
+    fi
+  fi
+
+  if grep -qE '^updated:\s*' <<<"$fm"; then
+    fm="$(sed -E "s/^updated:\s*.*/updated: \"${updated}\"/" <<<"$fm")"
+  else
+    # Insert updated just before final --- line
+    fm="$(awk -v u="updated: \"${updated}\"" '
+      {lines[NR]=$0}
+      END{
+        for(i=1;i<NR;i++) print lines[i]
+        print u
+        print lines[NR]
+      }' <<<"$fm")"
+  fi
+
+  # Rebuild file: updated front matter + rest of file after front matter
+  tail_start=$((fm_end_line + 1))
+  rest="$(tail -n +"$tail_start" "$f")"
+  printf "%s\n%s" "$fm" "$rest" > "$f"
+
+  # Re-stage the file because we modified it
+  git add "$f"
+done
+
+if [[ ${#skipped[@]} -gt 0 ]]; then
+  echo "pre-commit: skipped Markdown files without YAML front matter:"
+  printf '  - %s\n' "${skipped[@]}"
+  echo "pre-commit: no schema injected; add front matter manually if desired."
+fi
+
+exit 0
