@@ -56,6 +56,11 @@ class CapabilitySpec:
     input_schema: Optional[Dict[str, Any]] = None
     output_schema: Optional[Dict[str, Any]] = None
 
+    @property
+    def id(self) -> str:
+        """Alias for capability_id (stable external name)."""
+        return self.capability_id
+
 
 @dataclass(frozen=True)
 class CapabilityResult:
@@ -150,6 +155,14 @@ class CapabilityRegistry:
 
     def ids(self) -> list[str]:
         return sorted(self._by_id.keys())
+
+    def list_capabilities(self) -> list[CapabilitySpec]:
+        """Return registered CapabilitySpec objects in deterministic (id-sorted) order."""
+        return [self._by_id[cid].spec for cid in self.ids()]
+
+    # Compatibility alias (some call sites prefer list_specs)
+    def list_specs(self) -> list[CapabilitySpec]:
+        return self.list_capabilities()
 
 
 def default_registry() -> CapabilityRegistry:

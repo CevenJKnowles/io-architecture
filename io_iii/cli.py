@@ -2,14 +2,14 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Optional
+
 from io_iii.metadata_logging import append_metadata, make_request_id
 
 from io_iii.config import load_io3_config, default_config_dir
 from io_iii.routing import resolve_route
-from io_iii.providers.null_provider import NullProvider
 from io_iii.providers.ollama_provider import OllamaProvider
-from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
+from io_iii.persona_contract import PERSONA_CONTRACT_VERSION
 from io_iii.core.engine import run as engine_run
 from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState
 
@@ -69,6 +69,56 @@ def _parse_capability_payload(raw: Optional[str]) -> Dict[str, Any]:
 # -----------------------------
 # CLI Commands
 # -----------------------------
+def cmd_capabilities(args) -> int:
+    """
+    List registered capabilities (content-safe introspection).
+
+    This does not invoke capabilities and does not perform selection/planning.
+    """
+    registry = builtin_registry()
+
+    # Stable introspection surface (provided by CapabilityRegistry)
+    specs = registry.list_capabilities()
+
+    caps = []
+    for spec in specs:
+        bounds = getattr(spec, "bounds", None)
+        bounds_payload = None
+        if bounds is not None:
+            bounds_payload = {
+                "max_calls": getattr(bounds, "max_calls", None),
+                "timeout_ms": getattr(bounds, "timeout_ms", None),
+                "max_input_chars": getattr(bounds, "max_input_chars", None),
+                "max_output_chars": getattr(bounds, "max_output_chars", None),
+                "side_effects_allowed": getattr(bounds, "side_effects_allowed", None),
+            }
+
+        caps.append(
+            {
+                "id": getattr(spec, "id", None),
+                "version": getattr(spec, "version", None),
+                "description": getattr(spec, "description", None),
+                "category": str(getattr(spec, "category", None)),
+                "bounds": bounds_payload,
+            }
+        )
+
+    if getattr(args, "json", False):
+        _print({"capabilities": caps})
+        return 0
+
+    print("Registered capabilities:")
+    for c in caps:
+        b = c.get("bounds") or {}
+        print(
+            f"- {c.get('id')} (v{c.get('version')}) — {c.get('description')} "
+            f"[max_calls={b.get('max_calls')}, timeout_ms={b.get('timeout_ms')}, "
+            f"max_input_chars={b.get('max_input_chars')}, max_output_chars={b.get('max_output_chars')}, "
+            f"side_effects_allowed={b.get('side_effects_allowed')}]"
+        )
+    return 0
+
+
 def cmd_config_show(args) -> int:
     cfg_dir = _get_cfg_dir(args)
     cfg = load_io3_config(cfg_dir)
@@ -129,10 +179,13 @@ def cmd_run(args) -> int:
     prompt = getattr(args, "prompt", None)
     if not prompt:
         import sys
+
         prompt = sys.stdin.read().strip() or "Say hello in one short sentence."
 
     cap_id = getattr(args, "capability_id", None)
-    cap_payload = _parse_capability_payload(getattr(args, "capability_payload_json", None)) if cap_id else None
+    cap_payload = (
+        _parse_capability_payload(getattr(args, "capability_payload_json", None)) if cap_id else None
+    )
 
     # Build SessionState (control-plane; no prompt text stored)
     route = RouteInfo(
@@ -193,18 +246,28 @@ def cmd_run(args) -> int:
             "audit_meta": result.audit_meta,
         }
 
+        # Trace summary (content-safe)
         trace_obj = result.meta.get("trace") if isinstance(result.meta, dict) else None
         trace_steps = None
         trace_total_ms = None
         if isinstance(trace_obj, dict) and isinstance(trace_obj.get("steps"), list):
             trace_steps = len(trace_obj["steps"])
-            trace_total_ms = sum(int(s.get("duration_ms", 0)) for s in trace_obj["steps"] if isinstance(s, dict))
+            trace_total_ms = sum(
+                int(s.get("duration_ms", 0)) for s in trace_obj["steps"] if isinstance(s, dict)
+            )
 
+        # Capability summary (content-safe; MUST NOT include output)
         cap_meta = result.meta.get("capability") if isinstance(result.meta, dict) else None
-        capability_ok = cap_meta.get("ok") if isinstance(cap_meta, dict) else None
-        capability_version = cap_meta.get("version") if isinstance(cap_meta, dict) else None
-        capability_duration_ms = cap_meta.get("duration_ms") if isinstance(cap_meta, dict) else None
-        capability_error_code = cap_meta.get("error_code") if isinstance(cap_meta, dict) else None
+
+        capability_ok = None
+        capability_version = None
+        capability_duration_ms = None
+        capability_error_code = None
+        if isinstance(cap_meta, dict):
+            capability_ok = cap_meta.get("ok")
+            capability_version = cap_meta.get("version")
+            capability_duration_ms = cap_meta.get("duration_ms")
+            capability_error_code = cap_meta.get("error_code")
 
         # Metadata logging (NO prompt/response content; prompt_hash is safe)
         latency_ms = int((time.perf_counter() - t0) * 1000)
@@ -279,7 +342,7 @@ def cmd_about(args) -> int:
             "Model execution (OllamaProvider.generate)",
             "Structured JSON output + metadata logging policy",
         ],
-        "commands": ["config show", "route <mode>", "run <mode> --prompt ...", "about"],
+        "commands": ["config show", "route <mode>", "run <mode> --prompt ...", "capabilities", "about"],
         "routing_contract": {
             "target_format": "<namespace>:<model>",
             "example": "local:qwen3:8b",
@@ -327,6 +390,10 @@ def main(argv=None) -> int:
         help="JSON object payload for capability invocation (must be a JSON object).",
     )
     p_run.set_defaults(func=cmd_run)
+
+    p_caps = sub.add_parser("capabilities")
+    p_caps.add_argument("--json", action="store_true", help="Output JSON format")
+    p_caps.set_defaults(func=cmd_capabilities)
 
     p_about = sub.add_parser("about")
     p_about.set_defaults(func=cmd_about)
