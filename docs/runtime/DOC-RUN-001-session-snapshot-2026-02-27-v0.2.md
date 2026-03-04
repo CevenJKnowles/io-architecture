@@ -1,6 +1,6 @@
 ---
 id: "DOC-RUN-001"
-title: "Session Snapshot"
+title: "Session Snapshot v.02"
 type: "runtime"
 status: "active"
 version: "v0.2"
@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-02-27"
-updated: "2026-03-03"
+updated: "2026-03-04"
 tags:
  - "runtime"
  - "snapshot"
@@ -17,10 +17,12 @@ roles_focus:
 provenance: "human"
 ---
 
-# IO-III Runtime Session Snapshot 
-Date: 2026-02-27 
-Version: v0.2 
+# IO-III Runtime Session Snapshot  v.02
+
 Status: Control Plane Stabilised
+
+**Related runtime documents:**
+- DOC-RUN-002 — SessionState v0 contract
 
 ---
 

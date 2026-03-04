@@ -75,6 +75,10 @@ Examples:
 - provider configuration
 - logging policy
 
+**Runtime documents:**
+- DOC-RUN-001 — Session snapshot (v0.2)
+- DOC-RUN-002 — SessionState v0 contract
+
 ---
 
 ## Implementation Layer
