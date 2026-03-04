@@ -38,7 +38,6 @@ Provider
 Challenger (optional)
 
 Key guarantees enforced by the architecture:
-
 - deterministic routing
 - bounded audit passes
 - bounded revision passes
@@ -46,10 +45,37 @@ Key guarantees enforced by the architecture:
 - governance‑first system evolution
 
 Primary architecture documentation:
-
 docs/overview/ → system overview and roadmap  
 docs/architecture/ → architecture definitions  
 ADR/ → architectural decision records
+
+## Quick Run Example
+
+The reference runtime can be executed locally through the CLI.
+
+Example command:
+```python
+python -m io\_iii run executor --prompt "Explain deterministic routing in one sentence."
+```
+Expected behaviour:
+\- the CLI loads runtime configuration
+\- deterministic routing selects the provider
+\- the execution engine runs the prompt pipeline
+\- the challenger may optionally audit the output (if enabled)\
+
+### Architecture Validation
+
+The repository also includes validation tools for architectural guarantees.
+
+Run the invariant validator:
+```python
+python architecture/runtime/scripts/validate\_invariants.py
+```
+Run the regression test suite:
+```python
+pytest
+```
+These commands verify that the system still satisfies its **core architectural invariants**.
 
 ---
 
