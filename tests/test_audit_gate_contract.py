@@ -78,7 +78,8 @@ def test_audit_and_revision_are_bounded(monkeypatch, capsys):
         challenger_calls["n"] += 1
         return {"verdict": "needs_work", "issues": ["x"], "high_risk_claims": [], "suggested_fixes": []}
 
-    monkeypatch.setattr(cli, "_run_challenger", fake_run_challenger)
+    import io_iii.core.engine as engine
+    monkeypatch.setattr(engine, "_run_challenger", fake_run_challenger)
 
     # --- Act: run cmd_run with audit enabled
     args = types.SimpleNamespace(mode="executor", prompt="State 3 facts about Berlin.", audit=True, config_dir=None)

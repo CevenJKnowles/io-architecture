@@ -45,77 +45,6 @@ def _get_cfg_dir(args) -> Path:
 
 
 # -----------------------------
-# Challenger Enforcement (ADR-008)
-# -----------------------------
-def _run_challenger(cfg, user_prompt: str, draft_text: str) -> dict:
-    from io_iii.routing import _parse_target
-
-    selection = resolve_route(
-        routing_cfg=cfg.routing["routing_table"],
-        mode="challenger",
-        providers_cfg=cfg.providers,
-        supported_providers={"null", "ollama"},
-    )
-
-    # Fail-safe: if challenger unavailable, auto-pass
-    if selection.selected_provider != "ollama" or not selection.selected_target:
-        return {
-            "verdict": "pass",
-            "issues": [],
-            "high_risk_claims": [],
-            "suggested_fixes": [],
-        }
-
-    _, model = _parse_target(selection.selected_target)
-    provider = OllamaProvider.from_config(cfg.providers)
-
-    system_prompt = (
-        "You are IO-III Challenger.\n"
-        "Audit the executor draft for:\n"
-        "- policy compliance\n"
-        "- factual risk or unverifiable claims\n"
-        "- contradictions\n"
-        "- missing verification steps\n\n"
-        "You MUST NOT rewrite the draft.\n"
-        "You MUST NOT introduce new facts.\n\n"
-        "Respond in strict JSON with keys:\n"
-        "{"
-        "'verdict': 'pass'|'needs_work', "
-        "'issues': [], "
-        "'high_risk_claims': [], "
-        "'suggested_fixes': []"
-        "}"
-    )
-
-    audit_prompt = (
-        f"{system_prompt}\n\n"
-        f"USER_PROMPT:\n{user_prompt}\n\n"
-        f"EXECUTOR_DRAFT:\n{draft_text}\n"
-    )
-
-    raw = provider.generate(model=model, prompt=audit_prompt).strip()
-
-    try:
-        parsed = json.loads(raw)
-        # Minimal normalization: ensure required keys exist
-        if not isinstance(parsed, dict):
-            raise ValueError("Challenger output is not a JSON object")
-        parsed.setdefault("verdict", "pass")
-        parsed.setdefault("issues", [])
-        parsed.setdefault("high_risk_claims", [])
-        parsed.setdefault("suggested_fixes", [])
-        return parsed
-    except Exception:
-        # Never block execution
-        return {
-            "verdict": "pass",
-            "issues": [],
-            "high_risk_claims": [],
-            "suggested_fixes": [],
-        }
-
-
-# -----------------------------
 # CLI Commands
 # -----------------------------
 def cmd_config_show(args) -> int:
@@ -214,7 +143,6 @@ def cmd_run(args) -> int:
             session_state=state,
             user_prompt=prompt,
             audit=bool(getattr(args, "audit", False)),
-            challenger_fn=_run_challenger,
             ollama_provider_factory=OllamaProvider.from_config,
         )
 
