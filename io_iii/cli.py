@@ -193,6 +193,13 @@ def cmd_run(args) -> int:
             "audit_meta": result.audit_meta,
         }
 
+        trace_obj = result.meta.get("trace") if isinstance(result.meta, dict) else None
+        trace_steps = None
+        trace_total_ms = None
+        if isinstance(trace_obj, dict) and isinstance(trace_obj.get("steps"), list):
+            trace_steps = len(trace_obj["steps"])
+            trace_total_ms = sum(int(s.get("duration_ms", 0)) for s in trace_obj["steps"] if isinstance(s, dict))
+
         # Metadata logging (NO prompt/response content; prompt_hash is safe)
         latency_ms = int((time.perf_counter() - t0) * 1000)
         append_metadata(
@@ -209,6 +216,8 @@ def cmd_run(args) -> int:
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
                 "capability_id": cap_id,
+                "trace_steps": trace_steps,
+                "trace_total_ms": trace_total_ms,
             },
         )
 

@@ -64,9 +64,7 @@ Examples:
 
 ---
 
-## Runtime
-
-- DOC-RUN-004 — Capability Result Metadata Contract Layer
+## Runtime Layer
 
 Documents runtime behaviour and configuration.
 ```
@@ -80,6 +78,13 @@ Examples:
 **Runtime documents:**
 - DOC-RUN-001 — Session snapshot (v0.2)
 - DOC-RUN-002 — SessionState v0 contract
+- DOC-RUN-003 — Metadata log schema (metadata.jsonl)
+- DOC-RUN-005 — Execution trace schema (ExecutionResult.meta.trace)
+
+**Architecture documents (selected):**
+- DOC-ARCH-004 — Runtime architecture
+- DOC-ARCH-005 — Capability layer definition
+- DOC-ARCH-006 — Execution observability (content-safe trace)
 
 ---
 
@@ -96,9 +101,7 @@ Examples:
 
 ---
 
-## Governance
-
-- DOC-GOV-002 — Capability Governance Policy Layer
+## Governance Layer
 
 Defines the governance rules and architectural change process.
 ```

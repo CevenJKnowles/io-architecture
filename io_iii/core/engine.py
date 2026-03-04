@@ -20,6 +20,8 @@ from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_
 
 from io_iii.core.capabilities import CapabilityContext, CapabilityRegistry
 
+from io_iii.core.execution_trace import TraceRecorder
+
 
 @dataclass(frozen=True)
 class ExecutionResult:
@@ -200,6 +202,7 @@ def run(
     - Capability invocation is explicit-only and bounded (Phase 3 M3.6).
     """
     capability_meta: Optional[Dict[str, Any]] = None
+    trace = TraceRecorder(trace_id=session_state.request_id)
 
     # Phase 3 injection seam: prefer explicit dependency bundle when provided.
     if deps is not None:
@@ -217,12 +220,13 @@ def run(
         if capability_id:
             payload = dict(capability_payload or {})
             ctx = CapabilityContext(cfg=cfg, session_state=session_state, execution_context=None)
-            capability_meta = _invoke_capability_once(
-                registry=deps.capability_registry,
-                capability_id=capability_id,
-                payload=payload,
-                ctx=ctx,
-            )
+            with trace.step("capability_invoke", meta={"capability_id": capability_id}):
+                capability_meta = _invoke_capability_once(
+                    registry=deps.capability_registry,
+                    capability_id=capability_id,
+                    payload=payload,
+                    ctx=ctx,
+                )
 
     if ollama_provider_factory is None:
         ollama_provider_factory = OllamaProvider.from_config
@@ -267,12 +271,14 @@ def run(
             assembled_context=None,
         )
 
-        result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
+        with trace.step("provider_run", meta={"provider": "null"}):
+            result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
         message = getattr(result_obj, "message", "")
-        meta = getattr(result_obj, "meta", {})
+        meta = dict(getattr(result_obj, "meta", {}))
+
+        meta["trace"] = trace.trace.to_dict()
 
         if capability_meta is not None:
-            meta = dict(meta)
             meta["capability"] = capability_meta
 
         state2 = _replace(session_state, status="ok", provider="null", model=None)
@@ -295,17 +301,24 @@ def run(
     _, model = _parse_target(session_state.route.selected_target)
     provider = ollama_provider_factory(cfg.providers)
 
-    assembled = assemble_context(
-        session_state=session_state,
-        user_prompt=user_prompt,
-        persona_contract=EXECUTOR_PERSONA_CONTRACT,
-        route_metadata={
-            "selected_provider": session_state.provider,
-            "selected_target": session_state.route.selected_target,
-            "fallback_used": session_state.route.fallback_used,
+    with trace.step(
+        "context_assembly",
+        meta={
+            "persona_contract_version": PERSONA_CONTRACT_VERSION,
             "route_id": session_state.route_id,
         },
-    )
+    ):
+        assembled = assemble_context(
+            session_state=session_state,
+            user_prompt=user_prompt,
+            persona_contract=EXECUTOR_PERSONA_CONTRACT,
+            route_metadata={
+                "selected_provider": session_state.provider,
+                "selected_target": session_state.route.selected_target,
+                "fallback_used": session_state.route.fallback_used,
+                "route_id": session_state.route_id,
+            },
+        )
 
     # Engine-local execution context (content-safe: stores hash, not prompt text)
     _exec_ctx = ExecutionContext(
@@ -319,7 +332,11 @@ def run(
 
     # Keep historical suffix while ADR-010 provides the canonical system prompt.
     final_prompt = f"{assembled.system_prompt}\n\nUser:\n{assembled.user_prompt}\n\nIO-III:"
-    text = provider.generate(model=model, prompt=final_prompt).strip()
+    with trace.step(
+        "provider_inference",
+        meta={"provider": "ollama", "model": model},
+    ):
+        text = provider.generate(model=model, prompt=final_prompt).strip()
 
     audit_meta = {
         "audit_used": False,
@@ -339,7 +356,8 @@ def run(
             )
         audit_passes += 1
 
-        audit_result = challenger_fn(cfg, user_prompt, text)
+        with trace.step("challenger_audit", meta={"enabled": True}):
+            audit_result = challenger_fn(cfg, user_prompt, text)
         audit_meta["audit_used"] = True
         audit_meta["audit_verdict"] = audit_result.get("verdict")
 
@@ -362,10 +380,14 @@ def run(
                 "Produce the improved final answer only."
             )
 
-            text = provider.generate(model=model, prompt=revision_prompt).strip()
+            with trace.step("revision_inference", meta={"provider": "ollama", "model": model}):
+                text = provider.generate(model=model, prompt=revision_prompt).strip()
             audit_meta["revised"] = True
 
-    meta = {"persona_contract_version": PERSONA_CONTRACT_VERSION}
+    meta = {
+        "persona_contract_version": PERSONA_CONTRACT_VERSION,
+        "trace": trace.trace.to_dict(),
+    }
     if capability_meta is not None:
         meta["capability"] = capability_meta
 
