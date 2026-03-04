@@ -66,7 +66,7 @@ Phase 3 builds on this structure by introducing **internal capability boundaries
 Phase 3 focuses on:
 * expanding engine-local capability interfaces
 * strengthening dependency injection seams
-* formalizing provider interaction contracts
+* formalising provider interaction contracts
 * improving runtime extensibility without altering execution guarantees
 
 The CLI, routing system, and control-plane governance rules remain unchanged.
@@ -92,16 +92,16 @@ Future phases may introduce these capabilities only if they preserve the determi
 
 ### 1. Provider Contract Hardening
 
-Formalize the provider abstraction used by the execution engine.
+Formalise the provider abstraction used by the execution engine.
 
 Objectives:
 * ensure deterministic provider interaction
-* standardize provider method signatures
+* standardise provider method signatures
 * enforce predictable input/output boundaries
 
 Deliverables:
 * provider interface documentation
-* improved type annotations for provider adapters
+* improved type annotations for provider adaptors
 * additional provider validation tests
 
 ### 2. Engine Capability Interfaces
@@ -182,4 +182,4 @@ However, these expansions must continue to respect the core architectural constr
 
 Phase 3 focuses on **structural extensibility without behavioural expansion**.
 
-The architecture continues to prioritize **stability, determinism, and governance discipline** over rapid feature growth.
+The architecture continues to prioritise **stability, determinism, and governance discipline** over rapid feature growth.
