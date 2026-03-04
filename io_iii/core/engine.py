@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Mapping
 
 from io_iii.core.context_assembly import assemble_context
 from io_iii.core.execution_context import ExecutionContext
@@ -17,6 +18,11 @@ from io_iii.providers.null_provider import NullProvider
 from io_iii.providers.ollama_provider import OllamaProvider
 from io_iii.routing import resolve_route
 from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
+
+from io_iii.core.capabilities import CapabilityContext, CapabilityRegistry
+from io_iii.core.content_safety import assert_no_forbidden_keys
+
+from io_iii.core.execution_trace import TraceRecorder
 
 
 @dataclass(frozen=True)
@@ -117,14 +123,77 @@ def _run_challenger(
         }
 
 
+def _safe_json_len(obj: Any) -> int:
+    """
+    Size estimator used for capability payload/output bounds.
+    """
+    try:
+        return len(json.dumps(obj, ensure_ascii=False))
+    except Exception:
+        return len(str(obj))
+
+
+def _invoke_capability_once(
+    *,
+    registry: CapabilityRegistry,
+    capability_id: str,
+    payload: Mapping[str, Any],
+    ctx: CapabilityContext,
+) -> Dict[str, Any]:
+    """
+    Single explicit capability invocation surface (Phase 3 M3.6).
+
+    - explicit ID
+    - single call max
+    - bounded payload/output size checks
+    - no recursion (capability cannot access registry from ctx)
+    """
+    cap = registry.get(capability_id)
+    spec = cap.spec
+
+    # Bounds sanity (contract hygiene)
+    if spec.bounds.max_calls < 1:
+        raise ValueError("CAPABILITY_BOUNDS_INVALID: max_calls must be >= 1")
+
+    in_len = _safe_json_len(payload)
+    if in_len > spec.bounds.max_input_chars:
+        raise ValueError(
+            f"CAPABILITY_INPUT_TOO_LARGE: {in_len} chars > max_input_chars={spec.bounds.max_input_chars}"
+        )
+
+    # Time the invocation (content-safe; structural observability only)
+    t0 = time.perf_counter_ns()
+    res = cap.invoke(ctx, payload)
+    duration_ms = int((time.perf_counter_ns() - t0) / 1_000_000)
+
+    out_len = _safe_json_len(res.output)
+    if out_len > spec.bounds.max_output_chars:
+        raise ValueError(
+            f"CAPABILITY_OUTPUT_TOO_LARGE: {out_len} chars > max_output_chars={spec.bounds.max_output_chars}"
+        )
+
+    return {
+        "capability_id": spec.capability_id,
+        "version": spec.version,
+        "category": spec.category.value,
+        "ok": bool(res.ok),
+        "error_code": res.error_code,
+        "duration_ms": duration_ms,
+        "output": res.output,
+    }
+
+
 def run(
     *,
     cfg,
     session_state: SessionState,
     user_prompt: str,
     audit: bool,
+    deps=None,
     challenger_fn=None,
     ollama_provider_factory=None,
+    capability_id: Optional[str] = None,
+    capability_payload: Optional[Mapping[str, Any]] = None,
 ) -> Tuple[SessionState, ExecutionResult]:
     """
     Deterministic execution engine (Phase 2 extraction).
@@ -136,7 +205,35 @@ def run(
     Constraints:
     - SessionState remains control-plane only (no prompt/response content stored).
     - Audit toggle is explicit ('audit') and mirrored into SessionState.audit for traceability.
+    - Capability invocation is explicit-only and bounded (Phase 3 M3.6).
     """
+    capability_meta: Optional[Dict[str, Any]] = None
+    trace = TraceRecorder(trace_id=session_state.request_id)
+
+    # Phase 3 injection seam: prefer explicit dependency bundle when provided.
+    if deps is not None:
+        from io_iii.core.dependencies import RuntimeDependencies  # local import to avoid cycles
+
+        if not isinstance(deps, RuntimeDependencies):
+            raise TypeError("deps must be an instance of io_iii.core.dependencies.RuntimeDependencies")
+
+        if ollama_provider_factory is None:
+            ollama_provider_factory = deps.ollama_provider_factory
+        if challenger_fn is None and deps.challenger_fn is not None:
+            challenger_fn = deps.challenger_fn
+
+        # Capability invocation surface (explicit-only)
+        if capability_id:
+            payload = dict(capability_payload or {})
+            ctx = CapabilityContext(cfg=cfg, session_state=session_state, execution_context=None)
+            with trace.step("capability_invoke", meta={"capability_id": capability_id}):
+                capability_meta = _invoke_capability_once(
+                    registry=deps.capability_registry,
+                    capability_id=capability_id,
+                    payload=payload,
+                    ctx=ctx,
+                )
+
     if ollama_provider_factory is None:
         ollama_provider_factory = OllamaProvider.from_config
 
@@ -180,9 +277,18 @@ def run(
             assembled_context=None,
         )
 
-        result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
+        with trace.step("provider_run", meta={"provider": "null"}):
+            result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
         message = getattr(result_obj, "message", "")
-        meta = getattr(result_obj, "meta", {})
+        meta = dict(getattr(result_obj, "meta", {}))
+
+        trace_dict = trace.trace.to_dict()
+        assert_no_forbidden_keys(trace_dict)
+        meta["trace"] = trace_dict
+
+        if capability_meta is not None:
+            assert_no_forbidden_keys(capability_meta)
+            meta["capability"] = capability_meta
 
         state2 = _replace(session_state, status="ok", provider="null", model=None)
         return state2, ExecutionResult(
@@ -204,17 +310,24 @@ def run(
     _, model = _parse_target(session_state.route.selected_target)
     provider = ollama_provider_factory(cfg.providers)
 
-    assembled = assemble_context(
-        session_state=session_state,
-        user_prompt=user_prompt,
-        persona_contract=EXECUTOR_PERSONA_CONTRACT,
-        route_metadata={
-            "selected_provider": session_state.provider,
-            "selected_target": session_state.route.selected_target,
-            "fallback_used": session_state.route.fallback_used,
+    with trace.step(
+        "context_assembly",
+        meta={
+            "persona_contract_version": PERSONA_CONTRACT_VERSION,
             "route_id": session_state.route_id,
         },
-    )
+    ):
+        assembled = assemble_context(
+            session_state=session_state,
+            user_prompt=user_prompt,
+            persona_contract=EXECUTOR_PERSONA_CONTRACT,
+            route_metadata={
+                "selected_provider": session_state.provider,
+                "selected_target": session_state.route.selected_target,
+                "fallback_used": session_state.route.fallback_used,
+                "route_id": session_state.route_id,
+            },
+        )
 
     # Engine-local execution context (content-safe: stores hash, not prompt text)
     _exec_ctx = ExecutionContext(
@@ -228,7 +341,11 @@ def run(
 
     # Keep historical suffix while ADR-010 provides the canonical system prompt.
     final_prompt = f"{assembled.system_prompt}\n\nUser:\n{assembled.user_prompt}\n\nIO-III:"
-    text = provider.generate(model=model, prompt=final_prompt).strip()
+    with trace.step(
+        "provider_inference",
+        meta={"provider": "ollama", "model": model},
+    ):
+        text = provider.generate(model=model, prompt=final_prompt).strip()
 
     audit_meta = {
         "audit_used": False,
@@ -248,7 +365,8 @@ def run(
             )
         audit_passes += 1
 
-        audit_result = challenger_fn(cfg, user_prompt, text)
+        with trace.step("challenger_audit", meta={"enabled": True}):
+            audit_result = challenger_fn(cfg, user_prompt, text)
         audit_meta["audit_used"] = True
         audit_meta["audit_verdict"] = audit_result.get("verdict")
 
@@ -271,10 +389,19 @@ def run(
                 "Produce the improved final answer only."
             )
 
-            text = provider.generate(model=model, prompt=revision_prompt).strip()
+            with trace.step("revision_inference", meta={"provider": "ollama", "model": model}):
+                text = provider.generate(model=model, prompt=revision_prompt).strip()
             audit_meta["revised"] = True
 
-    meta = {"persona_contract_version": PERSONA_CONTRACT_VERSION}
+    trace_dict = trace.trace.to_dict()
+    assert_no_forbidden_keys(trace_dict)
+    meta = {
+        "persona_contract_version": PERSONA_CONTRACT_VERSION,
+        "trace": trace_dict,
+    }
+    if capability_meta is not None:
+        assert_no_forbidden_keys(capability_meta)
+        meta["capability"] = capability_meta
 
     state2 = _replace(session_state, status="ok", provider="ollama", model=model)
     # Also reflect audit verdict/revised into state.audit (control-plane)

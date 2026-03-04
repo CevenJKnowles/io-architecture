@@ -78,6 +78,14 @@ Examples:
 **Runtime documents:**
 - DOC-RUN-001 — Session snapshot (v0.2)
 - DOC-RUN-002 — SessionState v0 contract
+- DOC-RUN-003 — Metadata log schema (metadata.jsonl)
+- DOC-RUN-005 — Execution trace schema (ExecutionResult.meta.trace)
+
+**Architecture documents (selected):**
+- DOC-ARCH-004 — Runtime architecture
+- DOC-ARCH-005 — Capability layer definition
+- DOC-ARCH-006 — Execution observability (content-safe trace)
+docs/architecture/DOC-ARCH-007-capability-reference-implementation.md
 
 ---
 

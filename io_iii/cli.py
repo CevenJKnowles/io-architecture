@@ -2,16 +2,20 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional
+
 from io_iii.metadata_logging import append_metadata, make_request_id
 
 from io_iii.config import load_io3_config, default_config_dir
 from io_iii.routing import resolve_route
-from io_iii.providers.null_provider import NullProvider
 from io_iii.providers.ollama_provider import OllamaProvider
-from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
+from io_iii.persona_contract import PERSONA_CONTRACT_VERSION
 from io_iii.core.engine import run as engine_run
 from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState
+
+# Phase 3 seams
+from io_iii.core.dependencies import RuntimeDependencies
+from io_iii.capabilities.builtins import builtin_registry
 
 # -----------------------------
 # Audit Gate Hard Limits (ADR-009)
@@ -44,9 +48,77 @@ def _get_cfg_dir(args) -> Path:
     return default_config_dir()
 
 
+def _parse_capability_payload(raw: Optional[str]) -> Dict[str, Any]:
+    """
+    Parse a JSON object string into a dict for capability payload.
+
+    Allowed: JSON object only.
+    Default: {}.
+    """
+    if not raw:
+        return {}
+    try:
+        obj = json.loads(raw)
+    except Exception as e:
+        raise ValueError(f"CAPABILITY_PAYLOAD_INVALID_JSON: {e}") from e
+    if not isinstance(obj, dict):
+        raise ValueError("CAPABILITY_PAYLOAD_INVALID_SHAPE: payload must be a JSON object")
+    return obj
+
+
 # -----------------------------
 # CLI Commands
 # -----------------------------
+def cmd_capabilities(args) -> int:
+    """
+    List registered capabilities (content-safe introspection).
+
+    This does not invoke capabilities and does not perform selection/planning.
+    """
+    registry = builtin_registry()
+
+    # Stable introspection surface (provided by CapabilityRegistry)
+    specs = registry.list_capabilities()
+
+    caps = []
+    for spec in specs:
+        bounds = getattr(spec, "bounds", None)
+        bounds_payload = None
+        if bounds is not None:
+            bounds_payload = {
+                "max_calls": getattr(bounds, "max_calls", None),
+                "timeout_ms": getattr(bounds, "timeout_ms", None),
+                "max_input_chars": getattr(bounds, "max_input_chars", None),
+                "max_output_chars": getattr(bounds, "max_output_chars", None),
+                "side_effects_allowed": getattr(bounds, "side_effects_allowed", None),
+            }
+
+        caps.append(
+            {
+                "id": getattr(spec, "id", None),
+                "version": getattr(spec, "version", None),
+                "description": getattr(spec, "description", None),
+                "category": str(getattr(spec, "category", None)),
+                "bounds": bounds_payload,
+            }
+        )
+
+    if getattr(args, "json", False):
+        _print({"capabilities": caps})
+        return 0
+
+    print("Registered capabilities:")
+    for c in caps:
+        b = c.get("bounds") or {}
+        print(
+            f"- {c.get('id')} (v{c.get('version')}) — {c.get('description')} "
+            f"[max_calls={b.get('max_calls')}, timeout_ms={b.get('timeout_ms')}, "
+            f"max_input_chars={b.get('max_input_chars')}, max_output_chars={b.get('max_output_chars')}, "
+            f"side_effects_allowed={b.get('side_effects_allowed')}]"
+        )
+    return 0
+
+
 def cmd_config_show(args) -> int:
     cfg_dir = _get_cfg_dir(args)
     cfg = load_io3_config(cfg_dir)
@@ -107,7 +179,13 @@ def cmd_run(args) -> int:
     prompt = getattr(args, "prompt", None)
     if not prompt:
         import sys
+
         prompt = sys.stdin.read().strip() or "Say hello in one short sentence."
+
+    cap_id = getattr(args, "capability_id", None)
+    cap_payload = (
+        _parse_capability_payload(getattr(args, "capability_payload_json", None)) if cap_id else None
+    )
 
     # Build SessionState (control-plane; no prompt text stored)
     route = RouteInfo(
@@ -137,13 +215,22 @@ def cmd_run(args) -> int:
         logging_policy=cfg.logging,
     )
 
+    # Phase 3: explicit dependency bundle (injection seams)
+    deps = RuntimeDependencies(
+        ollama_provider_factory=OllamaProvider.from_config,
+        challenger_fn=None,
+        capability_registry=builtin_registry(),
+    )
+
     try:
         state2, result = engine_run(
             cfg=cfg,
             session_state=state,
             user_prompt=prompt,
             audit=bool(getattr(args, "audit", False)),
-            ollama_provider_factory=OllamaProvider.from_config,
+            deps=deps,
+            capability_id=cap_id,
+            capability_payload=cap_payload,
         )
 
         payload = {
@@ -158,6 +245,29 @@ def cmd_run(args) -> int:
             },
             "audit_meta": result.audit_meta,
         }
+
+        # Trace summary (content-safe)
+        trace_obj = result.meta.get("trace") if isinstance(result.meta, dict) else None
+        trace_steps = None
+        trace_total_ms = None
+        if isinstance(trace_obj, dict) and isinstance(trace_obj.get("steps"), list):
+            trace_steps = len(trace_obj["steps"])
+            trace_total_ms = sum(
+                int(s.get("duration_ms", 0)) for s in trace_obj["steps"] if isinstance(s, dict)
+            )
+
+        # Capability summary (content-safe; MUST NOT include output)
+        cap_meta = result.meta.get("capability") if isinstance(result.meta, dict) else None
+
+        capability_ok = None
+        capability_version = None
+        capability_duration_ms = None
+        capability_error_code = None
+        if isinstance(cap_meta, dict):
+            capability_ok = cap_meta.get("ok")
+            capability_version = cap_meta.get("version")
+            capability_duration_ms = cap_meta.get("duration_ms")
+            capability_error_code = cap_meta.get("error_code")
 
         # Metadata logging (NO prompt/response content; prompt_hash is safe)
         latency_ms = int((time.perf_counter() - t0) * 1000)
@@ -174,6 +284,13 @@ def cmd_run(args) -> int:
                 "fallback_used": getattr(selection, "fallback_used", None),
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
+                "capability_id": cap_id,
+                "capability_ok": capability_ok,
+                "capability_version": capability_version,
+                "capability_duration_ms": capability_duration_ms,
+                "capability_error_code": capability_error_code,
+                "trace_steps": trace_steps,
+                "trace_total_ms": trace_total_ms,
             },
         )
 
@@ -196,9 +313,13 @@ def cmd_run(args) -> int:
                 "fallback_used": getattr(selection, "fallback_used", None),
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
+                "capability_id": cap_id,
+                "capability_ok": False if cap_id else None,
+                "capability_error_code": type(e).__name__ if cap_id else None,
             },
         )
         raise
+
 
 def cmd_about(args) -> int:
     cfg_dir = _get_cfg_dir(args)
@@ -221,7 +342,7 @@ def cmd_about(args) -> int:
             "Model execution (OllamaProvider.generate)",
             "Structured JSON output + metadata logging policy",
         ],
-        "commands": ["config show", "route <mode>", "run <mode> --prompt ...", "about"],
+        "commands": ["config show", "route <mode>", "run <mode> --prompt ...", "capabilities", "about"],
         "routing_contract": {
             "target_format": "<namespace>:<model>",
             "example": "local:qwen3:8b",
@@ -256,7 +377,23 @@ def main(argv=None) -> int:
     p_run.add_argument("mode")
     p_run.add_argument("--prompt", type=str, default=None, help="Prompt text (or pipe via stdin)")
     p_run.add_argument("--audit", action="store_true", help="Enable challenger audit pass")
+    p_run.add_argument(
+        "--capability-id",
+        type=str,
+        default=None,
+        help="Explicit capability ID to invoke once (Phase 3; bounded; no autonomy).",
+    )
+    p_run.add_argument(
+        "--capability-payload-json",
+        type=str,
+        default=None,
+        help="JSON object payload for capability invocation (must be a JSON object).",
+    )
     p_run.set_defaults(func=cmd_run)
+
+    p_caps = sub.add_parser("capabilities")
+    p_caps.add_argument("--json", action="store_true", help="Output JSON format")
+    p_caps.set_defaults(func=cmd_capabilities)
 
     p_about = sub.add_parser("about")
     p_about.set_defaults(func=cmd_about)

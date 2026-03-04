@@ -120,6 +120,40 @@ The engine represents the **core runtime control plane**.
 
 ---
 
+## Capability Invocation
+
+Capabilities are **explicit, single-shot runtime extensions**. They are invoked only when the caller provides:
+
+- `capability_id`
+- `capability_payload` (JSON)
+
+There is **no automatic selection**, **no chaining**, and **no recursion**.
+
+### Sequence (explicit capability invocation)
+
+```mermaid
+sequenceDiagram
+  participant CLI
+  participant Engine
+  participant Registry as CapabilityRegistry
+  participant Cap as Capability
+  participant Log as MetadataLogging
+
+  CLI->>Engine: run(..., capability_id, capability_payload)
+  Engine->>Registry: get(capability_id)
+  Registry-->>Engine: Capability
+  Engine->>Cap: invoke(ctx, payload) [max_calls=1]
+  Cap-->>Engine: CapabilityResult
+  Engine->>Engine: attach meta["capability"]
+  Engine->>Log: write(metadata only)
+```
+
+Key invariants:
+- explicit ID only
+- one invocation per `engine.run(...)`
+- payload/output bounds enforced
+- result captured in `ExecutionResult.meta["capability"]`
+
 ## ExecutionContext
 
 ExecutionContext is an **engine-local runtime container**.
