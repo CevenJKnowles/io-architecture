@@ -42,8 +42,12 @@ def make_request_id() -> str:
 def append_metadata(logging_cfg: Dict[str, Any], record: Dict[str, Any]) -> Optional[Path]:
     """
     Appends one JSON object per line into metadata.jsonl (JSONL).
-    Metadata only: never pass prompt/response content into `record`.
+
+    Metadata-only observability channel.
+
+    Never pass prompt/response content into `record`.
     """
+
     if not metadata_enabled(logging_cfg):
         return None
 
@@ -51,7 +55,34 @@ def append_metadata(logging_cfg: Dict[str, Any], record: Dict[str, Any]) -> Opti
     path.parent.mkdir(parents=True, exist_ok=True)
 
     payload = dict(record)
-    payload.setdefault("timestamp", _utc_now_iso())
+
+    # ---- Schema fields (stable contract) ----
+    payload.setdefault("schema", "io-iii-metadata-jsonl")
+    payload.setdefault("schema_version", "v1.0")
+
+    # ---- Timestamp (milliseconds since epoch) ----
+    payload.setdefault("timestamp_ms", int(time.time() * 1000))
+
+    # ---- Ensure request_id exists ----
+    payload.setdefault("request_id", make_request_id())
+
+    # ---- Forbidden content keys guard ----
+    forbidden = {
+        "prompt",
+        "user_prompt",
+        "system_prompt",
+        "assembled_prompt",
+        "message",
+        "output",
+        "completion",
+        "draft",
+        "revision",
+        "content",
+    }
+
+    overlap = forbidden.intersection(payload.keys())
+    if overlap:
+        raise ValueError(f"metadata log contains forbidden content keys: {sorted(overlap)}")
 
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(payload, ensure_ascii=False) + "\n")
