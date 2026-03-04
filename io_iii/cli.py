@@ -2,7 +2,7 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Mapping, Optional
 from io_iii.metadata_logging import append_metadata, make_request_id
 
 from io_iii.config import load_io3_config, default_config_dir
@@ -46,6 +46,24 @@ def _get_cfg_dir(args) -> Path:
     if getattr(args, "config_dir", None):
         return Path(args.config_dir)
     return default_config_dir()
+
+
+def _parse_capability_payload(raw: Optional[str]) -> Dict[str, Any]:
+    """
+    Parse a JSON object string into a dict for capability payload.
+
+    Allowed: JSON object only.
+    Default: {}.
+    """
+    if not raw:
+        return {}
+    try:
+        obj = json.loads(raw)
+    except Exception as e:
+        raise ValueError(f"CAPABILITY_PAYLOAD_INVALID_JSON: {e}") from e
+    if not isinstance(obj, dict):
+        raise ValueError("CAPABILITY_PAYLOAD_INVALID_SHAPE: payload must be a JSON object")
+    return obj
 
 
 # -----------------------------
@@ -113,6 +131,9 @@ def cmd_run(args) -> int:
         import sys
         prompt = sys.stdin.read().strip() or "Say hello in one short sentence."
 
+    cap_id = getattr(args, "capability_id", None)
+    cap_payload = _parse_capability_payload(getattr(args, "capability_payload_json", None)) if cap_id else None
+
     # Build SessionState (control-plane; no prompt text stored)
     route = RouteInfo(
         mode=selection.mode,
@@ -155,6 +176,8 @@ def cmd_run(args) -> int:
             user_prompt=prompt,
             audit=bool(getattr(args, "audit", False)),
             deps=deps,
+            capability_id=cap_id,
+            capability_payload=cap_payload,
         )
 
         payload = {
@@ -185,6 +208,7 @@ def cmd_run(args) -> int:
                 "fallback_used": getattr(selection, "fallback_used", None),
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
+                "capability_id": cap_id,
             },
         )
 
@@ -207,6 +231,7 @@ def cmd_run(args) -> int:
                 "fallback_used": getattr(selection, "fallback_used", None),
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
+                "capability_id": cap_id,
             },
         )
         raise
@@ -268,6 +293,18 @@ def main(argv=None) -> int:
     p_run.add_argument("mode")
     p_run.add_argument("--prompt", type=str, default=None, help="Prompt text (or pipe via stdin)")
     p_run.add_argument("--audit", action="store_true", help="Enable challenger audit pass")
+    p_run.add_argument(
+        "--capability-id",
+        type=str,
+        default=None,
+        help="Explicit capability ID to invoke once (Phase 3; bounded; no autonomy).",
+    )
+    p_run.add_argument(
+        "--capability-payload-json",
+        type=str,
+        default=None,
+        help="JSON object payload for capability invocation (must be a JSON object).",
+    )
     p_run.set_defaults(func=cmd_run)
 
     p_about = sub.add_parser("about")

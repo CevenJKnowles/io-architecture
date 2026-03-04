@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Mapping
 
 from io_iii.core.context_assembly import assemble_context
 from io_iii.core.execution_context import ExecutionContext
@@ -17,6 +17,8 @@ from io_iii.providers.null_provider import NullProvider
 from io_iii.providers.ollama_provider import OllamaProvider
 from io_iii.routing import resolve_route
 from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
+
+from io_iii.core.capabilities import CapabilityContext, CapabilityRegistry
 
 
 @dataclass(frozen=True)
@@ -117,6 +119,62 @@ def _run_challenger(
         }
 
 
+def _safe_json_len(obj: Any) -> int:
+    """
+    Size estimator used for capability payload/output bounds.
+    """
+    try:
+        return len(json.dumps(obj, ensure_ascii=False))
+    except Exception:
+        return len(str(obj))
+
+
+def _invoke_capability_once(
+    *,
+    registry: CapabilityRegistry,
+    capability_id: str,
+    payload: Mapping[str, Any],
+    ctx: CapabilityContext,
+) -> Dict[str, Any]:
+    """
+    Single explicit capability invocation surface (Phase 3 M3.6).
+
+    - explicit ID
+    - single call max
+    - bounded payload/output size checks
+    - no recursion (capability cannot access registry from ctx)
+    """
+    cap = registry.get(capability_id)
+    spec = cap.spec
+
+    # Bounds sanity (contract hygiene)
+    if spec.bounds.max_calls < 1:
+        raise ValueError("CAPABILITY_BOUNDS_INVALID: max_calls must be >= 1")
+
+    in_len = _safe_json_len(payload)
+    if in_len > spec.bounds.max_input_chars:
+        raise ValueError(
+            f"CAPABILITY_INPUT_TOO_LARGE: {in_len} chars > max_input_chars={spec.bounds.max_input_chars}"
+        )
+
+    res = cap.invoke(ctx, payload)
+
+    out_len = _safe_json_len(res.output)
+    if out_len > spec.bounds.max_output_chars:
+        raise ValueError(
+            f"CAPABILITY_OUTPUT_TOO_LARGE: {out_len} chars > max_output_chars={spec.bounds.max_output_chars}"
+        )
+
+    return {
+        "capability_id": spec.capability_id,
+        "version": spec.version,
+        "category": spec.category.value,
+        "ok": bool(res.ok),
+        "error_code": res.error_code,
+        "output": res.output,
+    }
+
+
 def run(
     *,
     cfg,
@@ -126,6 +184,8 @@ def run(
     deps=None,
     challenger_fn=None,
     ollama_provider_factory=None,
+    capability_id: Optional[str] = None,
+    capability_payload: Optional[Mapping[str, Any]] = None,
 ) -> Tuple[SessionState, ExecutionResult]:
     """
     Deterministic execution engine (Phase 2 extraction).
@@ -137,7 +197,10 @@ def run(
     Constraints:
     - SessionState remains control-plane only (no prompt/response content stored).
     - Audit toggle is explicit ('audit') and mirrored into SessionState.audit for traceability.
+    - Capability invocation is explicit-only and bounded (Phase 3 M3.6).
     """
+    capability_meta: Optional[Dict[str, Any]] = None
+
     # Phase 3 injection seam: prefer explicit dependency bundle when provided.
     if deps is not None:
         from io_iii.core.dependencies import RuntimeDependencies  # local import to avoid cycles
@@ -149,7 +212,17 @@ def run(
             ollama_provider_factory = deps.ollama_provider_factory
         if challenger_fn is None and deps.challenger_fn is not None:
             challenger_fn = deps.challenger_fn
-        # deps.capability_registry is intentionally unused here (Phase 3 boundary).
+
+        # Capability invocation surface (explicit-only)
+        if capability_id:
+            payload = dict(capability_payload or {})
+            ctx = CapabilityContext(cfg=cfg, session_state=session_state, execution_context=None)
+            capability_meta = _invoke_capability_once(
+                registry=deps.capability_registry,
+                capability_id=capability_id,
+                payload=payload,
+                ctx=ctx,
+            )
 
     if ollama_provider_factory is None:
         ollama_provider_factory = OllamaProvider.from_config
@@ -197,6 +270,10 @@ def run(
         result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
         message = getattr(result_obj, "message", "")
         meta = getattr(result_obj, "meta", {})
+
+        if capability_meta is not None:
+            meta = dict(meta)
+            meta["capability"] = capability_meta
 
         state2 = _replace(session_state, status="ok", provider="null", model=None)
         return state2, ExecutionResult(
@@ -289,6 +366,8 @@ def run(
             audit_meta["revised"] = True
 
     meta = {"persona_contract_version": PERSONA_CONTRACT_VERSION}
+    if capability_meta is not None:
+        meta["capability"] = capability_meta
 
     state2 = _replace(session_state, status="ok", provider="ollama", model=model)
     # Also reflect audit verdict/revised into state.audit (control-plane)
