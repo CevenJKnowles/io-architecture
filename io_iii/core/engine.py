@@ -123,6 +123,7 @@ def run(
     session_state: SessionState,
     user_prompt: str,
     audit: bool,
+    deps=None,
     challenger_fn=None,
     ollama_provider_factory=None,
 ) -> Tuple[SessionState, ExecutionResult]:
@@ -137,6 +138,19 @@ def run(
     - SessionState remains control-plane only (no prompt/response content stored).
     - Audit toggle is explicit ('audit') and mirrored into SessionState.audit for traceability.
     """
+    # Phase 3 injection seam: prefer explicit dependency bundle when provided.
+    if deps is not None:
+        from io_iii.core.dependencies import RuntimeDependencies  # local import to avoid cycles
+
+        if not isinstance(deps, RuntimeDependencies):
+            raise TypeError("deps must be an instance of io_iii.core.dependencies.RuntimeDependencies")
+
+        if ollama_provider_factory is None:
+            ollama_provider_factory = deps.ollama_provider_factory
+        if challenger_fn is None and deps.challenger_fn is not None:
+            challenger_fn = deps.challenger_fn
+        # deps.capability_registry is intentionally unused here (Phase 3 boundary).
+
     if ollama_provider_factory is None:
         ollama_provider_factory = OllamaProvider.from_config
 

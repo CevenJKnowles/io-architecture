@@ -13,6 +13,10 @@ from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_
 from io_iii.core.engine import run as engine_run
 from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState
 
+# Phase 3 seams
+from io_iii.core.dependencies import RuntimeDependencies
+from io_iii.core.capabilities import default_registry
+
 # -----------------------------
 # Audit Gate Hard Limits (ADR-009)
 # -----------------------------
@@ -137,13 +141,20 @@ def cmd_run(args) -> int:
         logging_policy=cfg.logging,
     )
 
+    # Phase 3: explicit dependency bundle (injection seams)
+    deps = RuntimeDependencies(
+        ollama_provider_factory=OllamaProvider.from_config,
+        challenger_fn=None,
+        capability_registry=default_registry(),
+    )
+
     try:
         state2, result = engine_run(
             cfg=cfg,
             session_state=state,
             user_prompt=prompt,
             audit=bool(getattr(args, "audit", False)),
-            ollama_provider_factory=OllamaProvider.from_config,
+            deps=deps,
         )
 
         payload = {
@@ -199,6 +210,7 @@ def cmd_run(args) -> int:
             },
         )
         raise
+
 
 def cmd_about(args) -> int:
     cfg_dir = _get_cfg_dir(args)
