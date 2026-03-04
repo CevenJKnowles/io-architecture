@@ -15,7 +15,7 @@ from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState
 
 # Phase 3 seams
 from io_iii.core.dependencies import RuntimeDependencies
-from io_iii.core.capabilities import default_registry
+from io_iii.capabilities.builtins import builtin_registry
 
 # -----------------------------
 # Audit Gate Hard Limits (ADR-009)
@@ -166,7 +166,7 @@ def cmd_run(args) -> int:
     deps = RuntimeDependencies(
         ollama_provider_factory=OllamaProvider.from_config,
         challenger_fn=None,
-        capability_registry=default_registry(),
+        capability_registry=builtin_registry(),
     )
 
     try:

@@ -85,6 +85,7 @@ Examples:
 - DOC-ARCH-004 — Runtime architecture
 - DOC-ARCH-005 — Capability layer definition
 - DOC-ARCH-006 — Execution observability (content-safe trace)
+docs/architecture/DOC-ARCH-007-capability-reference-implementation.md
 
 ---
 
