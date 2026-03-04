@@ -134,6 +134,14 @@ def run(
     # Allow dependency injection for tests (keeps CLI monkeypatch compatibility)
     if challenger_fn is None:
         challenger_fn = _run_challenger
+    if challenger_fn is None:
+        def challenger_fn(cfg_, prompt_, draft_):
+            return _run_challenger(
+                cfg_,
+                prompt_,
+                draft_,
+                provider_factory=ollama_provider_factory,
+            )
 
     if ollama_provider_factory is None:
         ollama_provider_factory = OllamaProvider.from_config
