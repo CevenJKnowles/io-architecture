@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from io_iii.core.content_safety import assert_no_forbidden_keys, METADATA_FORBIDDEN_KEYS
+
 
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
@@ -66,23 +68,10 @@ def append_metadata(logging_cfg: Dict[str, Any], record: Dict[str, Any]) -> Opti
     # ---- Ensure request_id exists ----
     payload.setdefault("request_id", make_request_id())
 
-    # ---- Forbidden content keys guard ----
-    forbidden = {
-        "prompt",
-        "user_prompt",
-        "system_prompt",
-        "assembled_prompt",
-        "message",
-        "output",
-        "completion",
-        "draft",
-        "revision",
-        "content",
-    }
-
-    overlap = forbidden.intersection(payload.keys())
-    if overlap:
-        raise ValueError(f"metadata log contains forbidden content keys: {sorted(overlap)}")
+    # ---- Forbidden content keys guard (recursive) ----
+    # Prevent accidental leakage of content into the metadata channel.
+    # This scans nested dict/list structures as well.
+    assert_no_forbidden_keys(payload, forbidden=METADATA_FORBIDDEN_KEYS)
 
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(payload, ensure_ascii=False) + "\n")

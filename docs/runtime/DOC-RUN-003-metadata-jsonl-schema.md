@@ -151,7 +151,7 @@ M3.4 is complete when:
 2. Runtime metadata logging code produces entries that comply with the schema.
 3. Tests enforce:
    - presence of required keys
-   - absence of forbidden content keys
+   - absence of forbidden content keys (recursive scan; nested structures included)
    - bounded audit fields remain within contract limits
 
 ---

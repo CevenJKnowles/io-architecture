@@ -19,6 +19,7 @@ from io_iii.routing import resolve_route
 from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
 
 from io_iii.core.capabilities import CapabilityContext, CapabilityRegistry
+from io_iii.core.content_safety import assert_no_forbidden_keys
 
 from io_iii.core.execution_trace import TraceRecorder
 
@@ -276,9 +277,12 @@ def run(
         message = getattr(result_obj, "message", "")
         meta = dict(getattr(result_obj, "meta", {}))
 
-        meta["trace"] = trace.trace.to_dict()
+        trace_dict = trace.trace.to_dict()
+        assert_no_forbidden_keys(trace_dict)
+        meta["trace"] = trace_dict
 
         if capability_meta is not None:
+            assert_no_forbidden_keys(capability_meta)
             meta["capability"] = capability_meta
 
         state2 = _replace(session_state, status="ok", provider="null", model=None)
@@ -384,11 +388,14 @@ def run(
                 text = provider.generate(model=model, prompt=revision_prompt).strip()
             audit_meta["revised"] = True
 
+    trace_dict = trace.trace.to_dict()
+    assert_no_forbidden_keys(trace_dict)
     meta = {
         "persona_contract_version": PERSONA_CONTRACT_VERSION,
-        "trace": trace.trace.to_dict(),
+        "trace": trace_dict,
     }
     if capability_meta is not None:
+        assert_no_forbidden_keys(capability_meta)
         meta["capability"] = capability_meta
 
     state2 = _replace(session_state, status="ok", provider="ollama", model=model)
