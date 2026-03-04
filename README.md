@@ -195,6 +195,8 @@ io_iii/ → reference runtime implementation
 
 The repository includes a **minimal Python implementation of the IO‑III control plane**.
 
+The runtime implementation is deliberately minimal by design. Its purpose is to demonstrate **boundary discipline** and **deterministic control-plane structure** under governance constraints, rather than feature accumulation.
+
 Core modules:
 
 io_iii/

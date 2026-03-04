@@ -37,7 +37,13 @@ class ExecutionResult:
     prompt_hash: Optional[str]
 
 
-def _run_challenger(cfg, user_prompt: str, draft_text: str) -> dict:
+def _run_challenger(
+    cfg,
+    user_prompt: str,
+    draft_text: str,
+    *,
+    ollama_provider_factory,
+) -> dict:
     """
     Challenger pass (ADR-008).
 
@@ -131,20 +137,24 @@ def run(
     - SessionState remains control-plane only (no prompt/response content stored).
     - Audit toggle is explicit ('audit') and mirrored into SessionState.audit for traceability.
     """
-    # Allow dependency injection for tests (keeps CLI monkeypatch compatibility)
-    if challenger_fn is None:
-        challenger_fn = _run_challenger
-    if challenger_fn is None:
-        def challenger_fn(cfg_, prompt_, draft_):
-            return _run_challenger(
-                cfg_,
-                prompt_,
-                draft_,
-                provider_factory=ollama_provider_factory,
-            )
-
     if ollama_provider_factory is None:
         ollama_provider_factory = OllamaProvider.from_config
+
+    # Allow dependency injection for tests (keeps CLI monkeypatch compatibility)
+    # Default challenger binds the provider factory explicitly to avoid scope leakage.
+    if challenger_fn is None:
+        def challenger_fn(cfg_, prompt_, draft_):
+            # Backwards-compatibility: some tests monkeypatch _run_challenger with a
+            # 3-arg callable. Prefer the explicit provider factory when supported.
+            try:
+                return _run_challenger(
+                    cfg_,
+                    prompt_,
+                    draft_,
+                    ollama_provider_factory=ollama_provider_factory,
+                )
+            except TypeError:
+                return _run_challenger(cfg_, prompt_, draft_)
 
     # Mirror audit flag into state (frozen dataclass => rebuild audit field only)
     audit_state = AuditGateState(
