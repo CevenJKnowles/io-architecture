@@ -16,7 +16,7 @@ tags:
 roles_focus:
   - "executor"
   - "challenger"
-provenance: "human"
+provenance: "mixed"
 ---
 
 # Capability Result Metadata Contract
