@@ -321,6 +321,144 @@ def cmd_run(args) -> int:
         raise
 
 
+
+def cmd_capability(args) -> int:
+    """Invoke a capability explicitly (Phase 3).
+
+    Command surface (DOC-OVW-003 M3.16):
+        python -m io_iii capability <capability_id> '{"x":1}'
+
+    Notes:
+    - Deterministic: explicit-only invocation; no selection/planning.
+    - Content-safe logging: metadata only; never logs payload/output.
+    """
+    cfg_dir = _get_cfg_dir(args)
+    cfg = load_io3_config(cfg_dir)
+    request_id = make_request_id()
+    t0 = time.perf_counter()
+
+    cap_id = getattr(args, "capability_id", None)
+    if not cap_id:
+        raise ValueError("CAPABILITY_ID_REQUIRED: capability_id is required")
+
+    cap_payload = _parse_capability_payload(getattr(args, "payload_json", None))
+
+    # Capability-only execution uses the null provider path.
+    route = RouteInfo(
+        mode="capability",
+        primary_target=None,
+        secondary_target=None,
+        selected_target=None,
+        selected_provider="null",
+        fallback_used=False,
+        fallback_reason=None,
+        boundaries={},
+    )
+
+    state = SessionState(
+        request_id=request_id,
+        started_at_ms=int(time.time() * 1000),
+        mode="capability",
+        config_dir=str(cfg.config_dir),
+        route=route,
+        audit=AuditGateState(audit_enabled=False),
+        status="ok",
+        provider="null",
+        model=None,
+        route_id="capability",
+        persona_contract_version=PERSONA_CONTRACT_VERSION,
+        persona_id=None,
+        logging_policy=cfg.logging,
+    )
+
+    deps = RuntimeDependencies(
+        ollama_provider_factory=OllamaProvider.from_config,
+        challenger_fn=None,
+        capability_registry=builtin_registry(),
+    )
+
+    try:
+        state2, result = engine_run(
+            cfg=cfg,
+            session_state=state,
+            user_prompt="",  # not used by null provider path
+            audit=False,
+            deps=deps,
+            capability_id=cap_id,
+            capability_payload=cap_payload,
+        )
+
+        # Capability summary (content-safe; MUST NOT include output)
+        cap_meta = result.meta.get("capability") if isinstance(result.meta, dict) else None
+        capability_ok = None
+        capability_version = None
+        capability_duration_ms = None
+        capability_error_code = None
+        if isinstance(cap_meta, dict):
+            capability_ok = cap_meta.get("ok")
+            capability_version = cap_meta.get("version")
+            capability_duration_ms = cap_meta.get("duration_ms")
+            capability_error_code = cap_meta.get("error_code")
+
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        append_metadata(
+            cfg.logging,
+            {
+                "request_id": request_id,
+                "mode": state2.mode,
+                "provider": result.provider,
+                "model": result.model,
+                "status": "ok",
+                "latency_ms": latency_ms,
+                "prompt_hash": result.prompt_hash,
+                "fallback_used": False,
+                "fallback_reason": None,
+                "selected_primary": None,
+                "capability_id": cap_id,
+                "capability_ok": capability_ok,
+                "capability_version": capability_version,
+                "capability_duration_ms": capability_duration_ms,
+                "capability_error_code": capability_error_code,
+            },
+        )
+
+        payload = {
+            "result": {
+                "message": result.message,
+                "meta": result.meta,
+                "mode": state2.mode,
+                "provider": result.provider,
+                "model": result.model,
+                "route_id": state2.route_id,
+            },
+        }
+
+        _print(payload)
+        return 0
+
+    except Exception as e:
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        append_metadata(
+            cfg.logging,
+            {
+                "request_id": request_id,
+                "mode": "capability",
+                "provider": "null",
+                "model": None,
+                "status": "error",
+                "latency_ms": latency_ms,
+                "error_code": type(e).__name__,
+                "fallback_used": False,
+                "fallback_reason": None,
+                "selected_primary": None,
+                "capability_id": cap_id,
+                "capability_ok": False,
+                "capability_error_code": type(e).__name__,
+            },
+        )
+        raise
+
+
 def cmd_about(args) -> int:
     cfg_dir = _get_cfg_dir(args)
     cfg = load_io3_config(cfg_dir)
@@ -394,6 +532,16 @@ def main(argv=None) -> int:
     p_caps = sub.add_parser("capabilities")
     p_caps.add_argument("--json", action="store_true", help="Output JSON format")
     p_caps.set_defaults(func=cmd_capabilities)
+
+    p_cap = sub.add_parser("capability")
+    p_cap.add_argument("capability_id", type=str, help="Capability ID to invoke")
+    p_cap.add_argument(
+        "payload_json",
+        nargs="?",
+        default=None,
+        help="Optional JSON object payload (must be a JSON object)",
+    )
+    p_cap.set_defaults(func=cmd_capability)
 
     p_about = sub.add_parser("about")
     p_about.set_defaults(func=cmd_about)
