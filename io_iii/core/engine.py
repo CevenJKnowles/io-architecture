@@ -25,6 +25,19 @@ from io_iii.core.content_safety import assert_no_forbidden_keys
 from io_iii.core.execution_trace import TraceRecorder
 
 
+def _capability_error_code_from_exc(exc: Exception) -> str:
+    """Map exceptions to deterministic capability error codes.
+
+    Rules:
+    - If the exception message starts with "CAPABILITY_*", treat the prefix before ':' as the code.
+    - Otherwise return a stable generic code.
+    """
+    msg = str(exc)
+    if msg.startswith("CAPABILITY_"):
+        return msg.split(":", 1)[0]
+    return "CAPABILITY_EXCEPTION"
+
+
 @dataclass(frozen=True)
 class ExecutionResult:
     """
@@ -226,13 +239,25 @@ def run(
         if capability_id:
             payload = dict(capability_payload or {})
             ctx = CapabilityContext(cfg=cfg, session_state=session_state, execution_context=None)
-            with trace.step("capability_invoke", meta={"capability_id": capability_id}):
-                capability_meta = _invoke_capability_once(
-                    registry=deps.capability_registry,
-                    capability_id=capability_id,
-                    payload=payload,
-                    ctx=ctx,
-                )
+            cap_trace_meta: Dict[str, Any] = {
+                "capability_id": capability_id,
+                "success": None,
+                "error_code": None,
+            }
+            with trace.step("capability_execution", meta=cap_trace_meta):
+                try:
+                    capability_meta = _invoke_capability_once(
+                        registry=deps.capability_registry,
+                        capability_id=capability_id,
+                        payload=payload,
+                        ctx=ctx,
+                    )
+                    cap_trace_meta["success"] = bool(capability_meta.get("ok"))
+                    cap_trace_meta["error_code"] = capability_meta.get("error_code")
+                except Exception as e:
+                    cap_trace_meta["success"] = False
+                    cap_trace_meta["error_code"] = _capability_error_code_from_exc(e)
+                    raise
 
     if ollama_provider_factory is None:
         ollama_provider_factory = OllamaProvider.from_config

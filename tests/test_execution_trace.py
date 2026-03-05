@@ -92,7 +92,12 @@ def test_execution_trace_attached_and_ordered_for_null_route_with_capability():
 
     steps = trace["steps"]
     assert isinstance(steps, list)
-    assert [s["stage"] for s in steps] == ["capability_invoke", "provider_run"]
+    assert [s["stage"] for s in steps] == ["capability_execution", "provider_run"]
+
+    cap_step = steps[0]
+    assert cap_step["meta"]["capability_id"] == "test.echo"
+    assert cap_step["meta"]["success"] is True
+    assert cap_step["meta"]["error_code"] is None
 
     for s in steps:
         assert isinstance(s.get("duration_ms"), int)
@@ -101,5 +106,15 @@ def test_execution_trace_attached_and_ordered_for_null_route_with_capability():
 
     # Content-safety guard (defensive): ensure no forbidden content keys appear in the trace.
     forbidden = {"prompt", "completion", "draft", "revision", "content", "message", "output"}
-    flat_keys = set(trace.keys())
-    assert not (forbidden & flat_keys)
+
+    def _walk_keys(obj):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                yield k
+                yield from _walk_keys(v)
+        elif isinstance(obj, list):
+            for it in obj:
+                yield from _walk_keys(it)
+
+    all_keys = set(_walk_keys(trace))
+    assert not (forbidden & all_keys)
