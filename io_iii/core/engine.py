@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+import concurrent.futures
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Mapping
 
@@ -212,7 +213,22 @@ def _invoke_capability_once(
 
     # Time the invocation (content-safe; structural observability only)
     t0 = time.perf_counter_ns()
-    res = cap.invoke(ctx, payload)
+
+    # Enforce timeout_ms deterministically (Phase 3 M3.15).
+    # Note: thread-based timeout cannot forcibly kill arbitrary Python code,
+    # but it does bound the control-plane waiting time and yields a stable error.
+    timeout_s = max(0.001, float(spec.bounds.timeout_ms) / 1000.0)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+        fut = ex.submit(cap.invoke, ctx, payload)
+        try:
+            res = fut.result(timeout=timeout_s)
+        except concurrent.futures.TimeoutError as e:
+            # Best-effort cancellation; capability code may still run to completion.
+            fut.cancel()
+            raise ValueError(
+                f"CAPABILITY_TIMEOUT: exceeded timeout_ms={spec.bounds.timeout_ms}"
+            ) from e
+
     duration_ms = int((time.perf_counter_ns() - t0) / 1_000_000)
 
     out_len = _safe_json_len(res.output)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import types
+import time
 
 import pytest
 
@@ -168,3 +169,142 @@ def test_capability_rejects_invalid_payload_types(monkeypatch, bad_payload):
         )
 
     assert str(ei.value).startswith("CAPABILITY_INVALID_PAYLOAD")
+
+
+class TightBoundsCapability:
+    @property
+    def spec(self) -> CapabilitySpec:
+        return CapabilitySpec(
+            capability_id="test.tight_bounds",
+            version="v0",
+            category=CapabilityCategory.COMPUTATION,
+            description="Test-only capability with tight bounds.",
+            bounds=CapabilityBounds(max_calls=1, timeout_ms=50, max_input_chars=10, max_output_chars=10),
+        )
+
+    def invoke(self, ctx: CapabilityContext, payload):
+        return CapabilityResult(ok=True, output={"x": "ok"})
+
+
+class SlowCapability:
+    @property
+    def spec(self) -> CapabilitySpec:
+        return CapabilitySpec(
+            capability_id="test.slow",
+            version="v0",
+            category=CapabilityCategory.COMPUTATION,
+            description="Test-only capability that sleeps beyond timeout.",
+            bounds=CapabilityBounds(max_calls=1, timeout_ms=50, max_input_chars=1000, max_output_chars=1000),
+        )
+
+    def invoke(self, ctx: CapabilityContext, payload):
+        time.sleep(0.2)
+        return CapabilityResult(ok=True, output={"ok": True})
+
+
+class BigOutputCapability:
+    @property
+    def spec(self) -> CapabilitySpec:
+        return CapabilitySpec(
+            capability_id="test.big_output",
+            version="v0",
+            category=CapabilityCategory.TRANSFORMATION,
+            description="Test-only capability that returns oversized output.",
+            bounds=CapabilityBounds(max_calls=1, timeout_ms=200, max_input_chars=1000, max_output_chars=10),
+        )
+
+    def invoke(self, ctx: CapabilityContext, payload):
+        return CapabilityResult(ok=True, output={"x": "a" * 100})
+
+
+def test_capability_enforces_max_input_chars(monkeypatch):
+    import io_iii.routing as routing
+    monkeypatch.setattr(routing, "_parse_target", lambda _t: ("local", "qwen3:8b"), raising=False)
+
+    reg = CapabilityRegistry([TightBoundsCapability()])
+    deps = RuntimeDependencies(
+        ollama_provider_factory=lambda _cfg: FakeProvider(),
+        challenger_fn=None,
+        capability_registry=reg,
+    )
+    cfg = types.SimpleNamespace(
+        providers={},
+        routing={"routing_table": {}},
+        logging={"schema": "test"},
+        config_dir=".",
+    )
+    state = _make_state(provider="ollama")
+
+    with pytest.raises(ValueError) as ei:
+        engine.run(
+            cfg=cfg,
+            session_state=state,
+            user_prompt="x",
+            audit=False,
+            deps=deps,
+            capability_id="test.tight_bounds",
+            capability_payload={"x": "01234567890"},
+        )
+    assert str(ei.value).startswith("CAPABILITY_INPUT_TOO_LARGE")
+
+
+def test_capability_enforces_timeout_ms(monkeypatch):
+    import io_iii.routing as routing
+    monkeypatch.setattr(routing, "_parse_target", lambda _t: ("local", "qwen3:8b"), raising=False)
+
+    reg = CapabilityRegistry([SlowCapability()])
+    deps = RuntimeDependencies(
+        ollama_provider_factory=lambda _cfg: FakeProvider(),
+        challenger_fn=None,
+        capability_registry=reg,
+    )
+    cfg = types.SimpleNamespace(
+        providers={},
+        routing={"routing_table": {}},
+        logging={"schema": "test"},
+        config_dir=".",
+    )
+    state = _make_state(provider="ollama")
+
+    with pytest.raises(ValueError) as ei:
+        engine.run(
+            cfg=cfg,
+            session_state=state,
+            user_prompt="x",
+            audit=False,
+            deps=deps,
+            capability_id="test.slow",
+            capability_payload={},
+        )
+    assert str(ei.value).startswith("CAPABILITY_TIMEOUT")
+
+
+def test_capability_enforces_max_output_chars(monkeypatch):
+    import io_iii.routing as routing
+    monkeypatch.setattr(routing, "_parse_target", lambda _t: ("local", "qwen3:8b"), raising=False)
+
+    reg = CapabilityRegistry([BigOutputCapability()])
+    deps = RuntimeDependencies(
+        ollama_provider_factory=lambda _cfg: FakeProvider(),
+        challenger_fn=None,
+        capability_registry=reg,
+    )
+    cfg = types.SimpleNamespace(
+        providers={},
+        routing={"routing_table": {}},
+        logging={"schema": "test"},
+        config_dir=".",
+    )
+    state = _make_state(provider="ollama")
+
+    with pytest.raises(ValueError) as ei:
+        engine.run(
+            cfg=cfg,
+            session_state=state,
+            user_prompt="x",
+            audit=False,
+            deps=deps,
+            capability_id="test.big_output",
+            capability_payload={"a": 1},
+        )
+    assert str(ei.value).startswith("CAPABILITY_OUTPUT_TOO_LARGE")
