@@ -1,5 +1,5 @@
 ---
-id: DOC-OVW-005
+id: DOC-OVW-003
 title: IO-III Session Snapshot — Phase-3 Capability Layer — 2026-03-04
 type: overview
 status: active
@@ -10,7 +10,7 @@ audience:
   - developers
   - reviewers
 created: "2026-03-04"
-updated: "2026-03-04"
+updated: "2026-03-05"
 tags:
   - io-iii
   - architecture
