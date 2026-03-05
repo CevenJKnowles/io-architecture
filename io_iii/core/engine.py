@@ -146,6 +146,42 @@ def _safe_json_len(obj: Any) -> int:
         return len(str(obj))
 
 
+def _validate_capability_payload(payload: Any) -> Dict[str, Any]:
+    """Validate and normalize capability payload.
+
+    Phase 3 (M3.14) requirement:
+    - payload must be a JSON object (dict-like)
+    - payload must be JSON-serializable (structural safety)
+
+    Notes:
+    - This does NOT enforce CapabilityBounds (that is handled in the invocation surface).
+    - This is intentionally strict to preserve determinism and predictable error modes.
+    """
+    if payload is None:
+        normalized: Dict[str, Any] = {}
+    else:
+        if not isinstance(payload, Mapping):
+            raise ValueError(
+                f"CAPABILITY_INVALID_PAYLOAD: payload must be a JSON object (mapping), got {type(payload).__name__}"
+            )
+        normalized = dict(payload)
+
+    # JSON object keys must be strings for deterministic serialization.
+    for k in normalized.keys():
+        if not isinstance(k, str):
+            raise ValueError(
+                f"CAPABILITY_INVALID_PAYLOAD: payload keys must be strings, got {type(k).__name__}"
+            )
+
+    # Ensure it can be serialized deterministically (structural safety; no content logging).
+    try:
+        json.dumps(normalized, ensure_ascii=False, sort_keys=True)
+    except Exception as e:
+        raise ValueError(f"CAPABILITY_INVALID_PAYLOAD: payload is not JSON-serializable ({e.__class__.__name__})")
+
+    return normalized
+
+
 def _invoke_capability_once(
     *,
     registry: CapabilityRegistry,
@@ -237,7 +273,7 @@ def run(
 
         # Capability invocation surface (explicit-only)
         if capability_id:
-            payload = dict(capability_payload or {})
+            payload = _validate_capability_payload(capability_payload)
             ctx = CapabilityContext(cfg=cfg, session_state=session_state, execution_context=None)
             cap_trace_meta: Dict[str, Any] = {
                 "capability_id": capability_id,
