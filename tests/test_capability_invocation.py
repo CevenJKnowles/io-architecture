@@ -128,3 +128,43 @@ def test_capability_rejects_nonexistent_id(monkeypatch):
             capability_id="missing.cap",
             capability_payload={},
         )
+
+
+@pytest.mark.parametrize(
+    "bad_payload",
+    [
+        "not-a-dict",
+        123,
+        [1, 2, 3],
+        [("a", 1)],  # list is not allowed even if dict() would accept it
+        {1: "x"},  # non-string key
+    ],
+)
+def test_capability_rejects_invalid_payload_types(monkeypatch, bad_payload):
+    reg = CapabilityRegistry([EchoCapability()])
+    deps = RuntimeDependencies(
+        ollama_provider_factory=lambda _cfg: FakeProvider(),
+        challenger_fn=None,
+        capability_registry=reg,
+    )
+
+    cfg = types.SimpleNamespace(
+        providers={},
+        routing={"routing_table": {}},
+        logging={"schema": "test"},
+        config_dir=".",
+    )
+
+    state = _make_state(provider="ollama")
+    with pytest.raises(ValueError) as ei:
+        engine.run(
+            cfg=cfg,
+            session_state=state,
+            user_prompt="x",
+            audit=False,
+            deps=deps,
+            capability_id="test.echo",
+            capability_payload=bad_payload,
+        )
+
+    assert str(ei.value).startswith("CAPABILITY_INVALID_PAYLOAD")
