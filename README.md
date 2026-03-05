@@ -473,9 +473,17 @@ architectural guarantees** over rapid feature expansion.
 
 # Project Status
 
-Phase 1 --- Control Plane Stabilised
-Phase 2 --- Structural Consolidation Complete
-Phase 3 --- Capability Layer (Active)
+Phase 1 | Control Plane Stabilised
+
+Phase 2 | Structural Consolidation Complete
+
+Phase 3 | Capability Layer Complete
+
+**Phase 4 | Context Architecture Formalisation (Active)**
+
+*Phase 5 | Runtime Observability & Optimisation*
+
+*Phase 6 | Memory Architecture*
 
 IO-III prioritises **determinism, governance discipline, and
 architectural clarity** over feature velocity.
