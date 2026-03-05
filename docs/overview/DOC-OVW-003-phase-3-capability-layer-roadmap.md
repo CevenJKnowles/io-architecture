@@ -290,13 +290,21 @@ Target area:
 Add explicit CLI command (no selection logic):
 `python -m io\_iii capability cap.echo\_json '{"x":1}'`
 
-
 Constraints:
 
 - explicit invocation only
 - strict JSON payload
 - bounded execution
 - deterministic output shape (as `ExecutionResult`)
+
+---
+
+### M3.17 | Needs content update
+### M3.18 | Needs content update
+
+---
+
+
 
 ---
 
