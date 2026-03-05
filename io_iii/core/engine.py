@@ -18,7 +18,7 @@ from io_iii.core.session_state import (
 from io_iii.providers.null_provider import NullProvider
 from io_iii.providers.ollama_provider import OllamaProvider
 from io_iii.routing import resolve_route
-from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
+from io_iii.persona_contract import EXECUTOR_PERSONA_CONTRACT, CHALLENGER_PERSONA_CONTRACT, PERSONA_CONTRACT_VERSION
 
 from io_iii.core.capabilities import CapabilityContext, CapabilityRegistry
 from io_iii.core.content_safety import assert_no_forbidden_keys
@@ -63,12 +63,17 @@ def _run_challenger(
     draft_text: str,
     *,
     ollama_provider_factory,
+    session_state: SessionState | None = None,
 ) -> dict:
     """
     Challenger pass (ADR-008).
 
     Fail-open policy:
     - If challenger is unavailable or returns invalid JSON, auto-pass.
+
+    Notes:
+    - Uses ADR-010 Context Assembly for structural consistency.
+    - Never logs prompt or model output.
     """
     from io_iii.routing import _parse_target
 
@@ -91,31 +96,43 @@ def _run_challenger(
     _, model = _parse_target(selection.selected_target)
     provider = ollama_provider_factory(cfg.providers)
 
-    system_prompt = (
-        "You are IO-III Challenger.\n"
-        "Audit the executor draft for:\n"
-        "- policy compliance\n"
-        "- factual risk or unverifiable claims\n"
-        "- contradictions\n"
-        "- missing verification steps\n\n"
-        "You MUST NOT rewrite the draft.\n"
-        "You MUST NOT introduce new facts.\n\n"
-        "Respond in strict JSON with keys:\n"
-        "{"
-        "'verdict': 'pass'|'needs_work', "
-        "'issues': [], "
-        "'high_risk_claims': [], "
-        "'suggested_fixes': []"
-        "}"
+    # Ensure we have a SessionState to feed the assembly layer (control-plane only).
+    if session_state is None:
+        raise ValueError("SessionState is required for challenger context assembly")
+
+    # Assemble a challenger-scoped state (control-plane only).
+    challenger_state = _replace(
+        session_state,
+        mode="challenger",
+        provider=selection.selected_provider,
+        model=model,
+        route_id="challenger",
     )
 
-    audit_prompt = (
-        f"{system_prompt}\n\n"
+    challenger_user_prompt = (
+        "Audit the executor draft.\n"
+        "- Do NOT rewrite the draft.\n"
+        "- Do NOT introduce new facts.\n"
+        "- Respond in strict JSON with keys: verdict, issues, high_risk_claims, suggested_fixes.\n\n"
         f"USER_PROMPT:\n{user_prompt}\n\n"
         f"EXECUTOR_DRAFT:\n{draft_text}\n"
     )
 
-    raw = provider.generate(model=model, prompt=audit_prompt).strip()
+    assembled = assemble_context(
+        session_state=challenger_state,
+        user_prompt=challenger_user_prompt,
+        persona_contract=CHALLENGER_PERSONA_CONTRACT,
+        route_metadata={
+            "selected_provider": selection.selected_provider,
+            "selected_target": selection.selected_target,
+            "fallback_used": bool(getattr(selection, "fallback_used", False)),
+            "route_id": "challenger",
+        },
+    )
+
+    final_prompt = f"{assembled.system_prompt}\n\nUser:\n{assembled.user_prompt}\n\nIO-III Challenger:"
+
+    raw = provider.generate(model=model, prompt=final_prompt).strip()
 
     try:
         parsed = json.loads(raw)
@@ -135,6 +152,7 @@ def _run_challenger(
             "high_risk_claims": [],
             "suggested_fixes": [],
         }
+
 
 
 def _safe_json_len(obj: Any) -> int:
@@ -326,6 +344,7 @@ def run(
                     prompt_,
                     draft_,
                     ollama_provider_factory=ollama_provider_factory,
+                    session_state=session_state,
                 )
             except TypeError:
                 return _run_challenger(cfg_, prompt_, draft_)
@@ -454,8 +473,7 @@ def run(
                     f"REVISION_LIMIT_EXCEEDED: revision_passes={revision_passes} max={MAX_REVISION_PASSES}"
                 )
             revision_passes += 1
-
-            revision_prompt = (
+            revision_user_prompt = (
                 "You are IO-III Executor performing a single controlled revision.\n"
                 "Address the challenger feedback below.\n"
                 "You MUST NOT introduce new facts.\n"
@@ -465,6 +483,27 @@ def run(
                 f"CHALLENGER_FEEDBACK:\n{json.dumps(audit_result, indent=2)}\n\n"
                 "Produce the improved final answer only."
             )
+
+            with trace.step(
+                "revision_context_assembly",
+                meta={
+                    "persona_contract_version": PERSONA_CONTRACT_VERSION,
+                    "route_id": session_state.route_id,
+                },
+            ):
+                assembled_rev = assemble_context(
+                    session_state=session_state,
+                    user_prompt=revision_user_prompt,
+                    persona_contract=EXECUTOR_PERSONA_CONTRACT,
+                    route_metadata={
+                        "selected_provider": session_state.provider,
+                        "selected_target": session_state.route.selected_target,
+                        "fallback_used": session_state.route.fallback_used,
+                        "route_id": session_state.route_id,
+                    },
+                )
+
+            revision_prompt = f"{assembled_rev.system_prompt}\n\nUser:\n{assembled_rev.user_prompt}\n\nIO-III:"
 
             with trace.step("revision_inference", meta={"provider": "ollama", "model": model}):
                 text = provider.generate(model=model, prompt=revision_prompt).strip()
