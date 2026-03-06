@@ -1,7 +1,6 @@
 # IO-III Architecture
 
-IO-III is a local LLM control-plane runtime: a Python layer that sits between you and a
-language model and governs how that interaction behaves. Where most LLM tooling is
+IO-III is a local LLM control-plane runtime: a Python layer that sits between you and a language model and governs how that interaction behaves. Where most LLM tooling is
 permissive by default, IO-III is restrictive by design. Execution limits are hard-coded.
 Content boundaries are enforced recursively at the logging level. Every significant
 architectural decision is documented in an ADR before it is implemented. The system
@@ -34,12 +33,14 @@ The Python runtime intentionally demonstrates the architecture without expanding
 
 ## Project Status
 
-Phase 1 | Control Plane Stabilised
-Phase 2 | Structural Consolidation Complete
-Phase 3 | Capability Layer Complete
-**Phase 4 | Context Architecture Formalisation (Active)**
-*Phase 5 | Runtime Observability & Optimisation*
-*Phase 6 | Memory Architecture*
+| **Phase** | **Description**  | **Status** |
+|---|---|---|
+| 1 | Control Plane | Stabilised |
+| 2 | Structural Consolidation  | Complete |
+| 3 | Capability Layer | Complete  |
+| **4** | **Context Architecture Formalisation**  | **Active** |
+| *5* | *Runtime Observability & Optimisation*  | *Planned* |
+| *6* | *Memory Architecture* | *Planned* |
 
 IO-III prioritises **determinism, governance discipline, and architectural clarity** over
 feature velocity.
@@ -49,7 +50,6 @@ feature velocity.
 ## Structural Guarantees
 
 Unlike feature-driven AI frameworks, IO-III focuses on structural guarantees:
-
 - deterministic routing
 - bounded execution
 - explicit audit gates
@@ -57,7 +57,6 @@ Unlike feature-driven AI frameworks, IO-III focuses on structural guarantees:
 - architecture-first governance
 
 The repository contains:
-
 1. a formal architecture specification layer (ADRs, invariants, contracts, governance rules)
 2. a minimal reference implementation of the runtime control plane
 
@@ -66,7 +65,6 @@ The repository contains:
 ## Non-Goals
 
 IO-III is intentionally **not**:
-
 - an agent framework
 - a dynamic tool orchestrator
 - a workflow engine
@@ -177,11 +175,9 @@ ID_ROUTING --> ID_NULLP
 ---
 
 ## Quick Run
-
 ```bash
 python -m io_iii run executor --prompt "Explain deterministic routing in one sentence."
 ```
-
 Expected behaviour:
 
 - the CLI loads runtime configuration
@@ -194,17 +190,13 @@ Expected behaviour:
 ## Architecture Validation
 
 Run the invariant validator:
-
 ```bash
 python architecture/runtime/scripts/validate_invariants.py
 ```
-
 Run the full test suite:
-
 ```bash
 pytest
 ```
-
 Both commands verify that the system satisfies its core architectural invariants.
 
 ---
@@ -212,21 +204,13 @@ Both commands verify that the system satisfies its core architectural invariants
 ## Capability Invocation (Phase 3)
 
 Capabilities are introduced in Phase 3 as bounded runtime extensions.
-
-Capabilities are:
-
-- explicitly invoked
-- registry-controlled
-- single-execution only
-- payload-bounded
-- output-bounded
-
-They do **not** introduce:
-
-- autonomous behaviour
-- tool selection
-- recursive execution
-- workflow orchestration
+|  **Capabilities are:** |  They do **not** introduce: |
+|---|---|
+|  - explicitly invoked |  - autonomous behaviour |
+|  - registry-controlled |  - tool selection |
+|  - single-execution only |  - recursive execution |
+|  - payload-bounded |  - workflow orchestration |
+|  - output-bounded |   |
 
 ```mermaid
 sequenceDiagram
@@ -248,7 +232,6 @@ Engine-->>Result: ExecutionResult.meta["capability"]
 ## Core Invariants
 
 IO-III enforces the following system-level guarantees:
-
 - deterministic routing only
 - challenger enforcement internal to the engine
 - audit execution explicitly user-toggled
@@ -258,15 +241,15 @@ IO-III enforces the following system-level guarantees:
 - no multi-pass execution chains
 - single unified final output
 
-These are treated as contract-level invariants enforced by the test suite and invariant
-validator, not by convention.
+These are treated as contract-level invariants enforced by the test suite and invariant validator, not by convention.
 
 ---
 
 ## Governance Model
 
-All structural changes follow an ADR-first development model. Any modification affecting:
+All structural changes follow an ADR-first development model.
 
+Any modification affecting:
 - control-plane design
 - routing logic or fallback policy
 - provider or model selection
@@ -276,6 +259,7 @@ All structural changes follow an ADR-first development model. Any modification a
 - cross-model interaction
 
 requires a new Architecture Decision Record inside `ADR/` before implementation begins.
+
 The repository functions as the source of truth for IO-III architectural boundaries.
 
 ---
@@ -286,7 +270,6 @@ The Python implementation is deliberately minimal. Its purpose is to demonstrate
 discipline and deterministic control-plane structure under governance constraints.
 
 Core modules:
-
 | Module | Responsibility |
 |---|---|
 | `config.py` | runtime config loading |
