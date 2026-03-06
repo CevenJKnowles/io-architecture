@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "io-iii"
-version = "0.3.0"
+version = "0.3.2"
 description = "IO-III deterministic local LLM runtime (governance-first control-plane)."
 readme = "README.md"
 requires-python = ">=3.11"
