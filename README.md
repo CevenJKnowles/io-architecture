@@ -11,6 +11,27 @@ Built over three design generations. Phase 3 complete. Phase 4 now active.
 
 ---
 
+## Architecture Principles
+
+IO-III follows a small set of architectural principles that guide all design decisions.
+
+**Determinism First**
+All routing and execution behaviour must be predictable and reproducible. No dynamic routing or autonomous behaviour is introduced.
+
+**Bounded Execution**
+All control flows have explicit limits (audit passes, revision passes, capability invocation). The system rejects recursive or unbounded execution paths.
+
+**Architecture Before Implementation**
+Structural changes require an Architecture Decision Record (ADR) before code changes.
+
+**Governance by Design**
+Operational constraints (audit limits, routing discipline, invariants) are enforced structurally in the runtime rather than through convention.
+
+**Minimal Reference Implementation**
+The Python runtime intentionally demonstrates the architecture without expanding into a full orchestration framework.
+
+---
+
 ## Project Status
 
 Phase 1 | Control Plane Stabilised
