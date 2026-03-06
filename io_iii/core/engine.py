@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import time
 import concurrent.futures
-from dataclasses import dataclass
+from dataclasses import dataclass, replace as dataclasses_replace
 from typing import Any, Dict, Optional, Tuple, Mapping
 
 from io_iii.core.context_assembly import assemble_context
@@ -648,8 +648,6 @@ def run(
 
 def _replace(state: SessionState, **updates: Any) -> SessionState:
     """
-    Replace fields on a frozen dataclass using explicit reconstruction.
+    Replace fields on a frozen dataclass.
     """
-    data = state.__dict__.copy()
-    data.update(updates)
-    return SessionState(**data)
+    return dataclasses_replace(state, **updates)
