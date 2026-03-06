@@ -3,7 +3,7 @@ id: DOC-OVW-006
 title: IO-III Session State — Phase 3 Hardening Complete
 type: overview
 status: active
-version: v0.3.1
+version: v0.3.2
 canonical: true
 scope: repository
 audience: developer
@@ -199,6 +199,12 @@ Challenger prompts now use: `CHALLENGER_PERSONA_CONTRACT` and pass through the c
 This ensures all prompts follow identical assembly rules.
 
 ---
+
+### Engine decomposition pass (v0.3.2)
+
+- `engine.run()` decomposed into named sub-functions.
+- The runtime kernel remains deterministic and bounded.
+- `_replace()` aligned to `dataclasses.replace()` via a thin shim.
 
 ## Test Suite Status
 

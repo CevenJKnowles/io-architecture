@@ -72,15 +72,6 @@ def _run_null_route(
     """
     provider = NullProvider()
 
-    # Engine-local execution context (no content; no assembly for null route)
-    _exec_ctx = ExecutionContext(
-        cfg=cfg,
-        session_state=session_state,
-        provider=provider,
-        route=session_state.route,
-        prompt_hash=None,
-        assembled_context=None,
-    )
 
     with trace.step("provider_run", meta={"provider": "null"}):
         result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
@@ -135,15 +126,6 @@ def _assemble_executor_context(
             },
         )
 
-    # Engine-local execution context (content-safe: stores hash, not prompt text)
-    _exec_ctx = ExecutionContext(
-        cfg=cfg,
-        session_state=session_state,
-        provider=provider,
-        route=session_state.route,
-        prompt_hash=assembled.prompt_hash,
-        assembled_context=assembled,
-    )
 
     return assembled
 
@@ -297,7 +279,9 @@ def _run_challenger(
         supported_providers={"null", "ollama"},
     )
 
-    # Fail-safe: if challenger unavailable, auto-pass
+    # Policy: challenger is fail-open (auto-pass) by design.
+    # Rationale: governance checks must never block bounded deterministic execution when the challenger cannot run.
+    # Trade: availability and determinism over strict challenger enforcement on provider failure.
     if selection.selected_provider != "ollama" or not selection.selected_target:
         return {
             "verdict": "pass",
