@@ -209,7 +209,7 @@ This ensures all prompts follow identical assembly rules.
 ## Test Suite Status
 
 ```
-Total tests: 35
+Total tests: 38
 Test modules: 17
 Status: all passing
 ```
@@ -226,6 +226,29 @@ Coverage areas include:
 
 ---
 
+## Architectural Verification Model
+
+IO-III treats architectural guarantees as enforceable invariants rather than informal design intentions. The runtime therefore includes a structured verification layer composed of automated tests and invariant validation.
+
+Public-facing verification is presented as a guarantee-to-verification mapping, while the underlying pytest suite contains the concrete implementation-level test cases.
+
+| Architectural Guarantee | Verification Type | Coverage Area |
+|---|---|---|
+| Deterministic routing behaviour | unit / contract tests | routing determinism |
+| Explicit capability invocation boundaries | behavioural tests | capability invocation |
+| Dependency injection integrity | integration tests | provider dependency injection |
+| Audit gate execution limits | contract tests | audit gate enforcement |
+| Content-safe observability | safety tests | metadata logging safeguards |
+| Execution trace integrity | behavioural tests | execution tracing |
+| Runtime invariant enforcement | invariant validation | repository invariants |
+
+Verification can be reproduced locally with:
+bash
+`pytest`
+`python architecture/runtime/scripts/validate_invariants.py`
+
+---
+
 ## Repository Health
 
 Current evaluation:
@@ -236,8 +259,6 @@ Current evaluation:
 | Determinism | enforced |
 | Governance documentation | strong |
 | Test discipline | strong |
-
-The repository demonstrates serious systems engineering discipline and is suitable for public presentation as an AI runtime architecture project.
 
 ---
 
