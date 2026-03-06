@@ -16,7 +16,7 @@ class FakeProvider:
         self.calls.append({"model": model, "prompt": prompt})
 
         # Challenger prompt should return strict JSON.
-        if "You are IO-III Challenger" in prompt or "Respond in strict JSON" in prompt:
+        if "IO-III Persona Contract (Challenger)" in prompt or "mode: challenger" in prompt:
             return '{"verdict": "pass", "issues": [], "high_risk_claims": [], "suggested_fixes": []}'
 
         # Executor draft.
@@ -27,13 +27,9 @@ def test_engine_challenger_uses_injected_provider_factory(monkeypatch):
     """
     Regression test:
 
-    Ensures that when audit is enabled, the default challenger path does not
-    reference an out-of-scope provider factory (previously a NameError).
-
-    The test keeps everything deterministic by injecting:
-    - a fake provider factory
-    - a deterministic route snapshot
-    - deterministic challenger route resolution
+    Ensures that when audit is enabled, the challenger path uses the injected
+    provider factory and routes its prompt construction through ADR-010 Context
+    Assembly (structural consistency).
     """
 
     fake_provider = FakeProvider()
@@ -45,12 +41,18 @@ def test_engine_challenger_uses_injected_provider_factory(monkeypatch):
     def fake_parse_target(_target: str):
         return ("local", "qwen3:8b")
 
-    monkeypatch.setattr(engine, "resolve_route", lambda **_kwargs: types.SimpleNamespace(
-        selected_provider="ollama",
-        selected_target="local:qwen3:8b",
-    ))
+    monkeypatch.setattr(
+        engine,
+        "resolve_route",
+        lambda **_kwargs: types.SimpleNamespace(
+            selected_provider="ollama",
+            selected_target="local:qwen3:8b",
+            fallback_used=False,
+        ),
+    )
 
     import io_iii.routing as routing
+
     monkeypatch.setattr(routing, "_parse_target", fake_parse_target, raising=False)
 
     cfg = types.SimpleNamespace(
@@ -98,5 +100,11 @@ def test_engine_challenger_uses_injected_provider_factory(monkeypatch):
 
     # One executor call + one challenger call.
     assert len(fake_provider.calls) == 2
-    assert any("IO-III Challenger" in c["prompt"] for c in fake_provider.calls)
-    
+
+    # Challenger call should have context assembly markers.
+    assert any(
+        ("IO-III Persona Contract (Challenger)" in c["prompt"])
+        and ("=== Persona Contract ===" in c["prompt"])
+        and ("=== Execution Envelope ===" in c["prompt"])
+        for c in fake_provider.calls
+    )
