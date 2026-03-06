@@ -1,180 +1,112 @@
 # IO-III Architecture
 
-IO-III is a **governance-first LLM control-plane architecture** designed
-for **deterministic, bounded execution of local language models**.
+IO-III is a local LLM control-plane runtime: a Python layer that sits between you and a
+language model and governs how that interaction behaves. Where most LLM tooling is
+permissive by default, IO-III is restrictive by design. Execution limits are hard-coded.
+Content boundaries are enforced recursively at the logging level. Every significant
+architectural decision is documented in an ADR before it is implemented. The system
+knows what it will not do, and that refusal is structural rather than conventional.
 
-Unlike feature-driven AI frameworks, IO-III focuses on **structural
-guarantees**:
+Built over three design generations. Phase 3 complete. Phase 4 now active.
 
--   deterministic routing
--   bounded execution
--   explicit audit gates
--   invariant-protected runtime behaviour
--   architecture-first governance
+---
+
+## Project Status
+
+Phase 1 | Control Plane Stabilised
+Phase 2 | Structural Consolidation Complete
+Phase 3 | Capability Layer Complete
+**Phase 4 | Context Architecture Formalisation (Active)**
+*Phase 5 | Runtime Observability & Optimisation*
+*Phase 6 | Memory Architecture*
+
+IO-III prioritises **determinism, governance discipline, and architectural clarity** over
+feature velocity.
+
+---
+
+## Structural Guarantees
+
+Unlike feature-driven AI frameworks, IO-III focuses on structural guarantees:
+
+- deterministic routing
+- bounded execution
+- explicit audit gates
+- invariant-protected runtime behaviour
+- architecture-first governance
 
 The repository contains:
 
-1.  a formal architecture specification layer (ADRs, invariants,
-    contracts, governance rules)
-2.  a minimal reference implementation of the runtime control plane
+1. a formal architecture specification layer (ADRs, invariants, contracts, governance rules)
+2. a minimal reference implementation of the runtime control plane
 
-The project intentionally prioritises **architectural clarity and
-deterministic system design** over rapid feature expansion.
+---
 
-------------------------------------------------------------------------
-
-# Runtime Architecture (Quick View)
-
-IO-III implements a **deterministic local LLM control plane** with
-explicit architectural boundaries and bounded execution guarantees.
-
-The runtime pipeline is intentionally simple and single-path:
-
-CLI
-↓
-Execution Engine
-↓
-ExecutionContext
-↓
-Context Assembly
-↓
-Provider
-↓
-Optional Challenger
-↓
-ExecutionResult
-
-This structure ensures the runtime remains:
-
--   deterministic
--   bounded
--   governance-controlled
--   invariant-protected
+## Non-Goals
 
 IO-III is intentionally **not**:
 
--   an agent framework
--   a dynamic tool orchestrator
--   a workflow engine
--   an autonomous AI system
--   a recursive reasoning pipeline
+- an agent framework
+- a dynamic tool orchestrator
+- a workflow engine
+- an autonomous AI system
+- a recursive reasoning pipeline
 
-The runtime behaves as a **deterministic control-plane execution
-engine**.
+The runtime behaves as a **deterministic control-plane execution engine**. These
+exclusions are structural, not conventional.
 
-------------------------------------------------------------------------
+---
 
-## Execution Pipeline
+## Request Lifecycle
 
-  Stage   Component          Responsibility
-  ------- ------------------ ----------------------------------------------
-  1       CLI                parse command and load runtime configuration
-  2       Execution Engine   orchestrate deterministic runtime execution
-  3       ExecutionContext   construct structured runtime context
-  4       Context Assembly   build model-ready prompt context (ADR-010)
-  5       Provider           perform model inference
-  6       Challenger         bounded audit pass (optional)
-  7       Metadata Logger    record content-safe telemetry
-  8       ExecutionResult    return structured execution result
-
-This pipeline enforces **single-path execution** with explicit
-architectural boundaries.
-
-------------------------------------------------------------------------
-
-# Architecture Quick Start
-
-Core runtime structure:
-
-CLI
-↓
-Execution Engine
-↓
-ExecutionContext
-↓
-Context Assembly (ADR-010)
-↓
-Provider
-↓
-Challenger (optional)
-
-Key guarantees enforced by the architecture:
-
--   deterministic routing
--   bounded audit passes
--   bounded revision passes
--   invariant-protected runtime behaviour
--   governance-first system evolution
-
-Primary architecture documentation:
-
-docs/overview/ → system overview and roadmap
-docs/architecture/ → architecture definitions
-ADR/ → architectural decision records
-
-------------------------------------------------------------------------
-
-## Quick Run Example
-
-The reference runtime can be executed locally through the CLI.
-
-Example command:
-
-``` bash
-python -m io_iii run executor --prompt "Explain deterministic routing in one sentence."
+```mermaid
+sequenceDiagram
+participant User
+participant CLI as cli.py
+participant Routing as routing.py
+participant Engine as engine.py
+participant Context as context_assembly.py
+participant Provider
+participant Challenger
+User->>CLI: run executor prompt
+CLI->>CLI: load configuration
+CLI->>Routing: resolve_route()
+Routing-->>CLI: provider + model
+CLI->>Engine: engine.run()
+Engine->>Engine: create SessionState
+Engine->>Engine: create ExecutionContext
+Engine->>Context: assemble_context()
+Context-->>Engine: structured prompt
+Engine->>Provider: generate()
+Provider-->>Engine: draft response
+alt audit enabled
+Engine->>Challenger: audit draft
+Challenger-->>Engine: verdict
+end
+Engine-->>CLI: final output
+CLI-->>User: display result
 ```
 
-Expected behaviour:
+---
 
--   the CLI loads runtime configuration
--   deterministic routing selects the provider
--   the execution engine runs the prompt pipeline
--   the challenger may optionally audit the output (if enabled)
+## System Layer Architecture
 
-------------------------------------------------------------------------
-
-### Architecture Validation
-
-Run the invariant validator:
-
-``` bash
-python architecture/runtime/scripts/validate_invariants.py
-```
-
-Run the regression test suite:
-
-``` bash
-pytest
-```
-
-These commands verify that the system still satisfies its **core
-architectural invariants**.
-
-------------------------------------------------------------------------
-
-# Runtime Architecture
-
-``` mermaid
+```mermaid
 flowchart TB
-
 subgraph Interface
 CLI["CLI Interface"]
 end
-
 subgraph ControlPlane["Control Plane"]
 ENGINE["Execution Engine"]
 CTX["ExecutionContext"]
-ASSEMBLY["Context Assembly (ADR-010)"]
+ASSEMBLY["Context Assembly"]
 end
-
 subgraph Runtime
 PROVIDER["Provider Adapter"]
 end
-
 subgraph Governance
-CHALLENGER["Challenger Layer (ADR-008)"]
+CHALLENGER["Challenger Layer"]
 end
-
 CLI --> ENGINE
 ENGINE --> CTX
 CTX --> ASSEMBLY
@@ -182,43 +114,106 @@ ASSEMBLY --> PROVIDER
 PROVIDER --> CHALLENGER
 ```
 
-The runtime implements a **deterministic execution pipeline** with
-explicit architectural boundaries between interface, control plane,
-runtime providers, and governance layers.
+---
 
-------------------------------------------------------------------------
+## Python Module Architecture
 
-# Capability Invocation (Phase 3)
+```mermaid
+flowchart LR
+subgraph CLI
+    ID_CLI["io_iii/cli.py"]
+end
+subgraph Core
+    ID_ENGINE["core/engine.py"]
+    ID_SESSION["core/session_state.py"]
+    ID_CTX["core/execution_context.py"]
+    ID_ASSEMBLY["core/context_assembly.py"]
+end
+subgraph Routing
+    ID_ROUTING["routing.py"]
+end
+subgraph Providers
+    ID_OLLAMA["providers/ollama_provider.py"]
+    ID_NULLP["providers/null_provider.py"]
+end
+subgraph Config
+    ID_CONFIG["config loader"]
+    ID_RUNTIMECFG["runtime/config/*.yaml"]
+end
+ID_CLI --> ID_CONFIG
+ID_CLI --> ID_ROUTING
+ID_CLI --> ID_ENGINE
+ID_CONFIG --> ID_RUNTIMECFG
+ID_ENGINE --> ID_SESSION
+ID_ENGINE --> ID_CTX
+ID_ENGINE --> ID_ASSEMBLY
+ID_ENGINE --> ID_OLLAMA
+ID_ENGINE --> ID_NULLP
+ID_ROUTING --> ID_OLLAMA
+ID_ROUTING --> ID_NULLP
+```
 
-Capabilities are introduced in **Phase 3** as bounded runtime
-extensions.
+---
+
+## Quick Run
+
+```bash
+python -m io_iii run executor --prompt "Explain deterministic routing in one sentence."
+```
+
+Expected behaviour:
+
+- the CLI loads runtime configuration
+- deterministic routing selects the provider
+- the execution engine runs the prompt pipeline
+- the challenger optionally audits the output (if enabled)
+
+---
+
+## Architecture Validation
+
+Run the invariant validator:
+
+```bash
+python architecture/runtime/scripts/validate_invariants.py
+```
+
+Run the full test suite:
+
+```bash
+pytest
+```
+
+Both commands verify that the system satisfies its core architectural invariants.
+
+---
+
+## Capability Invocation (Phase 3)
+
+Capabilities are introduced in Phase 3 as bounded runtime extensions.
 
 Capabilities are:
 
--   explicitly invoked
--   registry-controlled
--   single-execution only
--   payload-bounded
--   output-bounded
+- explicitly invoked
+- registry-controlled
+- single-execution only
+- payload-bounded
+- output-bounded
 
 They do **not** introduce:
 
--   autonomous behaviour
--   tool selection
--   recursive execution
--   workflow orchestration
+- autonomous behaviour
+- tool selection
+- recursive execution
+- workflow orchestration
 
-Capability invocation path:
-
-``` mermaid
+```mermaid
 sequenceDiagram
-
 participant CLI
 participant Engine
 participant Registry
 participant Capability
 participant Result
-
 CLI->>Engine: run(capability_id)
 Engine->>Registry: resolve capability
 Registry-->>Engine: capability spec
@@ -227,263 +222,142 @@ Capability-->>Engine: CapabilityResult
 Engine-->>Result: ExecutionResult.meta["capability"]
 ```
 
-This preserves **deterministic control-plane behaviour**.
+---
 
-------------------------------------------------------------------------
+## Core Invariants
 
-# Design Intent
+IO-III enforces the following system-level guarantees:
 
-IO-III is engineered under strict architectural constraints:
+- deterministic routing only
+- challenger enforcement internal to the engine
+- audit execution explicitly user-toggled
+- bounded audit passes (`MAX_AUDIT_PASSES = 1`)
+- bounded revision passes (`MAX_REVISION_PASSES = 1`)
+- no recursion loops
+- no multi-pass execution chains
+- single unified final output
 
--   deterministic routing
--   bounded execution
--   no recursion loops
--   no unbounded chains
--   governance before feature expansion
--   local-first architecture
--   contract + invariant enforcement as stability mechanisms
+These are treated as contract-level invariants enforced by the test suite and invariant
+validator, not by convention.
 
-Structural integrity is prioritised over capability growth.
+---
 
-------------------------------------------------------------------------
+## Governance Model
 
-# Governance Model (ADR-First)
+All structural changes follow an ADR-first development model. Any modification affecting:
 
-All structural changes follow an **ADR-first development model**.
+- control-plane design
+- routing logic or fallback policy
+- provider or model selection
+- audit gate behaviour
+- persona binding or runtime governance
+- memory or persistence layers
+- cross-model interaction
 
-Any modification affecting:
+requires a new Architecture Decision Record inside `ADR/` before implementation begins.
+The repository functions as the source of truth for IO-III architectural boundaries.
 
--   control-plane design
--   routing logic or fallback policy
--   provider or model selection
--   audit gate behaviour
--   persona binding or runtime governance
--   memory or persistence layers
--   cross-model interaction
+---
 
-requires a new architecture decision record inside:
+## Control-Plane Reference Implementation
 
-`ADR/`
-
-before implementation changes occur.
-
-This repository therefore functions as the **source of truth for IO-III
-architectural boundaries**.
-
-------------------------------------------------------------------------
-
-# Documentation Structure
-
-The documentation follows a structured classification system.
-
-DOC-OVW → system overview documents
-DOC-ARCH → architecture definitions
-DOC-IMPL → implementation documentation
-DOC-RUN → runtime configuration documentation
-DOC-GOV → governance documentation
-ADR → architectural decision records
-
-Primary entry points:
-
-docs/overview/DOC-OVW-001-architecture-overview-index.md
-docs/architecture/DOC-ARCH-001-runtime-architecture.md
-
-------------------------------------------------------------------------
-
-# Repository Layout
-
-    ADR/                       → architecture decision records
-
-    docs/
-      overview/                → high-level system documentation
-      architecture/            → architecture definitions
-      governance/              → governance rules and lifecycle policies
-      runtime/                 → runtime metadata and execution contracts
-
-    architecture/
-      runtime/
-        config/                → canonical runtime configuration
-        tests/                 → invariant fixtures
-        scripts/               → invariant validator
-
-    io_iii/                    → reference runtime implementation
-      core/                    → engine components
-      providers/               → provider adapters
-      routing.py               → deterministic routing
-      cli.py                   → CLI interface
-
-------------------------------------------------------------------------
-
-# Control-Plane Reference Implementation
-
-The repository includes a **minimal Python implementation of the IO-III
-control plane**.
-
-The runtime implementation is deliberately minimal by design. Its
-purpose is to demonstrate **boundary discipline** and **deterministic
-control-plane structure** under governance constraints.
+The Python implementation is deliberately minimal. Its purpose is to demonstrate boundary
+discipline and deterministic control-plane structure under governance constraints.
 
 Core modules:
 
-  Module                         Responsibility
-  ------------------------------ --------------------------------
-  config.py                      runtime config loading
-  routing.py                     deterministic route resolution
-  core/engine.py                 execution engine
-  core/context_assembly.py       context assembly (ADR-010)
-  core/session_state.py          control-plane state container
-  core/execution_context.py      engine-local runtime container
-  providers/null_provider.py     null provider adaptor
-  providers/ollama_provider.py   Ollama provider adaptor
-  cli.py                         CLI entrypoint
+| Module | Responsibility |
+|---|---|
+| `config.py` | runtime config loading |
+| `routing.py` | deterministic route resolution |
+| `core/engine.py` | execution engine |
+| `core/context_assembly.py` | context assembly (ADR-010) |
+| `core/session_state.py` | control-plane state container |
+| `core/execution_context.py` | engine-local runtime container |
+| `providers/null_provider.py` | null provider adaptor |
+| `providers/ollama_provider.py` | Ollama provider adaptor |
+| `cli.py` | CLI entrypoint |
 
 Execution path:
 
 `CLI → Engine.run() → ExecutionContext → Context Assembly → Provider → Challenger (optional)`
 
-This layering guarantees **single-path deterministic execution**.
+---
 
-------------------------------------------------------------------------
+## Documentation Structure
 
-# Invariant Suite
+```
+DOC-OVW   system overview documents
+DOC-ARCH  architecture definitions
+DOC-IMPL  implementation documentation
+DOC-RUN   runtime configuration documentation
+DOC-GOV   governance documentation
+ADR       architectural decision records
+```
 
-Architectural guarantees are protected by invariant fixtures.
+Primary entry points:
+```
+docs/overview/DOC-OVW-001-architecture-overview-index.md
+docs/architecture/DOC-ARCH-001-runtime-architecture.md
+```
 
-Location:
+---
 
-`architecture/runtime/tests/invariants/`
+## Repository Layout
 
-Validator:
+```
+ADR/                       architecture decision records
 
-`architecture/runtime/scripts/validate_invariants.py`
+docs/
+  overview/                high-level system documentation
+  architecture/            architecture definitions
+  governance/              governance rules and lifecycle policies
+  runtime/                 runtime metadata and execution contracts
 
-These enforce properties such as:
+architecture/
+  runtime/
+    config/                canonical runtime configuration
+    tests/                 invariant fixtures
+    scripts/               invariant validator
 
--   routing table integrity
--   cloud providers disabled by default
--   logging defaults (metadata-only)
+io_iii/                    reference runtime implementation
+  core/                    engine components
+  providers/               provider adapters
+  routing.py               deterministic routing
+  cli.py                   CLI interface
+```
 
-------------------------------------------------------------------------
+---
 
-# Regression Enforcement
+## Milestones
 
-Critical execution guarantees are protected by regression tests.
+### Phase 1 - Control Plane Stabilisation
 
-Example:
+- deterministic routing
+- challenger enforcement (ADR-008)
+- bounded audit gate contract (ADR-009)
+- invariant validation suite
+- regression enforcement
 
-`tests/test_audit_gate_contract.py`
+### Phase 2 - Structural Consolidation
 
-This test ensures the **audit gate contract remains bounded**.
+- SessionState v0 implemented
+- execution engine extracted
+- CLI to engine boundary established
+- context assembly integrated (ADR-010)
+- ExecutionContext introduced
+- challenger ownership consolidated inside the engine
+- provider injection seams implemented
+- tests passing (pytest)
+- invariant validator passing
 
-------------------------------------------------------------------------
+### Phase 3 - Capability Layer
 
-# Core Invariants
+Bounded capability extensions introduced inside the execution engine. Capabilities remain
+deterministic, explicitly invoked, registry-controlled, and single-execution only. No
+autonomous behaviour or dynamic routing introduced.
 
-IO-III enforces the following system-level guarantees:
+### Phase 4 - Context Architecture Formalisation (Active)
 
--   deterministic routing only
--   challenger enforcement internal to the engine
--   audit execution explicitly user-toggled
--   bounded audit passes (MAX_AUDIT_PASSES = 1)
--   bounded revision passes (MAX_REVISION_PASSES = 1)
--   no recursion loops
--   no multi-pass execution chains
--   single unified final output
-
-These are treated as **contract-level invariants**.
-
-------------------------------------------------------------------------
-
-# Non-Goals (Intentional Constraints)
-
-The project intentionally does **not** implement:
-
--   persistent memory
--   retrieval systems (RAG / embeddings)
--   autonomous planning
--   agent loops
--   model arbitration beyond deterministic routing
--   streaming execution
--   automatic audit policies
-
-Future expansion must preserve:
-
--   deterministic control-plane execution
--   bounded runtime guarantees
--   invariant enforcement
-
-------------------------------------------------------------------------
-
-# Milestones
-
-### Phase 1 --- Control Plane Stabilisation
-
--   deterministic routing
--   challenger enforcement (ADR-008)
--   bounded audit gate contract (ADR-009)
--   invariant validation suite
--   regression enforcement
-
-### Phase 2 --- Structural Consolidation
-
--   SessionState v0 implemented
--   execution engine extracted
--   CLI → engine boundary established
--   context assembly integrated (ADR-010)
--   ExecutionContext introduced
--   challenger ownership consolidated inside the engine
--   provider injection seams implemented
--   tests passing (pytest)
--   invariant validator passing
-
-### Phase 3 --- Capability Layer
-
-Phase 3 introduces **bounded capability extensions** inside the
-execution engine.
-
-Capabilities remain:
-
--   deterministic
--   explicitly invoked
--   registry controlled
--   single-execution only
-
-No autonomous behaviour or dynamic routing will be introduced.
-
-------------------------------------------------------------------------
-
-# What This Project Demonstrates
-
-IO-III is an architecture-focused LLM project rather than a
-feature-driven AI tool.
-
-The repository demonstrates:
-
--   systems architecture thinking
--   deterministic runtime design
--   governance-driven engineering (ADR-first development)
--   invariant-protected architecture
--   bounded execution guarantees for LLM systems
--   separation between control plane and runtime providers
-
-The project intentionally prioritises **structural integrity and
-architectural guarantees** over rapid feature expansion.
-
-------------------------------------------------------------------------
-
-# Project Status
-
-Phase 1 | Control Plane Stabilised
-
-Phase 2 | Structural Consolidation Complete
-
-Phase 3 | Capability Layer Complete
-
-**Phase 4 | Context Architecture Formalisation (Active)**
-
-*Phase 5 | Runtime Observability & Optimisation*
-
-*Phase 6 | Memory Architecture*
-
-IO-III prioritises **determinism, governance discipline, and
-architectural clarity** over feature velocity.
+Post-capability architecture layer. Operational evidence gathering. Engine observability
+groundwork.
