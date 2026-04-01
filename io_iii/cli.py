@@ -179,6 +179,30 @@ def cmd_run(args) -> int:
         supported_providers={"null", "ollama"},
     )
 
+    # Provider health check (ADR-011): pre-flight, before SessionState creation.
+    # Skipped for null provider and when --no-health-check is passed.
+    if selection.selected_provider == "ollama" and not getattr(args, "no_health_check", False):
+        try:
+            OllamaProvider.from_config(cfg.providers).check_reachable()
+        except RuntimeError as e:
+            latency_ms = int((time.perf_counter() - t0) * 1000)
+            append_metadata(
+                cfg.logging,
+                {
+                    "request_id": request_id,
+                    "mode": getattr(selection, "mode", None),
+                    "provider": "ollama",
+                    "model": None,
+                    "status": "error",
+                    "latency_ms": latency_ms,
+                    "error_code": "PROVIDER_UNAVAILABLE",
+                    "fallback_used": False,
+                    "fallback_reason": None,
+                    "selected_primary": getattr(selection, "primary_target", None),
+                },
+            )
+            raise
+
     # Prompt source (CLI concern)
     prompt = getattr(args, "prompt", None)
     if not prompt:
@@ -542,6 +566,12 @@ def main(argv=None) -> int:
         type=str,
         default=None,
         help="JSON object payload for capability invocation (must be a JSON object).",
+    )
+    p_run.add_argument(
+        "--no-health-check",
+        action="store_true",
+        dest="no_health_check",
+        help="Skip provider reachability check (for offline/CI use; ADR-011).",
     )
     p_run.set_defaults(func=cmd_run)
 

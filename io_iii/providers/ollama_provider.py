@@ -24,12 +24,28 @@ class OllamaProvider:
 
     @classmethod
     def from_config(cls, providers_cfg: Dict[str, Any]) -> "OllamaProvider":
-        # providers.yaml may contain:
-        # ollama:
-        #   host: http://127.0.0.1:11434
+        # providers.yaml canonical key: ollama.base_url
         cfg = (providers_cfg or {}).get("ollama", {}) if isinstance(providers_cfg, dict) else {}
-        host = cfg.get("host") or os.environ.get("OLLAMA_HOST") or "http://127.0.0.1:11434"
+        host = cfg.get("base_url") or os.environ.get("OLLAMA_HOST") or "http://127.0.0.1:11434"
         return cls(host=host)
+
+    def check_reachable(self, *, timeout_ms: int = 1000) -> None:
+        """
+        Pre-flight reachability check (ADR-011).
+
+        Performs a lightweight GET to the Ollama root endpoint.
+        Raises RuntimeError("PROVIDER_UNAVAILABLE: ollama") if unreachable.
+
+        This is a CLI-boundary concern — do not call from the engine or routing layer.
+        """
+        url = f"{self.host}/"
+        timeout_s = max(0.1, timeout_ms / 1000.0)
+        req = urllib.request.Request(url, method="GET")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout_s):
+                pass
+        except Exception as e:
+            raise RuntimeError(f"PROVIDER_UNAVAILABLE: ollama — {e}") from e
 
     def generate(self, *, model: str, prompt: str) -> str:
         """

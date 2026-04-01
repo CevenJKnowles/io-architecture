@@ -131,6 +131,89 @@ def test_capability_rejects_nonexistent_id(monkeypatch):
         )
 
 
+class SlowCapability:
+    @property
+    def spec(self) -> CapabilitySpec:
+        return CapabilitySpec(
+            capability_id="test.slow",
+            version="v0",
+            category=CapabilityCategory.COMPUTATION,
+            description="Test-only slow capability.",
+            bounds=CapabilityBounds(max_calls=1, timeout_ms=50, max_input_chars=1000, max_output_chars=1000),
+        )
+
+    def invoke(self, ctx: CapabilityContext, payload):
+        time.sleep(0.5)  # 500ms > 50ms timeout
+        return CapabilityResult(ok=True, output={"done": True})
+
+
+class BigOutputCapability:
+    @property
+    def spec(self) -> CapabilitySpec:
+        return CapabilitySpec(
+            capability_id="test.bigout",
+            version="v0",
+            category=CapabilityCategory.TRANSFORMATION,
+            description="Test-only large-output capability.",
+            bounds=CapabilityBounds(max_calls=1, timeout_ms=500, max_input_chars=1000, max_output_chars=10),
+        )
+
+    def invoke(self, ctx: CapabilityContext, payload):
+        return CapabilityResult(ok=True, output={"data": "x" * 1000})
+
+
+def test_capability_enforces_timeout(monkeypatch):
+    reg = CapabilityRegistry([SlowCapability()])
+    deps = RuntimeDependencies(
+        ollama_provider_factory=lambda _cfg: FakeProvider(),
+        challenger_fn=None,
+        capability_registry=reg,
+    )
+    cfg = types.SimpleNamespace(
+        providers={},
+        routing={"routing_table": {}},
+        logging={"schema": "test"},
+        config_dir=".",
+    )
+    state = _make_state(provider="null")
+    with pytest.raises(ValueError, match="CAPABILITY_TIMEOUT"):
+        engine.run(
+            cfg=cfg,
+            session_state=state,
+            user_prompt="x",
+            audit=False,
+            deps=deps,
+            capability_id="test.slow",
+            capability_payload={},
+        )
+
+
+def test_capability_enforces_output_size(monkeypatch):
+    reg = CapabilityRegistry([BigOutputCapability()])
+    deps = RuntimeDependencies(
+        ollama_provider_factory=lambda _cfg: FakeProvider(),
+        challenger_fn=None,
+        capability_registry=reg,
+    )
+    cfg = types.SimpleNamespace(
+        providers={},
+        routing={"routing_table": {}},
+        logging={"schema": "test"},
+        config_dir=".",
+    )
+    state = _make_state(provider="null")
+    with pytest.raises(ValueError, match="CAPABILITY_OUTPUT_TOO_LARGE"):
+        engine.run(
+            cfg=cfg,
+            session_state=state,
+            user_prompt="x",
+            audit=False,
+            deps=deps,
+            capability_id="test.bigout",
+            capability_payload={},
+        )
+
+
 @pytest.mark.parametrize(
     "bad_payload",
     [
@@ -169,3 +252,54 @@ def test_capability_rejects_invalid_payload_types(monkeypatch, bad_payload):
         )
 
     assert str(ei.value).startswith("CAPABILITY_INVALID_PAYLOAD")
+
+
+def test_engine_sets_latency_ms_on_returned_state():
+    reg = CapabilityRegistry([EchoCapability()])
+    deps = RuntimeDependencies(
+        ollama_provider_factory=lambda _cfg: FakeProvider(),
+        challenger_fn=None,
+        capability_registry=reg,
+    )
+    cfg = types.SimpleNamespace(
+        providers={},
+        routing={"routing_table": {}},
+        logging={"schema": "test"},
+        config_dir=".",
+    )
+    started_at_ms = int(time.time() * 1000)
+    state = SessionState(
+        request_id="test-latency",
+        started_at_ms=started_at_ms,
+        mode="executor",
+        config_dir=".",
+        route=RouteInfo(
+            mode="executor",
+            primary_target=None,
+            secondary_target=None,
+            selected_target=None,
+            selected_provider="null",
+            fallback_used=False,
+            fallback_reason=None,
+            boundaries={},
+        ),
+        audit=AuditGateState(audit_enabled=False),
+        status="ok",
+        provider="null",
+        model=None,
+        route_id="executor",
+        persona_contract_version="1.0",
+        logging_policy={},
+    )
+    state2, _res = engine.run(
+        cfg=cfg,
+        session_state=state,
+        user_prompt="x",
+        audit=False,
+        deps=deps,
+        capability_id="test.echo",
+        capability_payload={"a": 1},
+    )
+    assert state2.latency_ms is not None
+    assert isinstance(state2.latency_ms, int)
+    assert state2.latency_ms >= 0

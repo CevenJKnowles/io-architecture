@@ -18,8 +18,8 @@ Local Path
 Current Phase  
 Phase 3 — Runtime Foundation
 
-Status  
-Completed and hardened
+Status
+Completed, hardened, and gap-closed (2026-04-01)
 
 Tag  
 v0.3.2
@@ -365,6 +365,104 @@ Forbidden logging fields:
 - draft
 - revision
 - content
+
+---
+
+# Post-Phase 3 Gap Closure — 2026-04-01
+
+Work performed against gaps identified during Phase 3 review.
+
+---
+
+## G1 — Capability bounds docstring corrected
+
+File
+`io_iii/core/capabilities.py`
+
+The `CapabilityBounds` docstring stated that bounds were "NOT yet enforced by a dedicated capability runner." This was incorrect. Enforcement was already present in `_invoke_capability_once` (engine.py) as part of M3.15. Docstring updated to accurately describe enforcement points and error codes.
+
+---
+
+## G2 — Capability bounds test coverage completed
+
+File
+`tests/test_capability_invocation.py`
+
+Input-too-large enforcement was tested. Timeout and output-too-large enforcement were not. Two tests added:
+
+- `test_capability_enforces_timeout` — verifies `CAPABILITY_TIMEOUT` on a slow capability
+- `test_capability_enforces_output_size` — verifies `CAPABILITY_OUTPUT_TOO_LARGE` on an oversized result
+
+---
+
+## G3 — ADR-003 promoted to active
+
+File
+`ADR/ADR-003-telemetry-logging-and-retention-policy.md`
+
+Status promoted from `draft v0.1` to `active v1.0`. Implementation Notes updated from aspirational notes to a factual record of what was built (`metadata_logging.py`, `logging.yaml`, `content_safety.py`).
+
+---
+
+## G4 — `latency_ms` auto-capture in SessionState
+
+File
+`io_iii/core/engine.py`
+
+`SessionState.latency_ms` was declared and validated but never populated by the engine. Both return paths in `engine.run()` (null route and ollama route) now compute and set `latency_ms` from `started_at_ms` before returning the final state. Test added:
+
+- `test_engine_sets_latency_ms_on_returned_state`
+
+---
+
+## G5 — Provider health check (ADR-011)
+
+Files
+`ADR/ADR-011-provider-health-check-policy.md`
+`io_iii/providers/ollama_provider.py`
+`io_iii/cli.py`
+`io_iii/tests/test_provider_health_check.py`
+
+New ADR written and indexed. Adds a pre-flight provider reachability check at the CLI boundary (between routing resolution and SessionState creation). Key properties:
+
+- Lightweight `GET <host>/` check on Ollama root endpoint
+- Raises `PROVIDER_UNAVAILABLE: ollama` on failure with metadata log entry
+- No implicit cloud fallback (ADR-004 preserved)
+- Skipped for null provider and via `--no-health-check` flag (offline/CI use)
+- `check_reachable()` method added to `OllamaProvider`
+- Three tests added covering reachable, connection error, and timeout cases
+
+---
+
+## G6 — ADR-011 added to index
+
+File
+`ADR/README.md`
+
+ADR-011 added to the index. (ADR-010 was already present.)
+
+---
+
+## G7 — Provider config key mismatch corrected
+
+File
+`io_iii/providers/ollama_provider.py`
+
+`OllamaProvider.from_config()` was reading `cfg.get("host")` but `providers.yaml` defines the key as `base_url`. The config value was silently ignored at runtime; the provider always fell back to the hardcoded default or `OLLAMA_HOST` env var. Fixed to read `base_url`, aligning code with the canonical config schema and ADR-011.
+
+---
+
+## Verification
+
+Tests: **44 passing**
+
+Invariant validator: **8/8 PASS**
+
+Standard verification commands:
+
+python -m pytest
+python architecture/runtime/scripts/validate_invariants.py
+python -m io_iii capabilities --json
 
 ---
 

@@ -399,7 +399,8 @@ def run(
             assert_no_forbidden_keys(capability_meta)
             meta["capability"] = capability_meta
 
-        state2 = _replace(session_state, status="ok", provider="null", model=None)
+        latency_ms = max(0, int(time.time() * 1000) - session_state.started_at_ms)
+        state2 = _replace(session_state, status="ok", provider="null", model=None, latency_ms=latency_ms)
         return state2, ExecutionResult(
             message=message,
             meta=meta,
@@ -503,7 +504,8 @@ def run(
         assert_no_forbidden_keys(capability_meta)
         meta["capability"] = capability_meta
 
-    state2 = _replace(session_state, status="ok", provider="ollama", model=model)
+    latency_ms = max(0, int(time.time() * 1000) - session_state.started_at_ms)
+    state2 = _replace(session_state, status="ok", provider="ollama", model=model, latency_ms=latency_ms)
     # Also reflect audit verdict/revised into state.audit (control-plane)
     state2 = _replace(
         state2,

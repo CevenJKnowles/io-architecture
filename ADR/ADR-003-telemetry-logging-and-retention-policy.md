@@ -2,13 +2,13 @@
 id: "ADR-003"
 title: "Telemetry, Logging, and Retention Policy"
 type: "adr"
-status: "draft"
-version: "v0.1"
+status: "active"
+version: "v1.0"
 canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-04-01"
 tags:
   - "telemetry"
   - "logging"
@@ -107,9 +107,13 @@ Accepted (balanced, testable, low-risk).
 
 ## Implementation Notes (Non-normative)
 
-- Define a single log schema version (e.g., `log_schema: v1`)
-- Store logs under a dedicated directory (e.g., `./IO-III/runtime/logs/`)
-- Consider log rotation to enforce retention automatically
+Implemented in Phase 3 (M3.8, M3.12):
+
+- Log schema version: `io-iii-metadata-jsonl v1.0` (set as default in `metadata_logging.py`)
+- Metadata log location: `./architecture/runtime/logs/metadata.jsonl` (JSONL format)
+- Content-safe guard: recursive forbidden-key scan via `assert_no_forbidden_keys()` in `core/content_safety.py`
+- Configuration: `architecture/runtime/config/logging.yaml` (canonical, references this ADR)
+- Retention enforcement is policy-only at this stage; log rotation is not automated
 
 ## Related
 
