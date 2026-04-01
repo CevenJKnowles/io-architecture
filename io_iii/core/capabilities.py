@@ -23,9 +23,12 @@ class CapabilityBounds:
     """
     Hard bounds for capability execution.
 
-    Phase 3 contract only:
-    - bounds are declared and testable
-    - they are NOT yet enforced by a dedicated capability runner
+    All bounds are enforced at invocation time by the engine's capability runner
+    (_invoke_capability_once in engine.py):
+    - max_input_chars: checked before invocation (CAPABILITY_INPUT_TOO_LARGE)
+    - timeout_ms: enforced via ThreadPoolExecutor timeout (CAPABILITY_TIMEOUT)
+    - max_output_chars: checked after invocation (CAPABILITY_OUTPUT_TOO_LARGE)
+    - max_calls: architectural constraint — one invocation per engine.run() call
     """
     max_calls: int = 1
     timeout_ms: int = 2_000

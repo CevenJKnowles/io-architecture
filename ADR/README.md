@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-03-03"
+updated: "2026-04-01"
 tags:
   - "governance"
   - "adr"
@@ -51,5 +51,11 @@ architecture, implementation, and documentation.
 - **ADR-008 — Challenger Enforcement Layer (Audit + Gate)**  
   Path: `./ADR/ADR-008-challenger-enforcement-layer.md`
 
-- **ADR-009 — Audit Gate Contract v1.0**  
+- **ADR-009 — Audit Gate Contract v1.0**
   Path: `./ADR/ADR-009-audit-gate-contract-v1.0.md`
+
+- **ADR-010 — Context Assembly Layer Definition**
+  Path: `./ADR/ADR-010-context-assembly-layer-definition.md`
+
+- **ADR-011 — Provider Health Check Policy**
+  Path: `./ADR/ADR-011-provider-health-check-policy.md`

@@ -82,7 +82,7 @@ def test_audit_and_revision_are_bounded(monkeypatch, capsys):
     monkeypatch.setattr(engine, "_run_challenger", fake_run_challenger)
 
     # --- Act: run cmd_run with audit enabled
-    args = types.SimpleNamespace(mode="executor", prompt="State 3 facts about Berlin.", audit=True, config_dir=None)
+    args = types.SimpleNamespace(mode="executor", prompt="State 3 facts about Berlin.", audit=True, config_dir=None, no_health_check=True)
     rc = cli.cmd_run(args)
     assert rc == 0
 
