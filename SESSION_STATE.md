@@ -14,11 +14,11 @@
 
 **Current Phase:** Phase 4 — Post-Capability Architecture Layer
 
-**Status:** Active (M4.10 complete; M4.11 next — implementation-safe)
+**Status:** Phase 4 complete (M4.11 delivered; taggable)
 
-**Tag:** v0.3.2
+**Tag:** v0.4.0 (candidate)
 
-**Branch:** main
+**Branch:** phase-4-11
 
 ---
 
@@ -334,7 +334,7 @@ All invariants PASS.
 
 **Pull request:** Phase 3 Hardening merged. Phase 4 implementation active on `main`.
 
-**Repository state:** Phase 4 active. M4.0–M4.10 complete. M4.11 next (gated on ADR-020).
+**Repository state:** Phase 4 complete. M4.0–M4.11 delivered. Taggable as v0.4.0.
 
 ---
 
@@ -506,12 +506,16 @@ End of Phase 3.
 - M4.10 Run Identity Contract — `run_id` UUIDv4, lineage via `source_run_id`, ADR-018
 - M4.10 Checkpoint Persistence Contract — JSON at `<root>/<run_id>.json`, atomic writes, five integrity checks, ADR-019
 - M4.10 Replay/Resume Execution Contract — replay from step 0, resume from first incomplete step, ADR-020
+- M4.11 Replay/Resume Layer Implementation — `replay_resume.py`, CLI `replay`/`resume` subcommands, ADR-019/020 enforcement, 28 contract tests
 
-### Verification Snapshot (M4.10)
+### Verification Snapshot (M4.11)
 
-- `pytest`: 325 passing
+- `pytest`: 353 passing
 - invariant validator: passing
 
-### Next Execution Target
+### Phase 4 Close State
 
-M4.11 — Replay/Resume Layer Implementation (all prerequisite ADRs accepted; implementation-safe)
+Phase 4 is complete. All milestones M4.0–M4.11 delivered.
+The frozen M4.7–M4.9 execution stack was not modified.
+Replay/resume is structurally isolated above it.
+Repository is in a taggable phase-close state (v0.4.0 candidate).

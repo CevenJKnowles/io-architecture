@@ -114,6 +114,7 @@ Governed surface:
 - run identity contract — `run_id` UUIDv4, lineage via `source_run_id` (ADR-018, M4.10)
 - checkpoint persistence contract — local JSON, deterministic lookup by `run_id` (ADR-019, M4.10)
 - replay/resume execution contract — bounded replay from step 0, resume from first incomplete step (ADR-020, M4.10)
+- replay/resume layer implementation — `replay_resume.py`, CLI subcommands, checkpoint I/O (M4.11 — Phase 4 closed)
 
 This phase must never expand beyond the ADR-012 contract without a new explicit ADR.
 
