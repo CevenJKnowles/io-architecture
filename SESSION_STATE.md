@@ -15,16 +15,16 @@ Local Path
 
 # Phase Status
 
-Current Phase  
+Current Phase
 Phase 3 — Runtime Foundation
 
 Status
 Completed, hardened, and gap-closed (2026-04-01)
 
-Tag  
+Tag
 v0.3.2
 
-Branch  
+Branch
 main
 
 ---
@@ -50,7 +50,7 @@ The runtime now provides:
 ## M3.1 — Capability architecture definition
 Document architectural design for the capability system.
 
-File  
+File
 docs/architecture/DOC-ARCH-005-io-iii-capability-layer-definition.md
 
 ---
@@ -83,11 +83,11 @@ Integrate capability execution path into the IO-III engine.
 
 Execution pipeline:
 
-CLI  
-→ routing  
-→ engine  
-→ capability registry  
-→ capability execution  
+CLI
+→ routing
+→ engine
+→ capability registry
+→ capability execution
 → telemetry + trace
 
 ---
@@ -198,7 +198,7 @@ Expose registry through deterministic CLI inspection.
 
 Commands:
 
-python -m io_iii capabilities  
+python -m io_iii capabilities
 python -m io_iii capabilities --json
 
 Purpose:
@@ -245,8 +245,8 @@ Route challenger and revision prompt construction through the same context assem
 
 Execution path:
 
-persona_contract  
-→ context_assembly  
+persona_contract
+→ context_assembly
 → provider execution
 
 Purpose:
@@ -299,12 +299,12 @@ The runtime can now:
 
 Execution architecture:
 
-CLI  
-→ routing  
-→ engine  
-→ context assembly / capability registry  
-→ bounded execution  
-→ execution trace  
+CLI
+→ routing
+→ engine
+→ context assembly / capability registry
+→ bounded execution
+→ execution trace
 → content-safe metadata logging
 
 ---
@@ -320,8 +320,8 @@ Verification status:
 
 Standard verification commands:
 
-python -m pytest  
-python architecture/runtime/scripts/validate_invariants.py  
+python -m pytest
+python architecture/runtime/scripts/validate_invariants.py
 python -m io_iii capabilities --json
 
 All invariants PASS.
@@ -330,16 +330,16 @@ All invariants PASS.
 
 # Current Repository State
 
-Branch  
+Branch
 main
 
-Tag  
+Tag
 v0.3.2
 
-Pull request  
+Pull request
 Phase 3 Hardening merged.
 
-Repository state  
+Repository state
 Phase 3 complete, hardened, and stabilised.
 
 ---
@@ -498,3 +498,20 @@ It should be treated as the authoritative handoff state between Phase 3 and Phas
 ---
 
 End of Phase 3
+
+---
+
+## Phase 4 Activation — M4.0 Complete
+
+**Status:** Active
+**Phase:** 4 — Post-Capability Architecture Layer
+**Current Milestone:** M4.1 — Task Specification Schema
+
+### Completed
+- ADR-012 accepted and indexed
+- Phase 4 bounded orchestration contract frozen
+- DOC-ARCH-012 promoted to active v0.3
+- Phase 4 milestone chain M4.0–M4.10 canonicalised
+
+### Next Execution Target
+Implement `TaskSpec` as a serialisable declarative contract object that resolves to exactly one static route and one bounded execution path.
