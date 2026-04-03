@@ -104,6 +104,7 @@ def run(
         route_id=selection.mode,
         persona_contract_version=PERSONA_CONTRACT_VERSION,
         persona_id=None,
+        task_spec_id=task_spec.task_spec_id,  # M4.4: binding reference to upstream TaskSpec
         logging_policy=cfg.logging,
     )
 
