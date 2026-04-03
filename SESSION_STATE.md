@@ -1,35 +1,28 @@
 # SESSION_STATE
 
-# IO-III Session State
+## IO-III Session State
 
-## Project
-IO-III — Deterministic Local LLM Runtime Architecture
+**Project:** IO-III — Deterministic Local LLM Runtime Architecture
 
-Repository
-https://github.com/CevenJKnowles/io-architecture
+**Repository:** [CevenJKnowles/io-architecture](https://github.com/CevenJKnowles/io-architecture)
 
-Local Path
-/home/cjk/Dev/IO-III/io-architecture
+**Local Path:** `/home/cjk/Dev/IO-III/io-architecture`
 
 ---
 
-# Phase Status
+## Phase Status
 
-Current Phase
-Phase 4 — Post-Capability Architecture Layer
+**Current Phase:** Phase 4 — Post-Capability Architecture Layer
 
-Status
-Active (M4.6 complete; M4.7 next)
+**Status:** Active (M4.10 complete; M4.11 next — implementation-safe)
 
-Tag
-v0.3.2
+**Tag:** v0.3.2
 
-Branch
-main
+**Branch:** main
 
 ---
 
-# Phase 3 Goal
+## Phase 3 Goal
 
 Establish the deterministic runtime kernel of IO-III while preserving all architectural invariants.
 
@@ -45,17 +38,18 @@ The runtime now provides:
 
 ---
 
-# Phase 3 Milestones
+## Phase 3 Milestones
 
-## M3.1 — Capability architecture definition
+### M3.1 — Capability architecture definition
+
 Document architectural design for the capability system.
 
-File
-docs/architecture/DOC-ARCH-005-io-iii-capability-layer-definition.md
+File: `docs/architecture/DOC-ARCH-005-io-iii-capability-layer-definition.md`
 
 ---
 
-## M3.2 — Capability contracts
+### M3.2 — Capability contracts
+
 Introduce capability specification structures.
 
 Core components introduced:
@@ -67,7 +61,8 @@ Core components introduced:
 
 ---
 
-## M3.3 — Capability registry
+### M3.3 — Capability registry
+
 Introduce deterministic registry system for capabilities.
 
 Properties:
@@ -78,21 +73,20 @@ Properties:
 
 ---
 
-## M3.4 — Capability invocation path
+### M3.4 — Capability invocation path
+
 Integrate capability execution path into the IO-III engine.
 
 Execution pipeline:
 
-CLI
-→ routing
-→ engine
-→ capability registry
-→ capability execution
-→ telemetry + trace
+```text
+CLI → routing → engine → capability registry → capability execution → telemetry + trace
+```
 
 ---
 
-## M3.5 — Execution bounds enforcement
+### M3.5 — Execution bounds enforcement
+
 Introduce strict runtime bounds:
 
 - max calls
@@ -102,53 +96,50 @@ Introduce strict runtime bounds:
 
 ---
 
-## M3.6 — Content safety guardrails
+### M3.6 — Content safety guardrails
+
 Ensure capability output cannot leak sensitive content into logs.
 
 Only structured metadata may be logged.
 
 ---
 
-## M3.7 — Execution trace integration
+### M3.7 — Execution trace integration
+
 Capability execution is integrated into the IO-III execution trace system.
 
-Trace stage:
-
-capability_execution
+Trace stage: `capability_execution`
 
 ---
 
-## M3.8 — Metadata logging integration
+### M3.8 — Metadata logging integration
+
 Capability executions produce content-safe metadata records.
 
-Log location
-
-architecture/runtime/logs/metadata.jsonl
+Log location: `architecture/runtime/logs/metadata.jsonl`
 
 ---
 
-## M3.9 — CLI capability execution
-Introduce CLI command:
+### M3.9 — CLI capability execution
 
-python -m io_iii capability <capability_id> <payload>
-
----
-
-## M3.10 — Capability registry exposure
-CLI capability listing introduced:
-
-python -m io_iii capabilities
+Introduce CLI command: `python -m io_iii capability <capability_id> <payload>`
 
 ---
 
-## M3.11 — Capability JSON inspection
-Machine-readable output added:
+### M3.10 — Capability registry exposure
 
-python -m io_iii capabilities --json
+CLI capability listing introduced: `python -m io_iii capabilities`
 
 ---
 
-## M3.12 — Capability telemetry integration
+### M3.11 — Capability JSON inspection
+
+Machine-readable output added: `python -m io_iii capabilities --json`
+
+---
+
+### M3.12 — Capability telemetry integration
+
 Capability executions produce structured metadata:
 
 - capability_id
@@ -158,28 +149,33 @@ Capability executions produce structured metadata:
 
 ---
 
-## M3.13 — Capability trace instrumentation
+### M3.13 — Capability trace instrumentation
+
 Execution trace records capability execution stage.
 
 ---
 
-## M3.14 — Payload validation
+### M3.14 — Payload validation
+
 Capability payload validation added.
 
 ---
 
-## M3.15 — Capability bounds enforcement
+### M3.15 — Capability bounds enforcement
+
 Runtime guardrails ensure deterministic bounded execution.
 
 ---
 
-## M3.16 — CLI capability command
+### M3.16 — CLI capability command
+
 Stable CLI execution command finalised.
 
 ---
 
-## M3.17 — Demonstration capabilities
-Introduce deterministic example capabilities.
+### M3.17 — Demonstration capabilities
+
+Introduce deterministic example capabilities:
 
 - cap.echo_json
 - cap.json_pretty
@@ -193,13 +189,14 @@ Purpose:
 
 ---
 
-## M3.18 — Capability registry JSON inspection
+### M3.18 — Capability registry JSON inspection
+
 Expose registry through deterministic CLI inspection.
 
 Commands:
 
-python -m io_iii capabilities
-python -m io_iii capabilities --json
+- `python -m io_iii capabilities`
+- `python -m io_iii capabilities --json`
 
 Purpose:
 
@@ -209,7 +206,8 @@ Purpose:
 
 ---
 
-## M3.19 — Session state enforcement
+### M3.19 — Session state enforcement
+
 Wire `validate_session_state()` into the CLI execution path.
 
 Purpose:
@@ -220,7 +218,8 @@ Purpose:
 
 ---
 
-## M3.20 — Invariant test integration
+### M3.20 — Invariant test integration
+
 Integrate the invariant validator into pytest.
 
 Purpose:
@@ -230,7 +229,8 @@ Purpose:
 
 ---
 
-## M3.21 — Routing determinism test
+### M3.21 — Routing determinism test
+
 Add explicit routing determinism coverage.
 
 Purpose:
@@ -240,14 +240,11 @@ Purpose:
 
 ---
 
-## M3.22 — ADR-010 seam closure
+### M3.22 — ADR-010 seam closure
+
 Route challenger and revision prompt construction through the same context assembly boundary as executor prompts.
 
-Execution path:
-
-persona_contract
-→ context_assembly
-→ provider execution
+Execution path: `persona_contract → context_assembly → provider execution`
 
 Purpose:
 
@@ -256,7 +253,8 @@ Purpose:
 
 ---
 
-## M3.23 — Runtime kernel hardening
+### M3.23 — Runtime kernel hardening
+
 Decompose `engine.run()` into named helper paths and align state replacement to stdlib `dataclasses.replace()`.
 
 Purpose:
@@ -267,7 +265,8 @@ Purpose:
 
 ---
 
-## M3.24 — Phase 3 polish and readiness docs
+### M3.24 — Phase 3 polish and readiness docs
+
 Add the remaining project-readiness artefacts:
 
 - CONTRIBUTING.md
@@ -283,7 +282,7 @@ Purpose:
 
 ---
 
-# Phase 3 Result
+## Phase 3 Result
 
 IO-III now includes a complete deterministic runtime kernel.
 
@@ -299,17 +298,14 @@ The runtime can now:
 
 Execution architecture:
 
-CLI
-→ routing
-→ engine
-→ context assembly / capability registry
-→ bounded execution
-→ execution trace
-→ content-safe metadata logging
+```text
+CLI → routing → engine → context assembly / capability registry
+  → bounded execution → execution trace → content-safe metadata logging
+```
 
 ---
 
-# Verification
+## Verification
 
 Verification status:
 
@@ -320,31 +316,29 @@ Verification status:
 
 Standard verification commands:
 
+```bash
 python -m pytest
 python architecture/runtime/scripts/validate_invariants.py
 python -m io_iii capabilities --json
+```
 
 All invariants PASS.
 
 ---
 
-# Current Repository State
+## Current Repository State
 
-Branch
-main
+**Branch:** main
 
-Tag
-v0.3.2
+**Tag:** v0.3.2
 
-Pull request
-Phase 3 Hardening merged. Phase 4 implementation active on `main`.
+**Pull request:** Phase 3 Hardening merged. Phase 4 implementation active on `main`.
 
-Repository state
-Phase 4 active. M4.0–M4.9 complete. M4.10 next.
+**Repository state:** Phase 4 active. M4.0–M4.10 complete. M4.11 next (gated on ADR-020).
 
 ---
 
-# Runtime Guarantees
+## Runtime Guarantees
 
 The runtime currently guarantees:
 
@@ -368,25 +362,23 @@ Forbidden logging fields:
 
 ---
 
-# Post-Phase 3 Gap Closure — 2026-04-01
+## Post-Phase 3 Gap Closure — 2026-04-01
 
 Work performed against gaps identified during Phase 3 review.
 
 ---
 
-## G1 — Capability bounds docstring corrected
+### G1 — Capability bounds docstring corrected
 
-File
-`io_iii/core/capabilities.py`
+File: `io_iii/core/capabilities.py`
 
 The `CapabilityBounds` docstring stated that bounds were "NOT yet enforced by a dedicated capability runner." This was incorrect. Enforcement was already present in `_invoke_capability_once` (engine.py) as part of M3.15. Docstring updated to accurately describe enforcement points and error codes.
 
 ---
 
-## G2 — Capability bounds test coverage completed
+### G2 — Capability bounds test coverage completed
 
-File
-`tests/test_capability_invocation.py`
+File: `tests/test_capability_invocation.py`
 
 Input-too-large enforcement was tested. Timeout and output-too-large enforcement were not. Two tests added:
 
@@ -395,19 +387,17 @@ Input-too-large enforcement was tested. Timeout and output-too-large enforcement
 
 ---
 
-## G3 — ADR-003 promoted to active
+### G3 — ADR-003 promoted to active
 
-File
-`ADR/ADR-003-telemetry-logging-and-retention-policy.md`
+File: `ADR/ADR-003-telemetry-logging-and-retention-policy.md`
 
 Status promoted from `draft v0.1` to `active v1.0`. Implementation Notes updated from aspirational notes to a factual record of what was built (`metadata_logging.py`, `logging.yaml`, `content_safety.py`).
 
 ---
 
-## G4 — `latency_ms` auto-capture in SessionState
+### G4 — `latency_ms` auto-capture in SessionState
 
-File
-`io_iii/core/engine.py`
+File: `io_iii/core/engine.py`
 
 `SessionState.latency_ms` was declared and validated but never populated by the engine. Both return paths in `engine.run()` (null route and ollama route) now compute and set `latency_ms` from `started_at_ms` before returning the final state. Test added:
 
@@ -415,13 +405,14 @@ File
 
 ---
 
-## G5 — Provider health check (ADR-011)
+### G5 — Provider health check (ADR-011)
 
-Files
-`ADR/ADR-011-provider-health-check-policy.md`
-`io_iii/providers/ollama_provider.py`
-`io_iii/cli.py`
-`io_iii/tests/test_provider_health_check.py`
+Files:
+
+- `ADR/ADR-011-provider-health-check-policy.md`
+- `io_iii/providers/ollama_provider.py`
+- `io_iii/cli.py`
+- `io_iii/tests/test_provider_health_check.py`
 
 New ADR written and indexed. Adds a pre-flight provider reachability check at the CLI boundary (between routing resolution and SessionState creation). Key properties:
 
@@ -434,39 +425,31 @@ New ADR written and indexed. Adds a pre-flight provider reachability check at th
 
 ---
 
-## G6 — ADR-011 added to index
+### G6 — ADR-011 added to index
 
-File
-`ADR/README.md`
+File: `ADR/README.md`
 
 ADR-011 added to the index. (ADR-010 was already present.)
 
 ---
 
-## G7 — Provider config key mismatch corrected
+### G7 — Provider config key mismatch corrected
 
-File
-`io_iii/providers/ollama_provider.py`
+File: `io_iii/providers/ollama_provider.py`
 
 `OllamaProvider.from_config()` was reading `cfg.get("host")` but `providers.yaml` defines the key as `base_url`. The config value was silently ignored at runtime; the provider always fell back to the hardcoded default or `OLLAMA_HOST` env var. Fixed to read `base_url`, aligning code with the canonical config schema and ADR-011.
 
 ---
 
-## Verification
+### Gap Closure Verification
 
 Tests: **44 passing**
 
 Invariant validator: **8/8 PASS**
 
-Standard verification commands:
-
-python -m pytest
-python architecture/runtime/scripts/validate_invariants.py
-python -m io_iii capabilities --json
-
 ---
 
-# Next Phase
+## Next Phase
 
 Phase 4 — Post-Capability Architecture Layer
 
@@ -487,7 +470,7 @@ Phase 4 must not introduce:
 
 ---
 
-# Session Reset Point
+## Session Reset Point
 
 This document serves as the canonical session alignment file.
 
@@ -495,63 +478,40 @@ Future sessions should read this file first before performing any architectural 
 
 It should be treated as the authoritative handoff state between Phase 3 and Phase 4.
 
----
-
-End of Phase 3
+End of Phase 3.
 
 ---
 
-## Phase 4 Progress Update — M4.6 Complete
+## Phase 4 Progress — M4.10 Complete
 
-**Status:** Active  
-**Phase:** 4 — Post-Capability Architecture Layer  
-**Current Milestone:** M4.6 complete — M4.7 next
+**Status:** Active
+
+**Phase:** 4 — Post-Capability Architecture Layer
+
+**Current Milestone:** M4.10 complete — M4.11 next (implementation-safe)
 
 ### Completed
-- M4.0 governance freeze completed through ADR-012, `DOC-ARCH-012`, and canonical milestone definition
+
+- M4.0 governance freeze — ADR-012, `DOC-ARCH-012`, canonical milestone definition
 - M4.1 `TaskSpec` introduced as a serialisable declarative execution contract
 - M4.2 single-run bounded `Orchestrator` implemented and tested
 - M4.3 `ExecutionTrace` lifecycle contracts added with explicit transition guards
 - M4.4 `SessionState` promoted to v1 with explicit `task_spec_id` linkage
-- M4.5 Engine Observability Groundwork — structured per-stage `EngineEventKind` lifecycle events, `EngineObservabilityLog`, engine events in `ExecutionResult.meta`
-- M4.6 Deterministic Failure Semantics — canonical typed failure model across engine, trace, observability, and CLI surfaces
+- M4.5 Engine Observability Groundwork — `EngineEventKind` lifecycle events, `EngineObservabilityLog`, engine events in `ExecutionResult.meta`
+- M4.6 Deterministic Failure Semantics — `RuntimeFailureKind`, `RuntimeFailure`, ADR-013
+- M4.7 Bounded Runbook Layer — `Runbook`, `RunbookResult`, `RunbookStepOutcome`, ADR-014
+- M4.8 Runbook Traceability and Metadata Correlation — `RunbookLifecycleEvent`, `RunbookMetadataProjection`, ADR-015
+- M4.9 CLI Runbook Execution Surface — `cmd_runbook()`, `runbook` subcommand, ADR-016
+- M4.10 Replay/Resume Boundary Definition — upper layer freeze, ADR-017
+- M4.10 Run Identity Contract — `run_id` UUIDv4, lineage via `source_run_id`, ADR-018
+- M4.10 Checkpoint Persistence Contract — JSON at `<root>/<run_id>.json`, atomic writes, five integrity checks, ADR-019
+- M4.10 Replay/Resume Execution Contract — replay from step 0, resume from first incomplete step, ADR-020
 
-### M4.6 Contract Summary
+### Verification Snapshot (M4.10)
 
-- `RuntimeFailureKind` defines six stable failure categories: `route_resolution`, `provider_execution`, `audit_challenger`, `capability`, `contract_violation`, `internal`
-- `RuntimeFailure` is a frozen, content-safe dataclass carrying `kind`, `code`, `summary`, `request_id`, `task_spec_id`, `retryable`, `causal_code`
-- On any engine exception, `RuntimeFailure` is classified and attached as `.runtime_failure` on the original exception
-- Original exception type is preserved on re-raise — no wrapper exception
-- Execution trace always reaches terminal `’failed’` state on any exception
-- `engine_run_failed` lifecycle event always emitted on the failure path (content-safe)
-- CLI logs stable `failure.code` and `failure_kind` in metadata when available
-- `retryable=True` permitted only for `PROVIDER_UNAVAILABLE`
-- Content policy: `summary` and `causal_code` never carry prompt or model output text
-- ADR: ADR-013 — Deterministic Failure Semantics
-
-### Verification Snapshot (M4.6)
-
-- `pytest`: 174 passing
-- invariant validator: 1/1 passing
-
-### M4.7 Implementation — In Progress (2026-04-03)
-
-**ADR:** ADR-014 — Bounded Runbook Layer Contract (subordinate to ADR-012)
-
-**Files introduced:**
-- `io_iii/core/runbook.py` — `Runbook` schema, `RUNBOOK_MAX_STEPS = 20`, validation, serialisation
-- `io_iii/core/runbook_runner.py` — `run()`, `RunbookResult`, `RunbookStepOutcome`
-- `tests/test_runbook_m47.py` — focused M4.7 contract and regression tests
-
-**Contract:**
-- `Runbook` is immutable/serialisable with a stable `runbook_id`
-- Ordered finite list of `TaskSpec` steps; ceiling enforced at construction
-- Runner executes steps strictly in declared order via `orchestrator.run()` only
-- Exactly one `orchestrator.run()` per step; ADR-009 bounds preserved per step
-- Step failure terminates deterministically — no retry, no branching, no recovery
-- `RunbookResult` is bounded and content-safe; no prompt/output text in any field
-
-**Status:** Implementation complete. Verification in progress.
+- `pytest`: 325 passing
+- invariant validator: passing
 
 ### Next Execution Target
-M4.7 acceptance verification — then M4.7 complete
+
+M4.11 — Replay/Resume Layer Implementation (all prerequisite ADRs accepted; implementation-safe)

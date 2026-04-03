@@ -292,3 +292,110 @@ Files:
 - `io_iii/cli.py` — `cmd_runbook()` and `runbook` subparser registration
 - `tests/test_runbook_m49.py` — focused M4.9 CLI contract tests
 - `ADR/ADR-016-cli-runbook-execution-surface.md` — governing ADR
+
+---
+
+### M4.10 — Replay/Resume Boundary Definition ✓ Complete
+
+Freeze the upper architectural boundary above the M4.9 CLI runbook execution surface.
+
+ADR: ADR-017 — Replay/Resume Boundary Definition (subordinate to ADR-016)
+
+This is a **boundary ADR milestone only**. No code, no tests, no new CLI surface.
+
+The M4.7–M4.9 execution stack is sealed. Replay and resume are deferred to M4.11 and
+beyond, contingent on three prerequisite ADRs (ADR-018 run identity, ADR-019 checkpoint
+persistence, ADR-020 replay/resume execution contract).
+
+Key constraints frozen by this milestone:
+
+- Replay/resume must be introduced as a separate upper layer above ADR-016
+- No replay-enabling state may be retrofitted into any M4.7/M4.8/M4.9 contract
+- `runbook.py`, `runbook_runner.py`, and `cli.py` must not be modified for replay
+- M4.11 is code-safe only after ADR-018, ADR-019, and ADR-020 are accepted
+
+Files:
+
+- `ADR/ADR-017-replay-resume-boundary-definition.md` — governing ADR
+
+---
+
+### M4.10 (cont.) — Run Identity Contract ✓ Complete
+
+Freeze the canonical `run_id` contract required before checkpoint persistence and
+replay execution can be specified.
+
+ADR: ADR-018 — Run Identity Contract (subordinate to ADR-017)
+
+This is a **contract ADR only**. No code, no tests, no changes to any existing surface.
+
+Contract frozen by this milestone:
+
+- `run_id` is a UUIDv4 string; generated once at execution start; immutable
+- `run_id` is distinct from `runbook_id` (definition identity vs. execution identity)
+- Original runs: `source_run_id = null`; replay runs: `source_run_id = <parent run_id>`
+- Lineage chain reconstructable via `source_run_id` trail; each link is the immediate parent
+- Checkpoint records (ADR-019) must bind to `run_id` as the exclusive correlation key
+- Replay invocations (ADR-020) must accept `run_id`, generate a new `run_id`, and set `source_run_id`
+- Cross-runbook lineage prohibited; lineage scoped to a single `runbook_id`
+- No frozen M4.7–M4.9 surface is modified
+
+Files:
+
+- `ADR/ADR-018-run-identity-contract.md` — governing ADR
+
+---
+
+### M4.10 (cont.) — Checkpoint Persistence Contract ✓ Complete
+
+Freeze the checkpoint storage schema and lifecycle bound to deterministic run identity.
+
+ADR: ADR-019 — Checkpoint Persistence Contract (subordinate to ADR-018)
+
+This is a **contract ADR only**. No code, no tests, no changes to any existing surface.
+
+Contract frozen by this milestone:
+
+- Checkpoint is a JSON file at `<storage_root>/<run_id>.json`; one file per run
+- Identity fields frozen at first write: `checkpoint_schema_version`, `run_id`, `runbook_id`, `source_run_id`, `runbook_snapshot`, `created_at`
+- Progress fields updated on each write: `steps_completed`, `last_completed_step_index`, `total_steps`, `status`, `updated_at`
+- Failure fields present iff `status = "failed"`: `failure_kind`, `failure_code`, `failed_step_index` (sourced from ADR-013)
+- Written atomically (write-to-temp + rename) after each step terminal state
+- Full replacement per write — no append; terminal state (`"completed"` or `"failed"`) is final
+- Deterministic lookup: derive path from `run_id`; no index, no registry
+- Five mandatory validation checks before state consumption: schema version, `run_id` binding, `runbook_id` consistency, progress consistency, failure field consistency
+- No prompt text, model output, or exception messages in any field (ADR-003 content safety)
+- No existing M4.7–M4.9 surface is modified
+
+Files:
+
+- `ADR/ADR-019-checkpoint-persistence-contract.md` — governing ADR
+
+---
+
+### M4.10 (cont.) — Replay/Resume Execution Contract ✓ Complete
+
+Freeze the replay/resume execution semantics as the final M4.10 contract layer.
+
+ADR: ADR-020 — Replay/Resume Execution Contract (subordinate to ADR-019)
+
+This is a **contract ADR only**. No code, no tests, no changes to any existing surface.
+M4.11 is now the first implementation-safe milestone.
+
+Contract frozen by this milestone:
+
+- Two bounded execution modes above the frozen M4.9 surface: replay (from step 0) and resume (from first incomplete step)
+- Checkpoint resolved via ADR-019 §7 six-step algorithm before any execution
+- Source runbook always derived from checkpoint `runbook_snapshot` — no external file
+- Both modes generate new `run_id`; `source_run_id` bound to the input `run_id` (ADR-018)
+- Completed runs (`status = "completed"`) can be replayed but not resumed (`RESUME_INVALID_STATE`)
+- Resume starting step: `last_completed_step_index + 1` (or 0 if none completed)
+- Execution through `runbook_runner.run()` unchanged — step slice passed from the replay/resume layer
+- ADR-009 audit constraints apply per step; no partial audit bypass
+- Three new failure codes under `contract_violation`: `CHECKPOINT_NOT_FOUND`, `CHECKPOINT_INTEGRITY_ERROR`, `RESUME_INVALID_STATE`
+- CLI surface (`replay` and `resume` subcommands, `--audit` passthrough) introduced in M4.11 only
+- No existing M4.7–M4.9 surface is modified
+
+Files:
+
+- `ADR/ADR-020-replay-resume-execution-contract.md` — governing ADR
