@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-03-03"
-updated: "2026-03-03"
+updated: "2026-04-03"
 tags:
   - "architecture"
   - "roadmap"
@@ -19,6 +19,7 @@ roles_focus:
   - "executor"
   - "governance"
 provenance: "human"
+updated: "2026-04-03"
 ---
 
 # IO-III Structural Elevation Roadmap
@@ -95,19 +96,22 @@ Still excluded:
 
 ---
 
-## Phase 4 — Capability Expansion (Long-Term)
+## Phase 4 — Post-Capability Architecture Layer (Active)
 
-Not currently planned.
+**Status: Active as of 2026-04-03. ADR-012 governs the bounded orchestration layer contract.**
 
-Would require explicit ADRs and freeze boundaries for:
+Phase 4 introduces a bounded orchestration layer above the frozen runtime kernel.
+It does not introduce memory systems, retrieval, or autonomous capability expansion
+as originally deferred here. The scope is strictly bounded by ADR-012.
 
-- Memory systems
-- Tool registries
-- Capability gating
-- Multi-model arbitration
-- Retrieval augmentation
+Governed surface:
 
-This phase must never be introduced implicitly.
+- bounded orchestration (ADR-012)
+- explicit task specifications (`TaskSpec`)
+- deterministic failure model (ADR-013)
+- bounded multi-step runbook layer (ADR-014, M4.7)
+
+This phase must never expand beyond the ADR-012 contract without a new explicit ADR.
 
 ---
 

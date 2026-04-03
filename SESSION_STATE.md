@@ -340,7 +340,7 @@ Pull request
 Phase 3 Hardening merged. Phase 4 implementation active on `main`.
 
 Repository state
-Phase 4 active. M4.0–M4.4 complete. M4.5 is the next implementation target.
+Phase 4 active. M4.0–M4.6 complete. M4.7 (Multi-Step Bounded Runbook Layer) in progress.
 
 ---
 
@@ -534,5 +534,24 @@ End of Phase 3
 - `pytest`: 174 passing
 - invariant validator: 1/1 passing
 
+### M4.7 Implementation — In Progress (2026-04-03)
+
+**ADR:** ADR-014 — Bounded Runbook Layer Contract (subordinate to ADR-012)
+
+**Files introduced:**
+- `io_iii/core/runbook.py` — `Runbook` schema, `RUNBOOK_MAX_STEPS = 20`, validation, serialisation
+- `io_iii/core/runbook_runner.py` — `run()`, `RunbookResult`, `RunbookStepOutcome`
+- `tests/test_runbook_m47.py` — focused M4.7 contract and regression tests
+
+**Contract:**
+- `Runbook` is immutable/serialisable with a stable `runbook_id`
+- Ordered finite list of `TaskSpec` steps; ceiling enforced at construction
+- Runner executes steps strictly in declared order via `orchestrator.run()` only
+- Exactly one `orchestrator.run()` per step; ADR-009 bounds preserved per step
+- Step failure terminates deterministically — no retry, no branching, no recovery
+- `RunbookResult` is bounded and content-safe; no prompt/output text in any field
+
+**Status:** Implementation complete. Verification in progress.
+
 ### Next Execution Target
-M4.7 — Multi-Step Bounded Runbook Layer
+M4.7 acceptance verification — then M4.7 complete

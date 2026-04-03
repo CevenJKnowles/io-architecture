@@ -3,18 +3,19 @@ id: DOC-OVW-007
 title: IO-III Session State — Phase 3 Complete, Gap-Closed, and Operational
 type: overview
 status: active
-version: v0.3.2
+version: v0.4.0
 canonical: true
 scope: repository
 audience: developer
 created: "2026-04-01"
-updated: "2026-04-01"
+updated: "2026-04-03"
 tags:
 - io-iii
 - runtime
 - session-state
 - architecture
 - phase-3
+- phase-4
 roles_focus:
 - executor
 - challenger
@@ -352,5 +353,39 @@ This document serves as:
 - the authoritative project checkpoint at end of Phase 3 gap closure
 - the handoff state for the start of Phase 4
 - the starting point for Phase 4 architecture work
+
+---
+
+## Phase 4 Progress Update — 2026-04-03
+
+**Current phase:** Phase 4 — Post-Capability Architecture Layer  
+**Governed by:** ADR-012 (Bounded Orchestration Layer Contract)
+
+### Milestones complete
+
+| Milestone | Title |
+|-----------|-------|
+| M4.0 | Phase 4 ADR and milestone definition (ADR-012, DOC-ARCH-012) |
+| M4.1 | Task Specification Schema (`TaskSpec`) |
+| M4.2 | Single-Run Bounded Orchestration Layer (`Orchestrator`) |
+| M4.3 | Execution Trace Lifecycle Contracts |
+| M4.4 | SessionState v1 Contract (`task_spec_id` linkage) |
+| M4.5 | Engine Observability Groundwork (`EngineEventKind`, per-stage events) |
+| M4.6 | Deterministic Failure Semantics (ADR-013, `RuntimeFailure`, `RuntimeFailureKind`) |
+
+### Next milestone
+
+**M4.7 — Multi-Step Bounded Runbook Layer** (in progress as of 2026-04-03)
+
+Governed by ADR-014. Introduces `Runbook` and `RunbookRunner` above the frozen
+orchestration layer with fixed-order execution, explicit step ceiling, no branching,
+and deterministic termination on step failure.
+
+### Verification snapshot (M4.6 close)
+
+```
+pytest:              174 passing
+invariant validator: 1/1 PASS
+```
 
 ---

@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-03-03"
-updated: "2026-03-03"
+updated: "2026-04-03"
 tags:
   - "architecture"
   - "roadmap"
@@ -19,6 +19,7 @@ roles_focus:
   - "executor"
   - "governance"
 provenance: "human"
+updated: "2026-04-03"
 ---
 
 # IO-III Master Project Roadmap
@@ -61,7 +62,7 @@ No behavioural expansion.
 
 ---
 
-# Phase 2 — Structural Consolidation (Current Phase)
+# Phase 2 — Structural Consolidation (Complete)
 
 ## Objectives
 
@@ -108,19 +109,17 @@ Still excluded:
 
 ---
 
-# Phase 4 — Capability Expansion (Long-Term, Not Active)
+# Phase 4 — Post-Capability Architecture Layer (Active)
 
-Requires explicit ADR approval.
+**Status: Active as of 2026-04-03. Governed by ADR-012.**
 
-Possible future categories:
+Phase 4 introduces a bounded orchestration layer above the frozen runtime kernel.
+Scope is strictly bounded by ADR-012. It does not introduce the capability expansion
+categories deferred here — those remain out of scope.
 
-- Memory systems
-- Tool registries
-- Retrieval augmentation
-- Multi-model arbitration
-- Capability gating frameworks
+Active milestones: M4.0–M4.6 complete. M4.7 (bounded runbook layer, ADR-014) in progress.
 
-This phase must never be entered implicitly.
+This phase must never expand beyond its ADR-governed surface.
 
 ---
 

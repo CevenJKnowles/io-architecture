@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-04-01"
+updated: "2026-04-03"
 tags:
   - "governance"
   - "adr"
@@ -59,3 +59,12 @@ architecture, implementation, and documentation.
 
 - **ADR-011 — Provider Health Check Policy**
   Path: `./ADR/ADR-011-provider-health-check-policy.md`
+
+- **ADR-012 — Bounded Orchestration Layer Contract**
+  Path: `./ADR/ADR-012-bounded-orchestration-layer-contract.md`
+
+- **ADR-013 — Deterministic Failure Semantics**
+  Path: `./ADR/ADR-013-deterministic-failure-semantics.md`
+
+- **ADR-014 — Bounded Runbook Layer Contract**
+  Path: `./ADR/ADR-014-bounded-runbook-layer-contract.md`

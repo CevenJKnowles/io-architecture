@@ -199,18 +199,25 @@ ADR-013 — Deterministic Failure Semantics
 
 ---
 
-### M4.7 — Multi-Step Bounded Runbook Layer
+### M4.7 — Multi-Step Bounded Runbook Layer ⬤ In Progress
 
 Define `Runbook` as an ordered, serialisable, finite list of `TaskSpec` steps with no branching.
 
+ADR: ADR-014 — Bounded Runbook Layer Contract (subordinate to ADR-012)
+
 Properties:
 
-- Explicit step count ceiling
-- Each step is exactly one bounded engine execution
+- Explicit step count ceiling (`RUNBOOK_MAX_STEPS = 20`)
+- Each step is exactly one bounded engine execution via `orchestrator.run()`
 - ADR-009 remains preserved per step
 - No conditional branching between steps
 - No output-driven reordering
-- Termination is unconditional at the declared step ceiling
+- Termination is deterministic on step failure (no retry, no recovery)
 - Runbooks exist for bounded composition only, never open workflow execution
+
+Files:
+- `io_iii/core/runbook.py` — `Runbook` schema, validation, serialisation
+- `io_iii/core/runbook_runner.py` — `RunbookRunner`, `RunbookResult`, `RunbookStepOutcome`
+- `tests/test_runbook_m47.py` — focused M4.7 contract tests
 
 This milestone defines the **maximum orchestration complexity ceiling** for IO-III.
