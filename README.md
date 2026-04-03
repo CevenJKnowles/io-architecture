@@ -6,7 +6,8 @@ Content boundaries are enforced recursively at the logging level. Every signific
 architectural decision is documented in an ADR before it is implemented. The system
 knows what it will not do, and that refusal is structural rather than conventional.
 
-Built over three design generations. Phase 3 complete. Phase 4 now active.
+Built over four design generations. Phase 4 complete. Phase 5 now active.
+Latest stable phase tag: `v0.4.0`.
 
 ---
 
@@ -38,12 +39,27 @@ The Python runtime intentionally demonstrates the architecture without expanding
 | 1 | Control Plane | Stabilised |
 | 2 | Structural Consolidation  | Complete |
 | 3 | Capability Layer | Complete  |
-| **4** | **Context Architecture Formalisation**  | **Active** |
-| *5* | *Runtime Observability & Optimisation*  | *Planned* |
+| 4 | Context Architecture Formalisation  | Complete |
+| **5** | **Runtime Observability & Optimisation**  | **Active** |
 | *6* | *Memory Architecture* | *Planned* |
 
 IO-III prioritises **determinism, governance discipline, and architectural clarity** over
 feature velocity.
+
+---
+
+## Why This Architecture Matters
+
+Most local LLM projects optimise for capability breadth.
+
+IO-III treats runtime governance as the primary systems problem: deterministic routing, bounded execution, explicit failure semantics, immutable lineage, and recoverable continuity.
+
+The result is a runtime architecture that remains inspectable under failure, reproducible across milestones, and portable as a governed control-plane substrate.
+
+```text
+runbook → checkpoint → failure
+                    ├── replay → step 0
+                    └── resume → failed_step_index
 
 ---
 
@@ -363,5 +379,24 @@ autonomous behaviour or dynamic routing introduced.
 
 ### Phase 4 - Context Architecture Formalisation (Active)
 
-Post-capability architecture layer. Operational evidence gathering. Engine observability
-groundwork.
+Phase 4 extends bounded runbook execution into deterministic continuity semantics.
+
+Implemented guarantees:
+
+- run identity and immutable lineage
+- checkpoint persistence contracts
+- replay from checkpoint snapshot
+- resume from first incomplete or failed step
+- checkpoint integrity validation before execution
+- new `run_id` per replay/resume invocation
+- `source_run_id` preserved for lineage traceability
+
+Execution continuity now remains bounded, deterministic, and structurally governed.
+
+### Phase 5 - Workflow State Stewardship (Active)
+
+Phase 5 formalises workflow-continuity semantics above run continuity.
+
+The active objective is to elevate execution history into governed work-session state while preserving deterministic control-plane behaviour.
+
+---
