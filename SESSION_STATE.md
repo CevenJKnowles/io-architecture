@@ -9,17 +9,17 @@ Repository
 https://github.com/CevenJKnowles/io-architecture
 
 Local Path
-/home/cjk/Dev/GitHub/IO-III/io-architecture
+/home/cjk/Dev/IO-III/io-architecture
 
 ---
 
 # Phase Status
 
 Current Phase
-Phase 3 — Runtime Foundation
+Phase 4 — Post-Capability Architecture Layer
 
 Status
-Completed, hardened, and gap-closed (2026-04-01)
+Active (M4.4 complete; M4.5 next)
 
 Tag
 v0.3.2
@@ -337,10 +337,10 @@ Tag
 v0.3.2
 
 Pull request
-Phase 3 Hardening merged.
+Phase 3 Hardening merged. Phase 4 implementation active on `main`.
 
 Repository state
-Phase 3 complete, hardened, and stabilised.
+Phase 4 active. M4.0–M4.4 complete. M4.5 is the next implementation target.
 
 ---
 
@@ -501,17 +501,29 @@ End of Phase 3
 
 ---
 
-## Phase 4 Activation — M4.0 Complete
+## Phase 4 Progress Update — M4.4 Complete
 
-**Status:** Active
-**Phase:** 4 — Post-Capability Architecture Layer
-**Current Milestone:** M4.1 — Task Specification Schema
+**Status:** Active  
+**Phase:** 4 — Post-Capability Architecture Layer  
+**Current Milestone:** M4.5 — Engine Observability Groundwork
 
 ### Completed
-- ADR-012 accepted and indexed
-- Phase 4 bounded orchestration contract frozen
-- DOC-ARCH-012 promoted to active v0.3
-- Phase 4 milestone chain M4.0–M4.10 canonicalised
+- M4.0 governance freeze completed through ADR-012, `DOC-ARCH-012`, and canonical milestone definition
+- M4.1 `TaskSpec` introduced as a serialisable declarative execution contract
+- M4.2 single-run bounded `Orchestrator` implemented and tested
+- M4.3 `ExecutionTrace` lifecycle contracts added with explicit transition guards
+- M4.4 `SessionState` promoted to v1 with explicit `task_spec_id` linkage
+
+### Current Contract State
+- `TaskSpec` is the canonical single-run execution input
+- `Orchestrator` resolves exactly one static route and delegates exactly one engine run
+- `ExecutionTrace` now carries explicit lifecycle states and invalid-transition guards
+- `SessionState` remains control-plane only and now carries schema version `v1`
+- `SessionState.status` remains a result code and is not unified with `ExecutionTrace.status`
+
+### Verification Snapshot
+- `pytest` passing on the user’s local Phase 4 checkpoint after M4.4
+- invariant validator previously passing at the last full architecture verification checkpoint
 
 ### Next Execution Target
-Implement `TaskSpec` as a serialisable declarative contract object that resolves to exactly one static route and one bounded execution path.
+Implement M4.5 by adding structured per-stage timing fields to the execution trace while preserving `SessionState.latency_ms` as total latency only.

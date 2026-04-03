@@ -42,6 +42,8 @@ This document defines **v1**, matching the current runtime implementation:
 - `io_iii/core/session_state.py`
 - used by `io_iii/core/engine.py`, `io_iii/core/orchestrator.py`, and `io_iii/cli.py`
 
+The file retains its historical `...v0-contract.md` filename for continuity during the v1 promotion. The document body and metadata are canonical.
+
 ---
 
 ## Migration from v0
