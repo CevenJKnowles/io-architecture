@@ -340,7 +340,7 @@ Pull request
 Phase 3 Hardening merged. Phase 4 implementation active on `main`.
 
 Repository state
-Phase 4 active. M4.0–M4.6 complete. M4.7 (Multi-Step Bounded Runbook Layer) in progress.
+Phase 4 active. M4.0–M4.8 complete. M4.9 next.
 
 ---
 

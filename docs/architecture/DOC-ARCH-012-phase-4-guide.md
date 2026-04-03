@@ -199,7 +199,7 @@ ADR-013 — Deterministic Failure Semantics
 
 ---
 
-### M4.7 — Multi-Step Bounded Runbook Layer ⬤ In Progress
+### M4.7 — Multi-Step Bounded Runbook Layer ✓ Complete
 
 Define `Runbook` as an ordered, serialisable, finite list of `TaskSpec` steps with no branching.
 
@@ -216,8 +216,43 @@ Properties:
 - Runbooks exist for bounded composition only, never open workflow execution
 
 Files:
+
 - `io_iii/core/runbook.py` — `Runbook` schema, validation, serialisation
 - `io_iii/core/runbook_runner.py` — `RunbookRunner`, `RunbookResult`, `RunbookStepOutcome`
 - `tests/test_runbook_m47.py` — focused M4.7 contract tests
 
 This milestone defines the **maximum orchestration complexity ceiling** for IO-III.
+
+---
+
+### M4.8 — Runbook Traceability and Metadata Correlation ✓ Complete
+
+Add a deterministic, content-safe observability layer above the M4.7 runbook runner.
+Every bounded runbook execution path is structurally reconstructable from metadata alone,
+without accessing prompt or model output content.
+
+ADR: ADR-015 — Runbook Traceability and Metadata Correlation (subordinate to ADR-014)
+
+This is an **observability-only milestone**. It does not increase orchestration power,
+add branching, retries, persistence, or any new failure taxonomy.
+
+Contract:
+
+- Frozen lifecycle event taxonomy (exactly six event classes — no additions without an ADR update):
+  `runbook_started`, `runbook_step_started`, `runbook_step_completed`,
+  `runbook_step_failed`, `runbook_completed`, `runbook_terminated`
+- Deterministic, test-asserted event ordering for success and failure paths
+- Frozen correlation schema: structural fields only (`runbook_id`, `request_id`,
+  `task_spec_id`, `step_index`, `steps_total`, `terminated_early`, `failed_step_index`,
+  `duration_ms`, `total_duration_ms`, `failure_kind`, `failure_code`)
+- Per-step `duration_ms` and per-runbook `total_duration_ms` timing (integer milliseconds)
+- ADR-013 `failure_kind` and `failure_code` surfaced at the runbook coordination layer
+- `ExecutionTrace` remains canonical runtime truth; `RunbookMetadataProjection` is projection-only
+- Attached to `RunbookResult.metadata`; existing `RunbookResult` fields unchanged
+- No prompt text, model output, or free-form exception content in any event field
+
+Files:
+
+- `io_iii/core/runbook_runner.py` — `RunbookLifecycleEvent`, `RunbookMetadataProjection`,
+  `RunbookResult.metadata` field, observability emission in `run()`
+- `tests/test_runbook_m48.py` — focused M4.8 contract tests
