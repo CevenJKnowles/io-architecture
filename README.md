@@ -60,7 +60,7 @@ The result is a runtime architecture that remains inspectable under failure, rep
 runbook → checkpoint → failure
                     ├── replay → step 0
                     └── resume → failed_step_index
-
+```
 ---
 
 ## Structural Guarantees
