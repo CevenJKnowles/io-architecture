@@ -338,6 +338,10 @@ def cmd_run(args) -> int:
 
     except Exception as e:
         # Metadata logging (error case; NO prompt/response content)
+        # M4.6: use typed failure envelope when available for stable error codes.
+        _failure = getattr(e, "runtime_failure", None)
+        _error_code = _failure.code if _failure is not None else type(e).__name__
+        _failure_kind = _failure.kind.value if _failure is not None else None
         latency_ms = int((time.perf_counter() - t0) * 1000)
         append_metadata(
             cfg.logging,
@@ -348,13 +352,14 @@ def cmd_run(args) -> int:
                 "model": None,
                 "status": "error",
                 "latency_ms": latency_ms,
-                "error_code": type(e).__name__,
+                "error_code": _error_code,
+                "failure_kind": _failure_kind,
                 "fallback_used": getattr(selection, "fallback_used", None),
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
                 "capability_id": cap_id,
                 "capability_ok": False if cap_id else None,
-                "capability_error_code": type(e).__name__ if cap_id else None,
+                "capability_error_code": _error_code if cap_id else None,
             },
         )
         raise
@@ -487,6 +492,10 @@ def cmd_capability(args) -> int:
         return 0
 
     except Exception as e:
+        # M4.6: use typed failure envelope when available for stable error codes.
+        _failure = getattr(e, "runtime_failure", None)
+        _error_code = _failure.code if _failure is not None else type(e).__name__
+        _failure_kind = _failure.kind.value if _failure is not None else None
         latency_ms = int((time.perf_counter() - t0) * 1000)
         append_metadata(
             cfg.logging,
@@ -497,13 +506,14 @@ def cmd_capability(args) -> int:
                 "model": None,
                 "status": "error",
                 "latency_ms": latency_ms,
-                "error_code": type(e).__name__,
+                "error_code": _error_code,
+                "failure_kind": _failure_kind,
                 "fallback_used": False,
                 "fallback_reason": None,
                 "selected_primary": None,
                 "capability_id": cap_id,
                 "capability_ok": False,
-                "capability_error_code": type(e).__name__,
+                "capability_error_code": _error_code,
             },
         )
         raise

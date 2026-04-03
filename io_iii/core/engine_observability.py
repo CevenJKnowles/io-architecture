@@ -19,15 +19,20 @@ class EngineEventKind(str, Enum):
     Values are stable strings suitable for direct JSON serialization.
     No value matches a forbidden content key.
 
-    Canonical lifecycle order per engine run:
+    Canonical lifecycle order per engine run (success path):
       RUN_STARTED                 — entry into engine.run()
       ROUTE_RESOLVED              — routing snapshot confirmed from SessionState
       PROVIDER_EXECUTION_COMPLETE — provider delivered its result
       CHALLENGER_AUDIT_COMPLETE   — challenger verdict received (audit=True path only)
       REVISION_COMPLETE           — controlled revision applied (needs_work path only)
       OUTPUT_EMITTED              — ExecutionResult constructed; about to return
-      RUN_COMPLETE                — engine.run() returning; trace terminal
+      RUN_COMPLETE                — engine.run() returning; trace terminal (completed)
 
+    Failure terminal event (M4.6):
+      RUN_FAILED                  — engine.run() exiting via exception; trace terminal (failed)
+        meta includes: failure_kind, failure_code, phase
+
+    Exactly one of RUN_COMPLETE or RUN_FAILED is emitted per run.
     Only events on the active path are emitted; optional events are absent, not null.
     """
     RUN_STARTED                 = "engine_run_started"
@@ -37,6 +42,7 @@ class EngineEventKind(str, Enum):
     REVISION_COMPLETE           = "revision_complete"
     OUTPUT_EMITTED              = "output_emitted"
     RUN_COMPLETE                = "engine_run_complete"
+    RUN_FAILED                  = "engine_run_failed"
 
 
 # ---------------------------------------------------------------------------
