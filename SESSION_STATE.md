@@ -340,7 +340,7 @@ Pull request
 Phase 3 Hardening merged. Phase 4 implementation active on `main`.
 
 Repository state
-Phase 4 active. M4.0–M4.8 complete. M4.9 next.
+Phase 4 active. M4.0–M4.9 complete. M4.10 next.
 
 ---
 
