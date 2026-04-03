@@ -256,3 +256,39 @@ Files:
 - `io_iii/core/runbook_runner.py` — `RunbookLifecycleEvent`, `RunbookMetadataProjection`,
   `RunbookResult.metadata` field, observability emission in `run()`
 - `tests/test_runbook_m48.py` — focused M4.8 contract tests
+
+---
+
+### M4.9 — CLI Runbook Execution Surface ✓ Complete
+
+Expose the already-bounded runbook execution contract through a deterministic CLI surface.
+
+ADR: ADR-016 — CLI Runbook Execution Surface (subordinate to ADR-015)
+
+This is a **CLI exposure milestone only**. It does not increase orchestration power,
+add persistence, add replay/resume semantics, or alter any M4.7/M4.8 contract.
+
+Command surface (frozen — no aliases, no additional flags beyond `--audit`):
+
+```text
+python -m io_iii runbook <json-file>
+python -m io_iii runbook <json-file> --audit
+```
+
+Contract:
+
+- Input boundary: JSON file only; deserialised via `Runbook.from_dict()`
+- Frozen validation order: file exists → valid JSON → valid schema → execute → emit result
+- Execution path: thin veneer only; delegates to `runbook_runner.run()` (never `engine.run()` directly)
+- Audit passthrough: `--audit` threads to runner without adding CLI semantics
+- Output: single stable JSON object (success or error); no colour, no prose, no streaming
+- Failure: surfaces `failure_kind`, `failure_code`, `failed_step_index`, `terminated_early` from ADR-013 envelope
+- Metadata: surfaces M4.8 `RunbookMetadataProjection` summary (`runbook_id`, `event_count`)
+- Exit code: 0 on success, 1 on any failure
+- Frozen non-goals: no YAML, no inline JSON, no `--from-step`/`--to-step`, no replay, no persistence
+
+Files:
+
+- `io_iii/cli.py` — `cmd_runbook()` and `runbook` subparser registration
+- `tests/test_runbook_m49.py` — focused M4.9 CLI contract tests
+- `ADR/ADR-016-cli-runbook-execution-surface.md` — governing ADR

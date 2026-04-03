@@ -71,3 +71,6 @@ architecture, implementation, and documentation.
 
 - **ADR-015 — Runbook Traceability and Metadata Correlation**
   Path: `./ADR/ADR-015-runbook-traceability-and-metadata-correlation.md`
+
+- **ADR-016 — CLI Runbook Execution Surface**
+  Path: `./ADR/ADR-016-cli-runbook-execution-surface.md`
