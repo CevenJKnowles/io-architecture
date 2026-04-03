@@ -22,8 +22,6 @@ provenance: "human"
 updated: "2026-04-03"
 ---
 
-# IO-III Structural Elevation Roadmap
-
 ## Purpose
 
 This document defines the sequencing discipline for IO-III architectural evolution.
@@ -110,6 +108,12 @@ Governed surface:
 - explicit task specifications (`TaskSpec`)
 - deterministic failure model (ADR-013)
 - bounded multi-step runbook layer (ADR-014, M4.7)
+- runbook traceability and metadata correlation (ADR-015, M4.8)
+- CLI runbook execution surface (ADR-016, M4.9)
+- replay/resume upper boundary freeze (ADR-017, M4.10)
+- run identity contract — `run_id` UUIDv4, lineage via `source_run_id` (ADR-018, M4.10)
+- checkpoint persistence contract — local JSON, deterministic lookup by `run_id` (ADR-019, M4.10)
+- replay/resume execution contract — bounded replay from step 0, resume from first incomplete step (ADR-020, M4.10)
 
 This phase must never expand beyond the ADR-012 contract without a new explicit ADR.
 

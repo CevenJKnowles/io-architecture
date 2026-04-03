@@ -74,3 +74,15 @@ architecture, implementation, and documentation.
 
 - **ADR-016 — CLI Runbook Execution Surface**
   Path: `./ADR/ADR-016-cli-runbook-execution-surface.md`
+
+- **ADR-017 — Replay/Resume Boundary Definition**
+  Path: `./ADR/ADR-017-replay-resume-boundary-definition.md`
+
+- **ADR-018 — Run Identity Contract**
+  Path: `./ADR/ADR-018-run-identity-contract.md`
+
+- **ADR-019 — Checkpoint Persistence Contract**
+  Path: `./ADR/ADR-019-checkpoint-persistence-contract.md`
+
+- **ADR-020 — Replay/Resume Execution Contract**
+  Path: `./ADR/ADR-020-replay-resume-execution-contract.md`

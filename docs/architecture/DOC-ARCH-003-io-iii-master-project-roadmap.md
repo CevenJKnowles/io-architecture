@@ -19,16 +19,14 @@ roles_focus:
   - "executor"
   - "governance"
 provenance: "human"
-updated: "2026-04-03"
 ---
-
-# IO-III Master Project Roadmap
 
 ## Purpose
 
 This document defines the authoritative roadmap for IO-III development.
 
 It consolidates:
+
 - Deterministic runtime foundations
 - Structural abstraction sequencing
 - Governance boundaries
@@ -39,9 +37,9 @@ This roadmap governs scope decisions.
 
 ---
 
-# Phase 1 — Deterministic Core (Complete)
+## Phase 1 — Deterministic Core (Complete)
 
-## Objectives
+### Objectives
 
 - Deterministic routing
 - Provider resolution
@@ -54,24 +52,24 @@ This roadmap governs scope decisions.
 - YAML automation
 - ADR sequencing discipline
 
-## State
+### State
 
-Stable.  
-Frozen.  
+Stable.
+Frozen.
 No behavioural expansion.
 
 ---
 
-# Phase 2 — Structural Consolidation (Complete)
+## Phase 2 — Structural Consolidation (Complete)
 
-## Objectives
+### Steps
 
 1. Define `SessionState v0` (definition only).
 2. Extract execution engine from CLI.
 3. Implement Context Assembly Layer (ADR-010).
 4. Freeze.
 
-## Constraints
+### Constraints
 
 - No behavioural expansion.
 - No memory systems.
@@ -80,7 +78,7 @@ No behavioural expansion.
 - No autonomy.
 - Determinism preserved.
 
-## Deliverables
+### Deliverables
 
 - `io_iii/runtime/session_state.py`
 - `io_iii/runtime/engine.py`
@@ -89,7 +87,7 @@ No behavioural expansion.
 
 ---
 
-# Phase 3 — Envelope Sophistication (Deferred)
+## Phase 3 — Envelope Sophistication (Deferred)
 
 Only after Phase 2 freeze.
 
@@ -109,7 +107,7 @@ Still excluded:
 
 ---
 
-# Phase 4 — Post-Capability Architecture Layer (Active)
+## Phase 4 — Post-Capability Architecture Layer (Active)
 
 **Status: Active as of 2026-04-03. Governed by ADR-012.**
 
@@ -117,13 +115,13 @@ Phase 4 introduces a bounded orchestration layer above the frozen runtime kernel
 Scope is strictly bounded by ADR-012. It does not introduce the capability expansion
 categories deferred here — those remain out of scope.
 
-Active milestones: M4.0–M4.6 complete. M4.7 (bounded runbook layer, ADR-014) in progress.
+Active milestones: M4.0–M4.10 complete. M4.11 next (implementation-safe; all prerequisite ADRs accepted).
 
 This phase must never expand beyond its ADR-governed surface.
 
 ---
 
-# Governance Invariants
+## Governance Invariants
 
 At all times IO-III must remain:
 
@@ -140,7 +138,7 @@ No feature expansion without phase approval.
 
 ---
 
-# Non-Goals (Active)
+## Non-Goals (Active)
 
 The following remain explicitly out of scope:
 
@@ -155,7 +153,7 @@ The following remain explicitly out of scope:
 
 ---
 
-# Evolution Model
+## Evolution Model
 
 IO-III evolves by:
 
@@ -165,7 +163,7 @@ Never by uncontrolled feature accumulation.
 
 ---
 
-# Review Discipline
+## Review Discipline
 
 Before introducing new architectural surfaces:
 
@@ -179,9 +177,9 @@ If any of these fail, expansion is deferred.
 
 ---
 
-# Summary
+## Summary
 
-This roadmap formalises IO-III’s evolution discipline.
+This roadmap formalises IO-III's evolution discipline.
 
 It protects architectural clarity, sequencing integrity, and governance-first design.
 
