@@ -115,7 +115,7 @@ Phase 4 introduces a bounded orchestration layer above the frozen runtime kernel
 Scope is strictly bounded by ADR-012. It does not introduce the capability expansion
 categories deferred here — those remain out of scope.
 
-Active milestones: M4.0–M4.10 complete. M4.11 next (implementation-safe; all prerequisite ADRs accepted).
+All milestones complete: M4.0–M4.11 delivered. Phase 4 closed. Taggable as v0.4.0.
 
 This phase must never expand beyond its ADR-governed surface.
 

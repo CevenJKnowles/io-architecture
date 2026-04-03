@@ -399,3 +399,37 @@ Contract frozen by this milestone:
 Files:
 
 - `ADR/ADR-020-replay-resume-execution-contract.md` — governing ADR
+
+---
+
+### M4.11 — Replay/Resume Layer Implementation ✓ Complete
+
+Implement the replay and resume execution modes above the frozen M4.9 surface,
+exactly as contracted by ADR-017 through ADR-020. No contract expansion.
+
+ADR: ADR-020 — Replay/Resume Execution Contract (governing implementation ADR)
+
+This is the **final milestone of Phase 4**. It closes the replay/resume
+implementation gap without modifying any M4.7/M4.8/M4.9 contract surface.
+
+Contract realised:
+
+- `replay <run_id>`: resolves source checkpoint via ADR-019 §7, re-executes from step 0
+- `resume <run_id>`: resolves source checkpoint, continues from first incomplete step
+- `--audit` passthrough to runner unchanged (ADR-009 preserved)
+- Source runbook always restored from checkpoint `runbook_snapshot`; no external file
+- New `run_id` generated per execution; `source_run_id` binds to input `run_id` (ADR-018)
+- Source checkpoint immutable; new checkpoint written atomically for the new run
+- Three failure codes under `contract_violation`: `CHECKPOINT_NOT_FOUND`,
+  `CHECKPOINT_INTEGRITY_ERROR`, `RESUME_INVALID_STATE` (ADR-020 §6.2)
+- Completed runs cannot be resumed (`RESUME_INVALID_STATE`)
+- All execution through `runbook_runner.run()` — no second execution engine
+- ADR-019 §7 six-step lookup + §8 integrity checks enforced before any execution
+
+Files:
+
+- `io_iii/core/replay_resume.py` — `replay()`, `resume()`, checkpoint resolution/write
+- `io_iii/cli.py` — `cmd_replay()`, `cmd_resume()`, parser registration
+- `tests/test_runbook_m411.py` — 28 contract-focused milestone tests
+
+**Phase 4 is now closed.** The repo is in a taggable phase-close state.
