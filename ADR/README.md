@@ -68,3 +68,6 @@ architecture, implementation, and documentation.
 
 - **ADR-014 — Bounded Runbook Layer Contract**
   Path: `./ADR/ADR-014-bounded-runbook-layer-contract.md`
+
+- **ADR-015 — Runbook Traceability and Metadata Correlation**
+  Path: `./ADR/ADR-015-runbook-traceability-and-metadata-correlation.md`
