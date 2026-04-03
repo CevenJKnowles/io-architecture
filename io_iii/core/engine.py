@@ -391,6 +391,8 @@ def run(
         message = getattr(result_obj, "message", "")
         meta = dict(getattr(result_obj, "meta", {}))
 
+        # M4.3: explicit lifecycle terminal state before serialisation.
+        trace.complete()
         trace_dict = trace.trace.to_dict()
         assert_no_forbidden_keys(trace_dict)
         meta["trace"] = trace_dict
@@ -494,6 +496,8 @@ def run(
                 text = provider.generate(model=model, prompt=revision_prompt).strip()
             audit_meta["revised"] = True
 
+    # M4.3: explicit lifecycle terminal state before serialisation.
+    trace.complete()
     trace_dict = trace.trace.to_dict()
     assert_no_forbidden_keys(trace_dict)
     meta = {

@@ -89,6 +89,7 @@ def test_execution_trace_attached_and_ordered_for_null_route_with_capability():
     assert trace["schema"] == "io-iii-execution-trace"
     assert trace["schema_version"] == "v1.0"
     assert trace["trace_id"] == "trace-test"
+    assert trace["status"] == "completed"  # M4.3: lifecycle terminal state
 
     steps = trace["steps"]
     assert isinstance(steps, list)
