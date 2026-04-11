@@ -12,13 +12,13 @@
 
 ## Phase Status
 
-**Current Phase:** Phase 5 — Runtime Observability & Optimisation (complete) / Phase 6 — Memory Architecture (pending)
+**Current Phase:** Phase 6 — Memory Architecture (active)
 
-**Status:** Phase 5 complete (M5.0–M5.3 delivered; tagged v0.5.0). Phase 6 not yet started.
+**Status:** Phase 5 complete (M5.0–M5.3 delivered; tagged v0.5.0). Phase 6 active — M6.0 complete.
 
 **Tag:** v0.5.0
 
-**Branch:** phase-5-0
+**Branch:** phase-6-0
 
 ---
 
@@ -555,3 +555,168 @@ Test count at phase close: 419 passing.
 All Phase 1–4 components remain frozen.
 Phase 5 observability capabilities operate alongside the execution stack, not inside it.
 Phase 6 (Memory Architecture) is unblocked — M5.1 prerequisite satisfied.
+
+---
+
+## Phase 6 — Memory Architecture (Active)
+
+**Governing ADR:** ADR-022 — Memory Architecture Contract (accepted)
+
+**Phase 6 Prerequisite:** M5.1 (token pre-flight estimator) confirmed complete.
+
+### M6 Milestone Definitions
+
+#### M6.0 — Phase 6 ADR and Milestone Definition ✓
+
+ADR-022 authored and accepted. Phase 6 milestones formally defined in SESSION_STATE.md.
+M5.1 prerequisite confirmed before M6.4 may begin.
+
+**Deliverable:** `ADR/ADR-022-memory-architecture-contract.md`
+
+---
+
+#### M6.1 — Memory Store Architecture
+
+Define and implement the memory store: atomic, scoped, versioned records with
+deterministic key-based lookup. No search, no embedding, no ranking.
+
+**Key contracts:**
+
+- `MemoryRecord` dataclass: `key`, `scope`, `value`, `version`, `provenance`,
+  `created_at`, `updated_at`, `sensitivity`
+- Storage root declared in config — no hardcoded path
+- Local file store under configurable `storage_root`
+
+**Module:** `io_iii/memory/store.py`
+
+---
+
+#### M6.2 — Memory Pack System
+
+Implement named memory bundles as the primary delivery mechanism for curated context.
+
+**Key contracts:**
+
+- `memory_packs.yaml` — pack definitions: `id`, `version`, `scope`, `keys`
+- Pack resolution deterministic from `id`
+- Max nesting depth: 1 (a pack may reference another pack's keys; no recursion)
+- Empty pack valid; resolves to empty subset
+
+**Config:** `architecture/runtime/config/memory_packs.yaml`
+
+**Module:** `io_iii/memory/packs.py`
+
+---
+
+#### M6.3 — Memory Retrieval Policy
+
+Define and enforce access rules controlling which routes and capabilities may retrieve
+which memory records.
+
+**Key contracts:**
+
+- `memory_retrieval_policy.yaml` — `route_allowlist`, `capability_allowlist`,
+  `sensitivity_allowlist`
+- No record accessible by default
+- `standard` records: accessible to any allowlisted route
+- `elevated` / `restricted`: require explicit `sensitivity_allowlist` entry
+- Policy absence → injection skipped for all routes (not a failure)
+
+**Config:** `architecture/runtime/config/memory_retrieval_policy.yaml`
+
+**Module:** `io_iii/memory/policy.py`
+
+---
+
+#### M6.4 — Memory Injection via Context Assembly
+
+**Requires:** M5.1 active (confirmed).
+
+Inject a bounded memory subset into `ExecutionContext.memory` during context assembly.
+Extends `context_assembly.py` to append a `### Memory` section when
+`ExecutionContext.memory` is non-empty.
+
+**Key contracts:**
+
+- Pipeline: store → policy → selector → bounded subset (M5.1 budget) →
+  `ExecutionContext.memory` → context assembly → provider call
+- Injection after routing, before provider call
+- Records included in declaration order until budget exhausted; overflow dropped silently
+- Empty route config → injection skipped gracefully
+- Applies identically on first-run, replay, and resume
+
+**New field:** `ExecutionContext.memory: list[MemoryRecord]`
+
+---
+
+#### M6.5 — Memory Safety Invariants
+
+Enforce content-safe memory logging across all memory lifecycle events.
+
+**Allowed log fields:**
+
+```text
+memory_keys_released
+memory_records_count
+memory_total_chars
+pack_id
+```
+
+**Never logged:** memory values, record content, free-text record fields.
+
+**Deliverable:** Invariants added to `architecture/runtime/scripts/validate_invariants.py`
+
+---
+
+#### M6.6 — Memory Write Contract
+
+Implement the user-confirmed write path for adding records to the memory store.
+
+**Key contracts:**
+
+- All writes require explicit user confirmation
+- Writes are atomic: single record, single operation
+- Write path is separate from execution path — no writes during a run
+- Successful write returns stable record identifier `<scope>/<key>`
+- Write failure raises `contract_violation` / `MEMORY_WRITE_FAILED`
+- No memory value logged on write
+
+**CLI:** `python -m io_iii memory write --scope <scope> --key <key> --value <value>`
+
+---
+
+#### M6.7 — SessionState Snapshot Export
+
+Define and implement a governed export/import contract for a portable session artefact.
+
+**Key contracts:**
+
+- Export is user-initiated only; no automatic exports
+- Artefact fields: `schema_version`, `run_id`, `workflow_position`,
+  `active_memory_pack_ids`, `governance_mode`, `exported_at`
+- Artefact never contains memory values, model output, or prompt content
+- Import validates `schema_version` and all required fields; failure raises
+  `contract_violation` / `SNAPSHOT_SCHEMA_INVALID`
+- Default path: `<storage_root>/<run_id>.snapshot.json`
+
+**CLI:**
+
+```text
+python -m io_iii session export [--output <path>]
+python -m io_iii session import --snapshot <path>
+```
+
+**Cross-phase note:** Prerequisite for Phase 8 M8.3 (`session continue` command).
+
+---
+
+### Phase 6 Definition of Done
+
+- ADR-022 accepted and indexed ✓
+- M6.1–M6.7 milestones delivered and tested
+- Memory injection active and bounded by M5.1
+- Memory values absent from all log output (invariant validator confirms)
+- `pytest` passing
+- Invariant validator passing
+- SESSION_STATE.md updated with phase close state
+- Repository tagged `v0.6.0`
