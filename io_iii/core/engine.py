@@ -292,6 +292,80 @@ def _invoke_capability_once(
     }
 
 
+def _do_challenger_pass(
+    *,
+    cfg: Any,
+    user_prompt: str,
+    text: str,
+    challenger_fn,
+    trace: TraceRecorder,
+    obs: EngineObservabilityLog,
+    rid: str,
+    tsid: Optional[str],
+    audit_passes: int,
+) -> Dict[str, Any]:
+    """
+    Execute one bounded challenger audit pass (ADR-008).
+
+    Records a trace step and emits CHALLENGER_AUDIT_COMPLETE.
+    Bound enforcement (audit_passes limit) is the caller's responsibility.
+    Returns the parsed audit_result dict.
+    """
+    with trace.step("challenger_audit", meta={"enabled": True}):
+        audit_result = challenger_fn(cfg, user_prompt, text)
+
+    obs.emit(
+        EngineEventKind.CHALLENGER_AUDIT_COMPLETE,
+        request_id=rid,
+        task_spec_id=tsid,
+        meta={"verdict": audit_result.get("verdict"), "audit_passes": audit_passes},
+    )
+    return audit_result
+
+
+def _do_revision(
+    *,
+    user_prompt: str,
+    text: str,
+    audit_result: Dict[str, Any],
+    provider: Any,
+    model: str,
+    trace: TraceRecorder,
+    obs: EngineObservabilityLog,
+    rid: str,
+    tsid: Optional[str],
+    revision_passes: int,
+) -> str:
+    """
+    Execute one bounded revision inference pass (ADR-009).
+
+    Records a trace step and emits REVISION_COMPLETE.
+    Bound enforcement (revision_passes limit) is the caller's responsibility.
+    Returns the revised text (stripped).
+    """
+    revision_prompt = (
+        "You are IO-III Executor performing a single controlled revision.\n"
+        "Address the challenger feedback below.\n"
+        "You MUST NOT introduce new facts.\n"
+        "Preserve user intent.\n\n"
+        f"USER_PROMPT:\n{user_prompt}\n\n"
+        f"ORIGINAL_DRAFT:\n{text}\n\n"
+        f"CHALLENGER_FEEDBACK:\n{json.dumps(audit_result, indent=2)}\n\n"
+        "Produce the improved final answer only."
+    )
+
+    with trace.step("revision_inference", meta={"provider": "ollama", "model": model}):
+        revised = provider.generate(model=model, prompt=revision_prompt).strip()
+
+    obs.emit(
+        EngineEventKind.REVISION_COMPLETE,
+        request_id=rid,
+        task_spec_id=tsid,
+        meta={"revision_passes": revision_passes},
+    )
+    return revised
+
+
 def run(
     *,
     cfg,
@@ -531,8 +605,10 @@ def run(
         _call_count = 0
         _provider_input_tokens: Optional[int] = None   # confirmed by provider (best-effort)
         _provider_output_tokens: Optional[int] = None  # confirmed by provider (best-effort)
-        # Heuristic input estimate (always available from M5.1 estimator).
-        _heuristic_input_tokens = estimate_chars(final_prompt)
+        # Heuristic char count (always available from M5.1 estimator).
+        # Character count only — not a token count. Named precisely to avoid
+        # false precision: 1 token ≈ 4 chars is an approximation, not a fact.
+        _heuristic_char_count = estimate_chars(final_prompt)
 
         _phase = "provider"
         with trace.step(
@@ -577,18 +653,19 @@ def run(
             audit_passes += 1
 
             _phase = "audit"
-            with trace.step("challenger_audit", meta={"enabled": True}):
-                audit_result = challenger_fn(cfg, user_prompt, text)
+            audit_result = _do_challenger_pass(
+                cfg=cfg,
+                user_prompt=user_prompt,
+                text=text,
+                challenger_fn=challenger_fn,
+                trace=trace,
+                obs=_obs,
+                rid=_rid,
+                tsid=_tsid,
+                audit_passes=audit_passes,
+            )
             audit_meta["audit_used"] = True
             audit_meta["audit_verdict"] = audit_result.get("verdict")
-
-            # Event 4: challenger_audit_complete
-            _obs.emit(
-                EngineEventKind.CHALLENGER_AUDIT_COMPLETE,
-                request_id=_rid,
-                task_spec_id=_tsid,
-                meta={"verdict": audit_result.get("verdict"), "audit_passes": audit_passes},
-            )
 
             # Single bounded revision
             if audit_result.get("verdict") == "needs_work":
@@ -598,29 +675,20 @@ def run(
                     )
                 revision_passes += 1
 
-                revision_prompt = (
-                    "You are IO-III Executor performing a single controlled revision.\n"
-                    "Address the challenger feedback below.\n"
-                    "You MUST NOT introduce new facts.\n"
-                    "Preserve user intent.\n\n"
-                    f"USER_PROMPT:\n{user_prompt}\n\n"
-                    f"ORIGINAL_DRAFT:\n{text}\n\n"
-                    f"CHALLENGER_FEEDBACK:\n{json.dumps(audit_result, indent=2)}\n\n"
-                    "Produce the improved final answer only."
-                )
-
                 _phase = "revision"
-                with trace.step("revision_inference", meta={"provider": "ollama", "model": model}):
-                    text = provider.generate(model=model, prompt=revision_prompt).strip()
-                audit_meta["revised"] = True
-
-                # Event 5: revision_complete
-                _obs.emit(
-                    EngineEventKind.REVISION_COMPLETE,
-                    request_id=_rid,
-                    task_spec_id=_tsid,
-                    meta={"revision_passes": revision_passes},
+                text = _do_revision(
+                    user_prompt=user_prompt,
+                    text=text,
+                    audit_result=audit_result,
+                    provider=provider,
+                    model=model,
+                    trace=trace,
+                    obs=_obs,
+                    rid=_rid,
+                    tsid=_tsid,
+                    revision_passes=revision_passes,
                 )
+                audit_meta["revised"] = True
 
         # M4.3: explicit lifecycle terminal state before serialisation.
         trace.complete()
@@ -628,11 +696,11 @@ def run(
         assert_no_forbidden_keys(trace_dict)
 
         # M5.2: build ExecutionMetrics (ADR-021 §3).
-        # Provider-confirmed input_tokens takes precedence over heuristic estimate.
+        # Provider-confirmed input_tokens takes precedence over heuristic char estimate.
         _final_input_tokens = (
             _provider_input_tokens
             if _provider_input_tokens is not None
-            else _heuristic_input_tokens
+            else _heuristic_char_count
         )
         _exec_latency_ms = max(0, int(time.time() * 1000) - session_state.started_at_ms)
         _telemetry = ExecutionMetrics(

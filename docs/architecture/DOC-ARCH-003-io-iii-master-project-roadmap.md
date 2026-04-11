@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-03-03"
-updated: "2026-04-03"
+updated: "2026-04-12"
 tags:
   - "architecture"
   - "roadmap"
@@ -107,17 +107,35 @@ Still excluded:
 
 ---
 
-## Phase 4 — Post-Capability Architecture Layer (Active)
+## Phase 4 — Post-Capability Architecture Layer (Complete)
 
-**Status: Active as of 2026-04-03. Governed by ADR-012.**
+**Status: Complete. Governed by ADR-012.**
 
 Phase 4 introduces a bounded orchestration layer above the frozen runtime kernel.
 Scope is strictly bounded by ADR-012. It does not introduce the capability expansion
 categories deferred here — those remain out of scope.
 
-All milestones complete: M4.0–M4.11 delivered. Phase 4 closed. Taggable as v0.4.0.
+All milestones complete: M4.0–M4.11 delivered. Phase 4 closed. Tagged v0.4.0.
 
-This phase must never expand beyond its ADR-governed surface.
+---
+
+## Phase 5 — Runtime Observability and Optimisation (Complete)
+
+**Status: Complete. Governed by ADR-021.**
+
+Phase 5 introduced measurement and governance signals without expanding the execution
+surface. All three milestones delivered: M5.0 (governance freeze), M5.1 (token
+pre-flight estimator), M5.2 (execution telemetry), M5.3 (constellation integrity guard).
+Tagged v0.5.0.
+
+A post-phase hardening pass was performed after close (2026-04-12):
+
+- 96 tests added (test gaps in context_assembly, routing fallback, engine revision paths)
+- `_heuristic_input_tokens` renamed to `_heuristic_char_count` for precision
+- `_do_challenger_pass` and `_do_revision` extracted from `engine.run()`
+- `mypy` and `ruff` added to dev tooling; `pytest` testpaths declared
+
+Test count after hardening: 515 passing (was 419 at phase close).
 
 ---
 

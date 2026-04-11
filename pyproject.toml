@@ -23,10 +23,27 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
+  "mypy>=1.8",
+  "ruff>=0.4",
 ]
 
 [tool.setuptools.packages.find]
 include = ["io_iii*"]
 
 [tool.pytest.ini_options]
-addopts = "-q"
+addopts = "-q --tb=short --strict-markers"
+testpaths = ["tests", "io_iii/tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+disallow_untyped_defs = false

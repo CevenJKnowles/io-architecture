@@ -8,7 +8,7 @@ canonical: true
 scope: phase-5
 audience: developer
 created: "2026-04-11"
-updated: "2026-04-11"
+updated: "2026-04-12"
 tags:
 - io-iii
 - phase-5
@@ -178,3 +178,40 @@ Phase 5 is complete when:
 - invariant validator passing
 - SESSION_STATE.md updated with phase close state
 - repository tagged `v0.5.0`
+
+**Status: Complete.** All criteria met at v0.5.0.
+
+---
+
+## Post-Phase 5 Hardening
+
+An optimality audit was performed after phase close. No ADRs were required; no invariants
+or execution paths were modified. All changes are additive (tests) or cosmetic (naming,
+extraction, tooling).
+
+**H1 — `context_assembly.py` unit test suite** (`tests/test_context_assembly_adr010.py`)
+ADR-010 had no direct unit tests. 46 tests added covering all private helpers and the
+`assemble_context` public surface. Hash stability verified over 5 iterations.
+
+**H2 — Routing fallback test suite** (`tests/test_routing_adr002.py`)
+ADR-002 primary→secondary→null fallback path was unexercised. 32 tests added covering
+all three fallback branches, input validation, `_parse_target`, and `_is_provider_enabled`.
+
+**H3 — Engine revision and challenger fail-open tests** (`tests/test_engine_revision_paths.py`)
+The `needs_work`→revision path and the challenger JSON-parse fail-open were untested.
+18 tests added covering the full audit/revision matrix and both fail-open scenarios.
+
+**H4 — `_heuristic_input_tokens` renamed to `_heuristic_char_count`** (`engine.py`)
+The variable name implied token-level precision. Renamed to reflect the actual unit
+(characters) with a clarifying comment.
+
+**H5 — `_do_challenger_pass` and `_do_revision` extracted** (`engine.py`)
+Two named helper functions extracted from `engine.run()`. Bound enforcement and `_phase`
+assignment remain in `run()` to preserve failure-handler accuracy.
+
+**H6 — `pyproject.toml` tooling** (`pyproject.toml`)
+Added `mypy>=1.8` and `ruff>=0.4` to dev dependencies. Added `[tool.ruff]` and
+`[tool.mypy]` sections. Declared `testpaths` and added `--tb=short --strict-markers`
+to pytest `addopts`.
+
+**Test count after hardening: 515 passing** (was 419 at phase close).
