@@ -8,6 +8,7 @@ Thumbs.db
 # ==============================
 # Python & Jupyter
 # ==============================
+*.egg-info/
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
