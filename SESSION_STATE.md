@@ -530,6 +530,7 @@ Repository is in a taggable phase-close state (v0.4.0 candidate).
 
 All three Phase 5 milestones are implemented, tested, and committed.
 Test count at phase close: 419 passing.
+Test count after post-phase hardening pass: 515 passing.
 
 ### M5 Completed
 
@@ -555,3 +556,105 @@ Test count at phase close: 419 passing.
 All Phase 1–4 components remain frozen.
 Phase 5 observability capabilities operate alongside the execution stack, not inside it.
 Phase 6 (Memory Architecture) is unblocked — M5.1 prerequisite satisfied.
+
+---
+
+## Post-Phase 5 Hardening — 2026-04-12
+
+Architectural optimality audit and gap closure performed against the v0.5.0 baseline.
+No new ADRs required. No invariants modified. No execution paths changed.
+
+---
+
+### H1 — Context Assembly unit test suite (ADR-010)
+
+File: `tests/test_context_assembly_adr010.py`
+
+ADR-010 (`context_assembly.py`, 221 lines) had zero direct unit tests. The module is
+foundational — it owns prompt hash stability, section ordering, and safe-key filtering.
+46 tests added covering: `_canonical_json`, `_compute_prompt_hash`, `_build_messages`,
+`_build_system_prompt`, `_format_boundaries_section`, `_build_assembly_metadata`,
+and `assemble_context` end-to-end.
+
+Key assertions:
+
+- same inputs → same `prompt_hash` across 5 iterations
+- section ordering is deterministic (persona < boundaries < envelope)
+- `_format_boundaries_section` excludes unsafe keys (prompt, completion, etc.)
+- `assembly_metadata` passes `assert_no_forbidden_keys`
+
+---
+
+### H2 — Routing fallback test suite (ADR-002)
+
+File: `tests/test_routing_adr002.py`
+
+ADR-002 routing fallback (primary → secondary → null) was exercised by only one
+determinism test. The critical failure paths were unexercised. 32 tests added covering:
+primary selection, primary-disabled fallback, unsupported-provider fallback,
+both-unavailable → null fallback, `_parse_target`, `_namespace_to_provider`,
+`_is_provider_enabled`, input validation, and determinism over 10 iterations.
+
+---
+
+### H3 — Engine revision path and challenger fail-open tests
+
+File: `tests/test_engine_revision_paths.py`
+
+The audit→`needs_work`→revision path (engine.py lines 593–623) and the challenger
+JSON-parse fail-open (engine.py lines 164–181) were untested. 18 tests added covering:
+
+- `needs_work` verdict → `provider.generate()` called twice, `revised=True` in audit_meta
+- `pass` verdict → generate called once, `revised=False`
+- `audit=False` → challenger never called, `audit_meta` is None
+- `_run_challenger` fail-open: invalid JSON → auto-pass dict returned
+- `_run_challenger` fail-open: provider unavailable (null route) → auto-pass dict returned
+
+---
+
+### H4 — `_heuristic_input_tokens` precision rename
+
+File: `io_iii/core/engine.py`
+
+Variable `_heuristic_input_tokens` renamed to `_heuristic_char_count`. The estimator
+(`estimate_chars`) returns a character count, not a token count. The old name implied
+token-level precision that does not exist. Clarifying comment added at the call site.
+
+---
+
+### H5 — Engine helper extraction: `_do_challenger_pass` and `_do_revision`
+
+File: `io_iii/core/engine.py`
+
+The challenger audit block and revision inference block were extracted from `engine.run()`
+into two named helper functions:
+
+- `_do_challenger_pass(cfg, user_prompt, text, challenger_fn, trace, obs, rid, tsid, audit_passes)`
+  — records trace step, calls `challenger_fn`, emits `CHALLENGER_AUDIT_COMPLETE`, returns `audit_result`
+- `_do_revision(user_prompt, text, audit_result, provider, model, trace, obs, rid, tsid, revision_passes)`
+  — constructs revision prompt, records trace step, calls `provider.generate`, emits `REVISION_COMPLETE`, returns revised text
+
+Bound enforcement (`MAX_AUDIT_PASSES`, `MAX_REVISION_PASSES`) and `_phase` assignment
+remain in `run()` so the failure handler retains accurate phase context.
+
+---
+
+### H6 — `pyproject.toml` tooling and pytest configuration
+
+File: `pyproject.toml`
+
+- Added `mypy>=1.8` and `ruff>=0.4` to `[project.optional-dependencies] dev`
+- Added `[tool.ruff]` configuration: `line-length = 100`, `target-version = "py311"`, lint selects E/F/W/I
+- Added `[tool.mypy]` configuration: `python_version = "3.11"`, `ignore_missing_imports = true`
+- Set `testpaths = ["tests", "io_iii/tests"]` — both test directories now explicit
+- Added `--tb=short --strict-markers` to pytest `addopts`
+
+---
+
+### Hardening Verification
+
+Tests: **515 passing**
+
+Invariant validator: **4/4 PASS**
+
+Capability registry: **3 capabilities, all bounded**
