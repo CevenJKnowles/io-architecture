@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-03-03"
-updated: "2026-04-03"
+updated: "2026-04-12"
 tags:
   - "architecture"
   - "roadmap"
@@ -19,7 +19,6 @@ roles_focus:
   - "executor"
   - "governance"
 provenance: "human"
-updated: "2026-04-03"
 ---
 
 ## Purpose
@@ -94,9 +93,9 @@ Still excluded:
 
 ---
 
-## Phase 4 — Post-Capability Architecture Layer (Active)
+## Phase 4 — Post-Capability Architecture Layer (Complete)
 
-**Status: Active as of 2026-04-03. ADR-012 governs the bounded orchestration layer contract.**
+**Status: Complete. ADR-012 governs the bounded orchestration layer contract.**
 
 Phase 4 introduces a bounded orchestration layer above the frozen runtime kernel.
 It does not introduce memory systems, retrieval, or autonomous capability expansion
@@ -143,14 +142,19 @@ Each phase requires:
 
 The following are explicitly out of scope at present:
 
-- Persistent memory implementation
-- Retrieval systems
+- Retrieval systems (embedding-based search or ranking)
 - Verification modules
 - Auto-audit policies
-- Dynamic routing
+- Dynamic routing (output-driven or telemetry-driven)
 - Multi-model arbitration
 - Autonomous meta-agents
 - Recursive orchestration
+
+Items previously listed as non-goals that are now phased:
+
+- Persistent memory → Phase 6 (governed memory architecture)
+- Steward mode → Phase 7 ADR / Phase 8 implementation
+- API surface → Phase 9
 
 ---
 
