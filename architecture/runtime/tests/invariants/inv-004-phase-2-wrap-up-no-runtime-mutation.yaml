@@ -5,7 +5,7 @@ id: "INV-004"
 title: "Phase Boundary Guardrails (Config + History Immutable)"
 status: "active"
 source_of_truth:
-  - "./docs/overview/DOC-OVW-003-phase-3-capability-layer-roadmap.md"
+  - "./docs/overview/DOC-OVW-003-io-iii-session-state-2026-03-04.md"
   - "./docs/runtime/DOC-RUN-002-sessionstate-v0-contract.md"
 
 assertions:
