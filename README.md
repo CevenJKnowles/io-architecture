@@ -6,7 +6,7 @@ Content boundaries are enforced recursively at the logging level. Every signific
 architectural decision is documented in an ADR before it is implemented. The system
 knows what it will not do, and that refusal is structural rather than conventional.
 
-Built over five design generations. Phase 5 complete. Phase 6 planned.
+Built over five design generations. Phase 5 complete. Phase 6 active.
 Latest stable phase tag: `v0.5.0`.
 
 ---
@@ -40,9 +40,11 @@ The Python runtime intentionally demonstrates the architecture without expanding
 | 2 | Structural Consolidation | Complete | — |
 | 3 | Capability Layer | Complete | — |
 | 4 | Context Architecture Formalisation | Complete | `v0.4.0` |
-| 5 | Runtime Observability & Optimisation | **Complete** | `v0.5.0` |
-| *6* | *Memory Architecture* | *Planned* | — |
+| 5 | Runtime Observability & Optimisation | Complete | `v0.5.0` |
+| *6* | *Memory Architecture* | **Active** | — |
 | *7* | *Open-Source Initialisation Layer* | *Planned* | — |
+| *8* | *Governed Dialogue Layer* | *Planned* | — |
+| *9* | *API & Integration Surface* | *Planned* | — |
 
 IO-III prioritises **determinism, governance discipline, and architectural clarity** over
 feature velocity.
