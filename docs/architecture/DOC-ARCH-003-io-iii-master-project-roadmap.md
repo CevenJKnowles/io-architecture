@@ -156,18 +156,113 @@ No feature expansion without phase approval.
 
 ---
 
+## Phase 6 — Memory Architecture (Pending)
+
+**Status: Pending. Governed by DOC-ARCH-014.**
+
+Phase 6 introduces governed, deterministic memory into the IO-III runtime.
+The execution stack remains frozen. Memory is a governed input to context assembly,
+not a new execution layer.
+
+Milestones: M6.0–M6.6 (memory store, packs, retrieval policy, injection, safety
+invariants, write contract) plus M6.7 (SessionState snapshot export — a portable,
+content-safe artefact carrying workflow position and memory pack state for
+cross-machine session continuity). Target: v0.6.0.
+
+**Cross-phase note:** M6.7 is a prerequisite for Phase 8 M8.3 (session shell `continue`
+command). The session shell requires a portable session object to resume from.
+
+---
+
+## Phase 7 — Initialisation & Distribution Layer (Pending)
+
+**Status: Pending. Governed by DOC-ARCH-015.**
+
+Phase 7 makes the IO-III runtime distributable and self-initialising for external users.
+It formalises the boundary between structural artefacts (owned by the architecture) and
+configurable values (owned by the user).
+
+Milestones: M7.0–M7.4 (init contract, init command, default templates including a
+`chat_session.yaml` session template, portability validation) plus M7.5 (Work Mode /
+Steward Mode ADR — the governance contract for Phase 8's dialogue layer). Target: v0.7.0.
+
+**Cross-phase note:** M7.5 (Work Mode / Steward Mode ADR) is a prerequisite for Phase 8
+M8.1 (implementation). The ADR must be accepted before any dialogue layer code is written.
+
+---
+
+## Phase 8 — Governed Dialogue Layer (Planned)
+
+**Status: Planned. ADR to be authored at M8.0.**
+
+Phase 8 is where IO-III becomes conversational. It introduces a bounded conversation loop
+above the frozen execution stack, using all prior infrastructure (memory, session snapshots,
+replay/resume, telemetry) as its substrate. The execution stack is not modified.
+
+Milestones:
+
+- M8.0 — Phase 8 ADR + milestone definition; `SESSION_MAX_TURNS` ceiling established
+- M8.1 — Work Mode / Steward Mode implementation (`SessionMode`, mode transitions, thresholds)
+- M8.2 — Bounded session loop (user turn → context assembly + memory → engine.run() →
+  steward gate → memory write gate → response; bounded by `SESSION_MAX_TURNS`)
+- M8.3 — Session shell CLI (`session start`, `session continue`, `session status`,
+  `session export`, `session close`); optional TUI extension using a terminal UI
+  library (`rich` / `textual`) — panels, live session state, colour-coded verdicts;
+  no structural change required, CLI remains the canonical interface
+- M8.4 — Steward approval gates (configurable pause triggers; content-safe state summary;
+  `approve` / `redirect` / `close` user actions)
+- M8.5 — Conditional runbook branches (`when:` conditions declared in config, not
+  output-driven; max 1 branch level; determinism preserved)
+- M8.6 — Session continuity via memory (cross-turn context as bounded memory records;
+  `pack.default.session` loaded automatically on `session continue`)
+
+Target: v0.8.0.
+
+---
+
+## Phase 9 — API & Integration Surface (Planned)
+
+**Status: Planned. ADR to be authored at M9.0.**
+
+Phase 9 wraps the existing CLI and session layer in a thin, content-safe HTTP surface.
+No new execution semantics. All invariants preserved. The API is a transport adapter only.
+
+Milestones:
+
+- M9.0 — Phase 9 ADR + milestone definition; API-as-transport-adapter contract established
+- M9.1 — HTTP API layer (`POST /run`, `POST /runbook`, `POST /session/start`,
+  `POST /session/{id}/turn`, `GET /session/{id}/state`, `DELETE /session/{id}`)
+- M9.2 — Event streaming (Server-Sent Events on `/session/{id}/stream`; content-safe
+  event schema; no raw model output in events)
+- M9.3 — External integration contracts (webhooks on `SESSION_COMPLETE`,
+  `RUNBOOK_COMPLETE`, `STEWARD_GATE_TRIGGERED`; content-safe payloads)
+- M9.4 — CLI surface improvements (`--output json` flag; structured exit codes;
+  machine-readable output for shell pipeline and CI/CD integration)
+- M9.5 — Self-hosted web UI (thin frontend over M9.1 API + M9.2 SSE streaming;
+  chat-style session interface; governed entry point only — all requests route
+  through the session layer; no execution bypass permitted)
+
+Target: v0.9.0.
+
+---
+
 ## Non-Goals (Active)
 
-The following remain explicitly out of scope:
+The following remain explicitly out of scope across all phases:
 
-- Persistent memory implementation
-- Retrieval systems
-- Verification modules
+- Retrieval systems (embedding-based search or ranking)
 - Auto-audit policies
-- Dynamic routing
+- Dynamic routing (output-driven or telemetry-driven)
 - Multi-model arbitration
 - Autonomous meta-agents
 - Recursive orchestration
+- Memory values in any log field
+
+Items previously listed as non-goals that are now phased:
+
+- Persistent memory → Phase 6
+- Steward mode → Phase 7 (ADR) / Phase 8 (implementation)
+- API surface → Phase 9
 
 ---
 

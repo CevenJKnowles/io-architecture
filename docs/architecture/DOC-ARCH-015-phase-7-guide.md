@@ -8,7 +8,7 @@ canonical: true
 scope: phase-7
 audience: developer
 created: "2026-04-11"
-updated: "2026-04-11"
+updated: "2026-04-12"
 tags:
 - io-iii
 - phase-7
@@ -155,6 +155,8 @@ Provide neutral, non-identity-specific template files for:
 - a default persona definition
 - a starter memory pack (`pack.default.starter`)
 - an annotated `providers.yaml` template with inline documentation
+- a `chat_session.yaml` runbook template demonstrating a 3-step bounded session
+  (`intent → execute → summarise`) as a concrete starting point for dialogue-mode use
 
 Templates are instructional — they demonstrate the config format without
 encoding the author's personal configuration.
@@ -179,14 +181,43 @@ has been recorded.
 
 ---
 
+### M7.5 — Work Mode / Steward Mode ADR
+
+Author the governance contract for the two operating modes introduced in Phase 8.
+
+#### M7.5 Purpose
+
+- formalise the distinction between active execution mode and deliberate stewardship mode
+  before any implementation begins
+- establish the `SessionMode` type, valid transitions, and what each mode permits
+- define steward thresholds (the conditions that trigger a pause for human review)
+- provide the governance prerequisite that Phase 8 M8.1 depends on
+
+#### M7.5 Contract
+
+- `SessionMode` is a two-value type: `work` and `steward`
+- mode is an explicit field on `SessionState` — not inferred from context
+- mode transitions are user-initiated only — no autonomous mode switching
+- steward thresholds are declared in config, not hardcoded
+- a steward threshold pause surfaces a content-safe state summary and waits for
+  explicit user action (`approve`, `redirect`, or `close`)
+- no execution proceeds past a steward threshold without explicit user action
+
+**Cross-phase note:** This ADR is a prerequisite for Phase 8 M8.1 (Work Mode /
+Steward Mode implementation). No Phase 8 code may be written until this ADR is accepted.
+
+---
+
 ## Definition of Done
 
 Phase 7 is complete when:
 
 - Phase 7 governing ADR accepted and indexed
-- M7.1–M7.4 milestones delivered
+- M7.1–M7.5 milestones delivered
 - a user with no prior context can clone the repo, follow the init surface,
   and execute a governed run without modifying structural code
+- `chat_session.yaml` template present and runnable
+- Work Mode / Steward Mode ADR accepted and indexed
 - no identity-specific values present in any structural artefact
 - `pytest` passing
 - invariant validator passing

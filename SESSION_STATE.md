@@ -658,3 +658,69 @@ Tests: **515 passing**
 Invariant validator: **4/4 PASS**
 
 Capability registry: **3 capabilities, all bounded**
+
+---
+
+## Roadmap Extension — 2026-04-12
+
+A comparative analysis of IO-II planning conversations against the IO-III roadmap
+was performed. Gaps, divergences, and missing phases were identified and resolved.
+The following documents were updated.
+
+### Analysis Findings
+
+Key divergences between IO-II's projected roadmap and IO-III's actual plan:
+
+- IO-II's "Phase 5: Structured Workflows" content landed in IO-III Phase 4 (runbooks);
+  IO-III Phase 5 was an observability insertion with no IO-II equivalent
+- IO-II's Phase 7 ("Agent Interaction Layer") was replaced by an open-source init layer;
+  the agent framing was explicitly rejected in favour of governed dialogue
+- IO-II's Phase 8 ("System Integration: API, UI") had no IO-III equivalent — now planned
+- Work Mode / Steward Mode was a "frozen design decision" with no implementation home
+- Task graph / conditional runbook branches were never formalised
+- No interface plan beyond the terminal existed
+
+### Documents Updated
+
+**DOC-ARCH-003** — Master roadmap extended with Phase 6–9 entries:
+
+- Phase 6 (Pending): memory architecture summary + M6.7 cross-phase dependency noted
+- Phase 7 (Pending): init layer summary + M7.5 cross-phase dependency noted
+- Phase 8 (Planned): Governed Dialogue Layer — M8.0–M8.6 defined; TUI option noted on M8.3
+- Phase 9 (Planned): API & Integration Surface — M9.0–M9.5 defined; web UI at M9.5
+- Non-goals list corrected: items now phased (persistent memory, steward mode, API)
+  moved out of active non-goals
+
+**DOC-ARCH-014** (Phase 6 Guide) — M6.7 added: governed SessionState snapshot export;
+portable session artefact carrying workflow position and memory pack state;
+prerequisite for Phase 8 M8.3 (`session continue`).
+
+**DOC-ARCH-015** (Phase 7 Guide) — two additions:
+
+- M7.3 extended: `chat_session.yaml` runbook template added to default pack templates
+- M7.5 added: Work Mode / Steward Mode ADR — governance contract prerequisite for
+  Phase 8 M8.1; `SessionMode` type, transition rules, steward threshold definition
+
+**DOC-ARCH-002** (Structural Elevation Roadmap) — three corrections:
+
+- Duplicate `updated:` frontmatter key removed
+- Phase 4 status updated from `(Active)` to `(Complete)`
+- Non-goals list corrected to match DOC-ARCH-003: phased items moved out
+
+### Interface Plan
+
+Three interface tiers documented in DOC-ARCH-003:
+
+| Tier | Interface | Phase | Milestone |
+| --- | --- | --- | --- |
+| 1 | CLI | Phase 1 (always) | — |
+| 2 | TUI (rich terminal) | Phase 8 | M8.3 extension |
+| 3 | Web UI (self-hosted) | Phase 9 | M9.5 |
+
+Constraint recorded: all interfaces must route through the governed session layer;
+no execution bypass permitted from any surface.
+
+### No Code Changes
+
+This session made no code changes. All changes are documentation only.
+Tests remain at 515 passing. Invariants remain at 4/4 PASS.
