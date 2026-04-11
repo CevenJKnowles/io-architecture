@@ -319,6 +319,9 @@ def cmd_run(args) -> int:
             capability_duration_ms = cap_meta.get("duration_ms")
             capability_error_code = cap_meta.get("error_code")
 
+        # Telemetry projection (M5.2; content-safe counts only)
+        telemetry_raw = result.meta.get("telemetry") if isinstance(result.meta, dict) else None
+
         # Metadata logging (NO prompt/response content; prompt_hash is safe)
         latency_ms = int((time.perf_counter() - t0) * 1000)
         append_metadata(
@@ -342,6 +345,7 @@ def cmd_run(args) -> int:
                 "trace_steps": trace_steps,
                 "trace_total_ms": trace_total_ms,
                 "engine_event_count": engine_event_count,
+                "telemetry": telemetry_raw,
             },
         )
 

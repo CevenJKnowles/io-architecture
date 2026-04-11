@@ -25,7 +25,8 @@ from io_iii.persona_contract import (
 
 from io_iii.core.capabilities import CapabilityContext, CapabilityRegistry
 from io_iii.core.content_safety import assert_no_forbidden_keys
-from io_iii.core.preflight import check_context_limit, _DEFAULT_CONTEXT_LIMIT_CHARS
+from io_iii.core.preflight import check_context_limit, _DEFAULT_CONTEXT_LIMIT_CHARS, estimate_chars
+from io_iii.core.telemetry import ExecutionMetrics
 
 from io_iii.core.execution_trace import TraceRecorder
 from io_iii.core.engine_observability import EngineEventKind, EngineObservabilityLog
@@ -526,12 +527,28 @@ def run(
         if _context_limit > 0:
             check_context_limit(final_prompt, limit_chars=_context_limit)
 
+        # M5.2: initialise telemetry accumulators for this execution.
+        _call_count = 0
+        _provider_input_tokens: Optional[int] = None   # confirmed by provider (best-effort)
+        _provider_output_tokens: Optional[int] = None  # confirmed by provider (best-effort)
+        # Heuristic input estimate (always available from M5.1 estimator).
+        _heuristic_input_tokens = estimate_chars(final_prompt)
+
         _phase = "provider"
         with trace.step(
             "provider_inference",
             meta={"provider": "ollama", "model": model},
         ):
-            text = provider.generate(model=model, prompt=final_prompt).strip()
+            # Use generate_with_metrics() when available (OllamaProvider M5.2);
+            # fall back to generate() for any provider that only implements the protocol.
+            if hasattr(provider, "generate_with_metrics"):
+                text, _provider_input_tokens, _provider_output_tokens = (
+                    provider.generate_with_metrics(model=model, prompt=final_prompt)
+                )
+            else:
+                text = provider.generate(model=model, prompt=final_prompt)
+            text = text.strip()
+            _call_count += 1
 
         # Event 3: provider_execution_complete (ollama path)
         _obs.emit(
@@ -609,9 +626,27 @@ def run(
         trace.complete()
         trace_dict = trace.trace.to_dict()
         assert_no_forbidden_keys(trace_dict)
+
+        # M5.2: build ExecutionMetrics (ADR-021 §3).
+        # Provider-confirmed input_tokens takes precedence over heuristic estimate.
+        _final_input_tokens = (
+            _provider_input_tokens
+            if _provider_input_tokens is not None
+            else _heuristic_input_tokens
+        )
+        _exec_latency_ms = max(0, int(time.time() * 1000) - session_state.started_at_ms)
+        _telemetry = ExecutionMetrics(
+            call_count=_call_count,
+            input_tokens=_final_input_tokens,
+            output_tokens=_provider_output_tokens,
+            latency_ms=_exec_latency_ms,
+            model_used=model,
+        )
+
         meta = {
             "persona_contract_version": PERSONA_CONTRACT_VERSION,
             "trace": trace_dict,
+            "telemetry": _telemetry.to_dict(),
         }
         if capability_meta is not None:
             assert_no_forbidden_keys(capability_meta)
