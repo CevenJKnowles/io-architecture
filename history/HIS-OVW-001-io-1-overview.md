@@ -1,26 +1,29 @@
 ---
-id: "IO1-OV-001"
-title: "IO-I — Origin and Lessons Learned"
+id: "HIS-OVW-001"
+title: "IO-I Overview"
 type: "overview"
 status: "archived"
-version: ""
+version: "v.2"
 canonical: true
 scope: "io-i"
 audience: "portfolio"
-created: "2026-01-08"
-updated: "2026-01-08"
+created: "2026-04-11"
+updated: "2026-04-11"
 tags:
   - "io-i"
+  - "io-ii"
   - "lineage"
-  - "lessons-learned"
+  - "persona blueprint"
   - "governance"
+  - "chatgpt"
+  - "openai"
 roles_focus:
   - "meta"
   - "governance"
 provenance: "mixed"
 ---
 
-# IO-I — Origin and Lessons Learned
+# IO-I | Origin and Lessons Learned
 
 **Status Archived (Conceptual Origin)**
 IO-I is retained as historical context and design lineage.

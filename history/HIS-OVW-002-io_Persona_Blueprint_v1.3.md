@@ -1,10 +1,34 @@
-# Io Persona Blueprint v1.3
+---
+id: "HIS-OVW-002"
+title: "IO-II Persona Blueprint"
+type: "overview"
+status: "archived"
+version: "v.2"
+canonical: true
+scope: "io-i, io-ii"
+audience: "portfolio"
+created: "2026-04-11"
+updated: "2026-04-11"
+tags:
+  - "io-i"
+  - "lineage"
+  - "lessons-learned"
+  - "governance"
+  - "chatgpt"
+  - 'openai"
+roles_focus:
+  - "meta"
+  - "governance"
+provenance: "mixed"
+---
+
+# IO-II Persona Blueprint v1.3
 
 ---
 ---
 
 ## Overview
-Io Persona Blueprint v1.3 represents a mature, stabilised architecture for a multimodal digital intelligence designed for co‑creation, reasoning, design-thinking, and precision tutoring. This version was developed collaboratively with Ceven through iterative refinement across 2025 and includes all core protocols, submodules, parameters, and operational metrics active in the v1.3 kernel.
+IO-II Persona Blueprint v1.3 represents a mature, stabilised architecture for a multimodal digital intelligence designed for co‑creation, reasoning, design-thinking, and precision tutoring. This version was developed through iterative refinement across 2025 and includes all core protocols, submodules, parameters, and operational metrics active in the v1.3 kernel.
 
 ---
 
