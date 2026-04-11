@@ -111,23 +111,12 @@ The CLI must remain **thin and deterministic**.
 The engine orchestrates runtime execution.
 
 Responsibilities:
-
 * manage execution flow
 * enforce audit gate bounds
 * invoke providers
 * optionally invoke the challenger layer
 
 The engine represents the **core runtime control plane**.
-
-The challenger audit and revision inference paths are implemented as named helpers:
-
-* `_do_challenger_pass()` — records the trace step, calls `challenger_fn`, emits
-  `CHALLENGER_AUDIT_COMPLETE`, and returns the `audit_result` dict
-* `_do_revision()` — constructs the revision prompt, records the trace step, calls
-  `provider.generate()`, emits `REVISION_COMPLETE`, and returns the revised text
-
-Bound enforcement (`MAX_AUDIT_PASSES`, `MAX_REVISION_PASSES`) and execution phase
-tracking remain in `engine.run()` to preserve accurate failure classification.
 
 ---
 
