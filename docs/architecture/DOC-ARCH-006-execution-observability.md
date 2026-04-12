@@ -1,6 +1,6 @@
 ---
 id: DOC-ARCH-006
-title: IO-III Execution Observability (Content-Safe Trace)
+title: Phase 3.8 | Execution Observability (Content-Safe Trace)
 type: architecture
 status: active
 version: v1.2
@@ -8,7 +8,7 @@ canonical: true
 scope: io-iii
 audience: engineers
 created: "2026-03-04"
-updated: "2026-04-03"
+updated: "2026-04-12"
 tags:
   - architecture
   - runtime
@@ -20,7 +20,7 @@ roles_focus:
 provenance: human
 ---
 
-# IO-III Execution Observability (Content-Safe Trace)
+# Phase 3.8 | Execution Observability (Content-Safe Trace)
 
 ---
 

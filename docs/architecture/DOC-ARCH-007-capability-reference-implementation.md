@@ -1,4 +1,4 @@
-# DOC-ARCH-007 — Capability Reference Implementation
+# DOC-ARCH-007 | Capability Reference Implementation
 
 This document defines the **Phase 3 reference capability implementation** shipped with IO-III.
 

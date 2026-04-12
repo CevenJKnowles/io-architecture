@@ -53,6 +53,7 @@ from ._session_shell import (
     cmd_session_status,
     cmd_session_close,
 )
+from io_iii.api.server import cmd_serve
 
 __all__ = [
     "main",
@@ -74,6 +75,7 @@ __all__ = [
     "cmd_session_continue",
     "cmd_session_status",
     "cmd_session_close",
+    "cmd_serve",
 ]
 
 
@@ -460,6 +462,13 @@ def main(argv=None) -> int:
         default=None,
         help="Path to IO-III runtime config directory",
     )
+    parser.add_argument(
+        "--output",
+        choices=["json"],
+        default="json",
+        dest="output_format",
+        help="Output format (default: json; all output is JSON — M9.4 / ADR-025 §7)",
+    )
 
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -616,6 +625,18 @@ def main(argv=None) -> int:
     p_session_close = p_session_sub.add_parser("close")
     p_session_close.add_argument("--session-id", required=True, dest="session_id", help="Session ID to close")
     p_session_close.set_defaults(func=cmd_session_close)
+
+    # Phase 9 M9.1 — HTTP API server (ADR-025 §8)
+    p_serve = sub.add_parser("serve")
+    p_serve.add_argument(
+        "--host", default="127.0.0.1",
+        help="Bind address (default: 127.0.0.1 — loopback only; ADR-025 §8)",
+    )
+    p_serve.add_argument(
+        "--port", type=int, default=8080,
+        help="Listen port (default: 8080)",
+    )
+    p_serve.set_defaults(func=cmd_serve)
 
     args = parser.parse_args(argv)
     return int(args.func(args))

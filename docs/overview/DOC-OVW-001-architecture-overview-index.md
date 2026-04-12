@@ -12,7 +12,7 @@ audience:
   - reviewers
   - external-engineers
 created: "2026-03-04"
-updated: "2026-04-11"
+updated: "2026-04-12"
 tags:
   - io-iii
   - architecture
@@ -83,10 +83,17 @@ Examples:
 - DOC-RUN-005 — Execution trace schema (ExecutionResult.meta.trace)
 
 **Architecture documents (selected):**
+- DOC-ARCH-003 — Master project roadmap
 - DOC-ARCH-004 — Runtime architecture
 - DOC-ARCH-005 — Capability layer definition
 - DOC-ARCH-006 — Execution observability (content-safe trace)
-docs/architecture/DOC-ARCH-007-capability-reference-implementation.md
+- DOC-ARCH-007 — Capability reference implementation
+- DOC-ARCH-012 — Phase 4 guide (Context Architecture Formalisation)
+- DOC-ARCH-013 — Phase 5 guide (Runtime Observability & Optimisation)
+- DOC-ARCH-014 — Phase 6 guide (Memory Architecture)
+- DOC-ARCH-015 — Phase 7 guide (Open-Source Initialisation Layer)
+- DOC-ARCH-016 — Phase 8 guide (Governed Dialogue Layer) ← current phase
+- DOC-ARCH-017 — Phase 9 guide (API & Integration Surface) ← next phase
 
 ---
 
