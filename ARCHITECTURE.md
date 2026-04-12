@@ -8,7 +8,7 @@ canonical: true
 scope: "repo"
 audience: "portfolio"
 created: "2026-01-08"
-updated: "2026-01-08"
+updated: "2026-04-12"
 tags:
   - "io"
   - "architecture"
@@ -168,9 +168,9 @@ Only one model addresses the user. Internal disagreement is resolved before outp
 
 ## 8. Runtime Boundary
 
-LiteLLM functions as the runtime control plane, providing routing and policy enforcement.
+The IO-III runtime control plane (`routing.py`, `engine.py`) provides deterministic routing, bounded execution, and policy enforcement.
 
-It does not manage cognition, memory, or persona. Those responsibilities remain within the IO-III Core.
+It does not manage cognition, memory, or persona. Those responsibilities remain within the IO-III Core. Provider adapters (Ollama, null) are interchangeable behind a stable provider contract.
 
 ***
 
