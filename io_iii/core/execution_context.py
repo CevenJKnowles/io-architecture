@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Optional
 
 from io_iii.core.context_assembly import AssembledContext
 from io_iii.core.session_state import RouteInfo, SessionState
+from io_iii.memory.store import MemoryRecord
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,8 @@ class ExecutionContext:
     Notes:
     - 'prompt_hash' is safe to log.
     - 'assembled_context' is content-plane and MUST NOT be logged.
+    - 'memory' is content-plane (record values) and MUST NOT be logged.
+      Use assembly_metadata['memory_keys_released'] for safe log fields.
     """
 
     cfg: Any
@@ -28,4 +31,5 @@ class ExecutionContext:
     route: Optional[RouteInfo]
     prompt_hash: Optional[str]
     assembled_context: Optional[AssembledContext]
+    memory: tuple[MemoryRecord, ...] = field(default_factory=tuple)
     

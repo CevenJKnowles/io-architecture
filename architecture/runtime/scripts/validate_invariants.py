@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import re
 import sys
 import glob
 import os
@@ -169,6 +170,64 @@ def assert_git_forbid_paths(spec: Dict[str, Any], failure_ctx: Dict[str, str]) -
     return []
 
 
+def assert_python_requires_pattern(spec: Dict[str, Any], failure_ctx: Dict[str, str]) -> List[Failure]:
+    """
+    Assert that at least one file matching glob contains the regex pattern (ADR-022 §6).
+
+    Fields:
+        glob    — file glob (supports ** with recursive=True)
+        pattern — Python regex; must be found in at least one matching file
+    """
+    file_glob = spec["glob"]
+    pattern = spec["pattern"]
+    files = sorted(glob.glob(file_glob, recursive=True))
+
+    if not files:
+        return [Failure(**failure_ctx, message=f"No files found matching: {file_glob}")]
+
+    rx = re.compile(pattern)
+    for fpath in files:
+        try:
+            with open(fpath, "r", encoding="utf-8") as fh:
+                if rx.search(fh.read()):
+                    return []
+        except Exception as e:
+            return [Failure(**failure_ctx, message=f"Error reading {fpath}: {e}")]
+
+    return [Failure(**failure_ctx, message=f"Pattern {pattern!r} not found in any file matching {file_glob}")]
+
+
+def assert_python_forbids_pattern(spec: Dict[str, Any], failure_ctx: Dict[str, str]) -> List[Failure]:
+    """
+    Assert that no line in any file matching glob contains the regex pattern (ADR-022 §6).
+
+    Fields:
+        glob    — file glob (supports ** with recursive=True)
+        pattern — Python regex; must NOT appear on any line in any matching file
+    """
+    file_glob = spec["glob"]
+    pattern = spec["pattern"]
+    files = sorted(glob.glob(file_glob, recursive=True))
+
+    if not files:
+        return []  # nothing to check; not a failure
+
+    rx = re.compile(pattern)
+    failures: List[Failure] = []
+    for fpath in files:
+        try:
+            with open(fpath, "r", encoding="utf-8") as fh:
+                for lineno, line in enumerate(fh, 1):
+                    if rx.search(line):
+                        failures.append(
+                            Failure(**failure_ctx, message=f"Forbidden pattern {pattern!r} at {fpath}:{lineno}")
+                        )
+        except Exception as e:
+            failures.append(Failure(**failure_ctx, message=f"Error reading {fpath}: {e}"))
+
+    return failures
+
+
 def run_invariant(invariant_path: str) -> Tuple[str, str, List[Failure]]:
     inv = load_yaml(invariant_path) or {}
     inv_id = str(inv.get("id", "UNKNOWN"))
@@ -204,6 +263,10 @@ def run_invariant(invariant_path: str) -> Tuple[str, str, List[Failure]]:
                 failures.extend(assert_yaml_each_has_keys(a, ctx))
             elif atype == "git_forbid_paths":
                 failures.extend(assert_git_forbid_paths(a, ctx))
+            elif atype == "python_requires_pattern":
+                failures.extend(assert_python_requires_pattern(a, ctx))
+            elif atype == "python_forbids_pattern":
+                failures.extend(assert_python_forbids_pattern(a, ctx))
             else:
                 failures.append(Failure(**ctx, message=f"Unknown assertion type: {atype!r} (in {invariant_path})"))
         except FileNotFoundError as e:
