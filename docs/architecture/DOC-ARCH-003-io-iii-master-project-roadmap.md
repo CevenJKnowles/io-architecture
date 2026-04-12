@@ -156,38 +156,36 @@ No feature expansion without phase approval.
 
 ---
 
-## Phase 6 — Memory Architecture (Pending)
+## Phase 6 — Memory Architecture (Complete)
 
-**Status: Pending. Governed by DOC-ARCH-014.**
+**Status: Complete. Governed by DOC-ARCH-014.**
 
-Phase 6 introduces governed, deterministic memory into the IO-III runtime.
-The execution stack remains frozen. Memory is a governed input to context assembly,
-not a new execution layer.
+Phase 6 introduced governed, deterministic memory into the IO-III runtime. The execution
+stack remained frozen. Memory is a governed input to context assembly, not a new
+execution layer.
 
-Milestones: M6.0–M6.6 (memory store, packs, retrieval policy, injection, safety
-invariants, write contract) plus M6.7 (SessionState snapshot export — a portable,
-content-safe artefact carrying workflow position and memory pack state for
-cross-machine session continuity). Target: v0.6.0.
+Milestones: M6.0–M6.7 delivered (memory store, packs, retrieval policy, injection, safety
+invariants, write contract, SessionState snapshot export). Tagged v0.6.0.
 
 **Cross-phase note:** M6.7 is a prerequisite for Phase 8 M8.3 (session shell `continue`
 command). The session shell requires a portable session object to resume from.
 
 ---
 
-## Phase 7 — Initialisation & Distribution Layer (Pending)
+## Phase 7 — Initialisation & Distribution Layer (Complete)
 
-**Status: Pending. Governed by DOC-ARCH-015.**
+**Status: Complete. Governed by DOC-ARCH-015.**
 
-Phase 7 makes the IO-III runtime distributable and self-initialising for external users.
-It formalises the boundary between structural artefacts (owned by the architecture) and
+Phase 7 made the IO-III runtime distributable and self-initialising for external users.
+It formalised the boundary between structural artefacts (owned by the architecture) and
 configurable values (owned by the user).
 
-Milestones: M7.0–M7.4 (init contract, init command, default templates including a
-`chat_session.yaml` session template, portability validation) plus M7.5 (Work Mode /
-Steward Mode ADR — the governance contract for Phase 8's dialogue layer). Target: v0.7.0.
+Milestones: M7.0–M7.5 delivered (init contract, init command, default templates including
+a `chat_session.yaml` session template, portability validation pass with
+`PORTABILITY_CHECK_FAILED` failure code, Work Mode / Steward Mode ADR-024). Tagged v0.7.0.
 
-**Cross-phase note:** M7.5 (Work Mode / Steward Mode ADR) is a prerequisite for Phase 8
-M8.1 (implementation). The ADR must be accepted before any dialogue layer code is written.
+**Cross-phase note:** M7.5 (ADR-024 — Work Mode / Steward Mode) is a prerequisite for
+Phase 8 M8.1 (implementation). ADR accepted. Phase 8 may begin.
 
 ---
 

@@ -92,3 +92,9 @@ architecture, implementation, and documentation.
 
 - **ADR-022 — Memory Architecture Contract**
   Path: `./ADR/ADR-022-memory-architecture-contract.md`
+
+- **ADR-023 — Open-Source Initialisation Contract**
+  Path: `./ADR/ADR-023-open-source-initialisation-contract.md`
+
+- **ADR-024 — Work Mode / Steward Mode Contract**
+  Path: `./ADR/ADR-024-work-mode-steward-mode-contract.md`

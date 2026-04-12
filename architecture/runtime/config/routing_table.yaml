@@ -29,7 +29,7 @@ routing_table:
       name: "gemma:latest"
     reasoning:
       provider: ollama
-      name: "deepseek-r1:latest"
+      name: "qwen2.5:14b-instruct"
     challenger:
       provider: ollama
       name: "deepseek-r1:latest"
@@ -42,11 +42,11 @@ routing_table:
 
   modes:
     executor:
-      primary: "local:qwen3:8b"
+      primary: "local:qwen2.5:14b-instruct"
       secondary: "local:mistral:latest"
 
     explorer:
-      primary: "local:deepseek-r1:latest"
+      primary: "local:qwen2.5:14b-instruct"
       secondary: "local:qwen3:8b"
 
     challenger:

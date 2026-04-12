@@ -12,13 +12,13 @@
 
 ## Phase Status
 
-**Current Phase:** Phase 6 — Memory Architecture (complete)
+**Current Phase:** Phase 7 — Open-Source Initialisation Layer (complete)
 
-**Status:** Phase 6 complete. M6.0–M6.7 delivered and tested. All invariants passing. Ready for tagging v0.6.0.
+**Status:** Phase 7 complete. M7.0–M7.5 delivered. All invariants passing. Ready for tagging v0.7.0.
 
-**Tag:** v0.6.0
+**Tag:** v0.7.0 (pending)
 
-**Branch:** phase-6-0
+**Branch:** phase-7-0
 
 ---
 
@@ -749,3 +749,98 @@ python -m io_iii session import --snapshot <path>
 - `python -m io_iii session import --snapshot <path>` — M6.7
 
 **ADR freeze boundary respected:** engine.py, routing.py, telemetry.py unchanged throughout Phase 6.
+
+---
+
+## Phase 7 — Open-Source Initialisation Layer (Complete)
+
+**Governing ADR:** ADR-023 — Open-Source Initialisation Contract (accepted)
+
+**Phase 7 Prerequisite:** Config separation audit complete. All model names live in
+`routing_table.yaml`. No identity-specific values in structural artefacts. `persona.yaml`
+absent — Phase 7 M7.3 deliverable.
+
+---
+
+### M7.0 — Phase 7 ADR and Milestone Definition ✓
+
+ADR-023 authored and accepted. Config separation audit confirms Phase 7 prerequisite
+satisfied. Phase 7 milestones formally defined in SESSION_STATE.md.
+
+**Deliverable:** `ADR/ADR-023-open-source-initialisation-contract.md`
+
+---
+
+### M7.1 — Initialisation Contract ✓
+
+Init contract formalised in ADR-023 §3. Four required config files identified;
+two optional. No prerequisite extraction needed — config separation confirmed clean.
+
+---
+
+### M7.2 — Init Command or Setup Guide ✓
+
+CLI `init` subcommand: displays required config surface, shows file presence state,
+runs portability validation, prints human-readable summary with next steps.
+
+**Module:** `io_iii/cli.py` — `cmd_init()`
+
+**CLI:** `python -m io_iii init`
+
+---
+
+### M7.3 — Default Pack and Persona Templates ✓
+
+Neutral, non-identity-specific template files created:
+
+- `architecture/runtime/config/persona.yaml` — default persona template (executor,
+  explorer, draft modes; annotated; placeholder `persona.name = "io-user"`)
+- `architecture/runtime/config/templates/chat_session.yaml` — annotated YAML template
+  (human-readable; schema reference)
+- `architecture/runtime/config/templates/chat_session.json` — runnable JSON version
+  (3-step `intent → execute → summarise` pattern; explorer → executor → draft)
+
+---
+
+### M7.4 — Portability Validation ✓
+
+Validation pass confirming correct initialisation before first execution.
+
+**Module:** `io_iii/core/portability.py` — `run_portability_checks()`, `validate_portability()`
+
+**Checks (7):** required config files present and parseable; provider base_url declared;
+model name declared; persona name present; storage root declared; storage root writable;
+constellation guard passes (M5.3).
+
+**CLI:** `python -m io_iii validate`
+
+**New failure code:** `PORTABILITY_CHECK_FAILED` (ADR-013 extension)
+
+**Tests:** `tests/test_portability_m74.py` — 24 tests
+
+---
+
+### M7.5 — Work Mode / Steward Mode ADR ✓
+
+ADR-024 authored and accepted. Governance contract for `work` / `steward` session modes
+established as Phase 8 M8.1 prerequisite.
+
+**Deliverable:** `ADR/ADR-024-work-mode-steward-mode-contract.md`
+
+**Prerequisite for:** Phase 8 M8.1. No Phase 8 code until ADR-024 is accepted.
+
+---
+
+### Phase 7 Definition of Done
+
+- ADR-023 accepted and indexed ✓
+- M7.1–M7.5 milestones delivered ✓
+- A user with no prior context can clone, follow the init surface, and execute a governed
+  run without modifying structural code ✓
+- `chat_session.yaml` template present and runnable ✓
+- ADR-024 (Work Mode / Steward Mode) accepted and indexed ✓
+- No identity-specific values in any structural artefact ✓
+- `pytest` passing ✓
+- Invariant validator passing ✓
+- SESSION_STATE.md updated with phase close state ✓
+- Repository tagged `v0.7.0` (pending)

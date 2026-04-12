@@ -1,0 +1,102 @@
+# IO-III Chat Session Runbook Template
+# ADR-014 (bounded runbook layer contract)
+# ADR-023 §5.3 (Phase 7 portability — chat session template)
+#
+# ABOUT THIS FILE
+# ---------------
+# This is a human-readable annotated template for a 3-step bounded chat session
+# following the intent → execute → summarise pattern.
+#
+# The IO-III runtime accepts runbooks as JSON. The runnable equivalent of this
+# file is chat_session.json in this directory. Use this YAML file to understand
+# the schema; use the JSON file to actually run it:
+#
+#   python -m io_iii runbook architecture/runtime/config/templates/chat_session.json
+#
+# RUNBOOK SCHEMA
+# --------------
+# runbook_id  — stable identifier; prefix "rb-" followed by a short hex string.
+#               Change this to something meaningful for your session.
+#
+# steps       — ordered list of TaskSpec objects (1–20 steps; ADR-014).
+#               Each step runs in sequence; earlier step output informs later steps
+#               via the execution trace, not via direct data passing.
+#
+# TaskSpec fields:
+#   task_spec_id  — stable step identifier; prefix "ts-"
+#   mode          — routing mode; must match a key in routing_table.yaml modes
+#                   (executor, explorer, challenger, synthesizer, visionary, fast, draft)
+#   prompt        — the instruction for this step; replace with your own content
+#   capabilities  — optional list of capability ids to invoke (leave empty for most steps)
+#   metadata      — optional key/value annotations (governance use; not content)
+#
+# THE INTENT → EXECUTE → SUMMARISE PATTERN
+# -----------------------------------------
+# Step 1 (intent / explorer):
+#   Clarify and reason about what is being asked before any output is produced.
+#   Use explorer mode to engage the reasoning model.
+#
+# Step 2 (execute / executor):
+#   Perform the task. Use executor mode for the primary work step.
+#   Audit is enabled — the challenger gate runs after this step.
+#
+# Step 3 (summarise / draft):
+#   Format and deliver the final output. Use draft mode to produce
+#   a clean, structured response without introducing new reasoning.
+
+schema: "io-iii-runbook-template"
+version: "v1.0"
+
+# -------------------------------------------------------------------
+# Replace rb-chat-session-001 with a meaningful id for your session.
+# -------------------------------------------------------------------
+runbook_id: rb-chat-session-001
+
+steps:
+
+  # Step 1 — Intent
+  # Reason about the request before producing any output.
+  # Replace the prompt with a description of what you want to investigate or accomplish.
+  - task_spec_id: ts-intent-001
+    mode: explorer
+    prompt: >
+      Reason carefully about the following request. Do not produce a final answer yet.
+      Identify: (1) what is being asked, (2) any ambiguities or assumptions,
+      (3) what a complete, accurate response would need to cover.
+
+      Request: [replace this with your actual request]
+    capabilities: []
+    metadata:
+      step_label: intent
+      pattern: intent-execute-summarise
+
+  # Step 2 — Execute
+  # Perform the task based on the intent step's findings.
+  # The challenger audit gate runs after this step (audit_enabled in persona.yaml).
+  # Replace the prompt with your task instruction.
+  - task_spec_id: ts-execute-001
+    mode: executor
+    prompt: >
+      Based on the reasoning from the intent step, perform the following task.
+      Produce a complete, accurate response. Do not introduce facts beyond what
+      is needed to answer the request.
+
+      Task: [replace this with your actual task instruction]
+    capabilities: []
+    metadata:
+      step_label: execute
+      pattern: intent-execute-summarise
+
+  # Step 3 — Summarise
+  # Format and deliver the final output.
+  # Do not introduce new reasoning here — structure only.
+  - task_spec_id: ts-summarise-001
+    mode: draft
+    prompt: >
+      Format the output from the execute step for clear delivery.
+      Preserve all facts and conclusions. Do not add new reasoning.
+      Structure the response with a brief summary followed by any relevant detail.
+    capabilities: []
+    metadata:
+      step_label: summarise
+      pattern: intent-execute-summarise

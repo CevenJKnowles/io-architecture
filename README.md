@@ -6,8 +6,8 @@ Content boundaries are enforced recursively at the logging level. Every signific
 architectural decision is documented in an ADR before it is implemented. The system
 knows what it will not do, and that refusal is structural rather than conventional.
 
-Built over six design generations. Phase 6 complete.
-Latest stable phase tag: `v0.6.0`.
+Built over seven design generations. Phase 7 complete.
+Latest stable phase tag: `v0.7.0`.
 
 ---
 
@@ -42,7 +42,7 @@ The Python runtime intentionally demonstrates the architecture without expanding
 | 4 | Context Architecture Formalisation | Complete | `v0.4.0` |
 | 5 | Runtime Observability & Optimisation | **Complete** | `v0.5.0` |
 | 6 | Memory Architecture | **Complete** | `v0.6.0` |
-| *7* | *Open-Source Initialisation Layer* | *Planned* | — |
+| 7 | Open-Source Initialisation Layer | **Complete** | `v0.7.0` |
 | *8* | *Governed Dialogue Layer* | *Planned* | — |
 | *9* | *API & Integration Surface* | *Planned* | — |
 
@@ -304,6 +304,7 @@ Core modules:
 | `core/preflight.py` | token pre-flight estimator (M5.1) |
 | `core/telemetry.py` | execution telemetry metrics (M5.2) |
 | `core/constellation.py` | constellation integrity guard (M5.3) |
+| `core/portability.py` | portability validation pass (M7.4) |
 | `providers/null_provider.py` | null provider adaptor |
 | `providers/ollama_provider.py` | Ollama provider adaptor |
 | `cli.py` | CLI entrypoint |
@@ -433,19 +434,20 @@ Phase 6 is complete. Tag: `v0.6.0`.
 
 Governing document: `docs/architecture/DOC-ARCH-014-phase-6-guide.md`.
 
-### Phase 7 - Open-Source Initialisation Layer *(Planned)*
+### Phase 7 - Open-Source Initialisation Layer
 
 Phase 7 makes the IO-III runtime self-initialising for external users. The goal: clone → configure → run, without modifying structural code.
 
-Planned capabilities:
+Delivered capabilities:
 
-- initialisation contract defining the minimum required user configuration
-- `init` CLI command or documented setup procedure
-- neutral template files for persona, model config, and memory packs
-- portability validation pass confirming correct initialisation before first execution
-- clean separation of structural artefacts from user-configurable values
+- initialisation contract defining the minimum required user configuration (M7.1)
+- `python -m io_iii init` command and `python -m io_iii validate` command (M7.2, M7.4)
+- neutral template files: `persona.yaml`, `chat_session.yaml` bounded session template (M7.3)
+- portability validation pass with `PORTABILITY_CHECK_FAILED` failure code (M7.4)
+- clean config/structural separation confirmed by Phase 7 audit (M7.0)
+- Work Mode / Steward Mode ADR-024 — governance prerequisite for Phase 8 M8.1 (M7.5)
 
-Prerequisite: Phase 6 config separation must be complete before Phase 7 begins.
+Phase 7 is complete. Tag: `v0.7.0`.
 
 Governing document: `docs/architecture/DOC-ARCH-015-phase-7-guide.md`.
 

@@ -2,8 +2,8 @@
 id: DOC-ARCH-015
 title: Phase 7 Guide | Open-Source Initialisation Layer
 type: architecture
-status: planned
-version: v0.1
+status: complete
+version: v1.0
 canonical: true
 scope: phase-7
 audience: developer

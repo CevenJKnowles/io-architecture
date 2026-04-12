@@ -1,0 +1,89 @@
+# IO-III Persona Configuration
+# ADR-006 (persona binding and mode governance)
+# ADR-023 §5 (Phase 7 portability — required config surface)
+#
+# SETUP INSTRUCTIONS
+# ------------------
+# Replace the placeholder values below with your own before first run.
+# The portability validator (M7.4) will check that persona.name is non-empty.
+#
+# Fields:
+#   persona.name      — stable identifier for this persona instance.
+#                       Used in governance logs (never in content logs).
+#                       Example: "io-user", "my-runtime", "research-assistant"
+#
+#   persona.version   — semantic version string for this persona definition.
+#                       Increment when you make meaningful changes to mode contracts.
+#
+#   persona.modes     — one or more named mode definitions. Each mode maps to a
+#                       role in routing_table.yaml and carries a persona contract
+#                       string injected into the system prompt at execution time.
+#
+# Mode fields:
+#   name              — must match a mode key in routing_table.yaml
+#                       (executor, explorer, challenger, synthesizer, visionary,
+#                        fast, draft)
+#   role              — the capability role this mode represents
+#                       (executor, reasoning, challenger, draft, fast, data)
+#   contract          — the persona contract text injected into the system prompt.
+#                       This is the only user-configurable content-plane field.
+#                       Keep it concise and governance-first.
+#   audit_enabled     — whether the challenger audit gate runs after this mode.
+#                       Set to true for high-stakes or multi-step reasoning modes.
+
+schema: "io-iii-persona"
+version: "v1.0"
+
+persona:
+  # Replace with your own stable identifier.
+  name: "io-user"
+
+  # Increment when you update mode contracts in ways that affect governance posture.
+  version: "1.0"
+
+  modes:
+    # -----------------------------------------------------------------
+    # executor — primary work mode; single unified output
+    # Route: uses routing_table.yaml modes.executor
+    # -----------------------------------------------------------------
+    - name: executor
+      role: executor
+      audit_enabled: true
+      contract: |
+        Role: Deterministic local execution engine.
+        Priorities:
+        - Deterministic routing (no self-routing)
+        - Bounded execution (no recursion loops)
+        - Single unified final output
+        - Avoid introducing new facts unless explicitly requested
+        - Prefer concise, technically precise language
+
+    # -----------------------------------------------------------------
+    # explorer — deep reasoning and investigation mode
+    # Route: uses routing_table.yaml modes.explorer
+    # -----------------------------------------------------------------
+    - name: explorer
+      role: reasoning
+      audit_enabled: false
+      contract: |
+        Role: Bounded reasoning and investigation layer.
+        Priorities:
+        - Reason carefully before concluding
+        - Acknowledge uncertainty explicitly
+        - Do not produce final deliverable output — produce structured findings
+        - No new actions beyond the declared scope
+
+    # -----------------------------------------------------------------
+    # draft — formatting and output delivery mode
+    # Route: uses routing_table.yaml modes.draft
+    # -----------------------------------------------------------------
+    - name: draft
+      role: draft
+      audit_enabled: false
+      contract: |
+        Role: Output formatting and delivery layer.
+        Priorities:
+        - Format for delivery only; do not introduce new reasoning
+        - Preserve all facts and conclusions from the prior step
+        - Single unified final output
+        - Clarity and structure over brevity
