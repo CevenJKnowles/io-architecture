@@ -1,34 +1,32 @@
-# IO-III Architecture
+# IO-III — Governed LLM Runtime
 
-IO-III is a local LLM control-plane runtime: a Python layer that sits between you and a language model and governs how that interaction behaves. Where most LLM tooling is
-permissive by default, IO-III is restrictive by design. Execution limits are hard-coded.
-Content boundaries are enforced recursively at the logging level. Every significant
-architectural decision is documented in an ADR before it is implemented. The system
-knows what it will not do, and that refusal is structural rather than conventional.
+IO-III is a Python runtime that wraps a local language model in a structured governance layer. Rather than calling a model directly, every request passes through deterministic routing, bounded execution controls, an optional audit gate, and a human-supervised session layer — before any output reaches the user.
 
-Built over nine design generations. Phase 9 complete.
-Latest stable phase tag: `v0.9.0`.
+Built over nine design phases. All phases complete. Latest stable tag: `v0.9.0`.
 
 ---
 
-## Architecture Principles
+## What This Is
 
-IO-III follows a small set of architectural principles that guide all design decisions.
+Most LLM tooling is permissive by default: you send a prompt and get a response. IO-III is designed the other way around. Execution limits are hard-coded. Content boundaries are enforced at every layer. Every structural decision is documented in an Architecture Decision Record before any code is written.
 
-**Determinism First**
-All routing and execution behaviour must be predictable and reproducible. No dynamic routing or autonomous behaviour is introduced.
+The result is a runtime that knows what it will not do — and enforces that structurally, not conventionally.
 
-**Bounded Execution**
-All control flows have explicit limits (audit passes, revision passes, capability invocation). The system rejects recursive or unbounded execution paths.
+**For engineers:** IO-III is a local, provider-agnostic LLM control plane. It implements deterministic routing, bounded orchestration, governed dialogue sessions, a content-safe HTTP API, and a steward supervision layer. The execution engine, routing layer, and telemetry are frozen after Phase 1 — subsequent phases add surface area without modifying the core.
 
-**Architecture Before Implementation**
-Structural changes require an Architecture Decision Record (ADR) before code changes.
+**For those new to AI architecture:** Think of IO-III as a circuit breaker and audit log sitting between a user and a language model. The model does not decide what it responds to, when it stops, or what gets logged. The runtime governs all of that. The language model is just one component in a controlled pipeline.
 
-**Governance by Design**
-Operational constraints (audit limits, routing discipline, invariants) are enforced structurally in the runtime rather than through convention.
+---
 
-**Minimal Reference Implementation**
-The Python runtime intentionally demonstrates the architecture without expanding into a full orchestration framework.
+## Architecture at a Glance
+
+- **Deterministic routing** — every request resolves to exactly one provider via a static routing table; no dynamic model selection
+- **Bounded execution** — hard limits on audit passes (1), revision passes (1), capability invocations, and session turn counts
+- **Content-safe output** — prompts, model completions, and memory values never appear in logs, metadata, or API responses
+- **ADR-first development** — every structural change requires an Architecture Decision Record before implementation begins
+- **Frozen core** — `routing.py`, `engine.py`, and `telemetry.py` do not change after Phase 1; all later phases add surface area only
+- **Steward supervision** — sessions can run in work mode (autonomous) or steward mode (human approval required at configurable gates)
+- **Transport adapter API** — the HTTP layer routes to the existing session and engine layer; it adds no new execution semantics
 
 ---
 
@@ -36,98 +34,17 @@ The Python runtime intentionally demonstrates the architecture without expanding
 
 | **Phase** | **Description** | **Status** | **Tag** |
 | --- | --- | --- | --- |
-| 1 | Control Plane | Complete | — |
-| 2 | Structural Consolidation | Complete | — |
-| 3 | Capability Layer | Complete | — |
-| 4 | Context Architecture Formalisation | Complete | `v0.4.0` |
+| 1 | Control Plane | **Complete** | — |
+| 2 | Structural Consolidation | **Complete** | — |
+| 3 | Capability Layer | **Complete** | — |
+| 4 | Context Architecture Formalisation | **Complete** | `v0.4.0` |
 | 5 | Runtime Observability & Optimisation | **Complete** | `v0.5.0` |
 | 6 | Memory Architecture | **Complete** | `v0.6.0` |
 | 7 | Open-Source Initialisation Layer | **Complete** | `v0.7.0` |
 | 8 | Governed Dialogue Layer | **Complete** | `v0.8.0` |
 | 9 | API & Integration Surface | **Complete** | `v0.9.0` |
 
-IO-III prioritises **determinism, governance discipline, and architectural clarity** over
-feature velocity.
-
----
-
-## Why This Architecture Matters
-
-Most local LLM projects optimise for capability breadth.
-
-IO-III treats runtime governance as the primary systems problem: deterministic routing, bounded execution, explicit failure semantics, immutable lineage, and recoverable continuity.
-
-The result is a runtime architecture that remains inspectable under failure, reproducible across milestones, and portable as a governed control-plane substrate.
-
-```text
-runbook → checkpoint → failure
-                    ├── replay → step 0
-                    └── resume → failed_step_index
-```
-
----
-
-## Structural Guarantees
-
-Unlike feature-driven AI frameworks, IO-III focuses on structural guarantees:
-
-- deterministic routing
-- bounded execution
-- explicit audit gates
-- invariant-protected runtime behaviour
-- architecture-first governance
-
-The repository contains:
-
-1. a formal architecture specification layer (ADRs, invariants, contracts, governance rules)
-2. a minimal reference implementation of the runtime control plane
-
----
-
-## Non-Goals
-
-IO-III is intentionally **not**:
-
-- an agent framework
-- a dynamic tool orchestrator
-- a workflow engine
-- an autonomous AI system
-- a recursive reasoning pipeline
-
-The runtime behaves as a **deterministic control-plane execution engine**. These
-exclusions are structural, not conventional.
-
----
-
-## Request Lifecycle
-
-```mermaid
-sequenceDiagram
-participant User
-participant CLI as cli.py
-participant Routing as routing.py
-participant Engine as engine.py
-participant Context as context_assembly.py
-participant Provider
-participant Challenger
-User->>CLI: run executor prompt
-CLI->>CLI: load configuration
-CLI->>Routing: resolve_route()
-Routing-->>CLI: provider + model
-CLI->>Engine: engine.run()
-Engine->>Engine: create SessionState
-Engine->>Engine: create ExecutionContext
-Engine->>Context: assemble_context()
-Context-->>Engine: structured prompt
-Engine->>Provider: generate()
-Provider-->>Engine: draft response
-alt audit enabled
-Engine->>Challenger: audit draft
-Challenger-->>Engine: verdict
-end
-Engine-->>CLI: final output
-CLI-->>User: display result
-```
+25 Architecture Decision Records. 1046 passing tests.
 
 ---
 
@@ -135,136 +52,141 @@ CLI-->>User: display result
 
 ```mermaid
 flowchart TB
-subgraph Interface
-CLI["CLI Interface"]
-end
-subgraph ControlPlane["Control Plane"]
-ENGINE["Execution Engine"]
-CTX["ExecutionContext"]
-ASSEMBLY["Context Assembly"]
-end
-subgraph Runtime
-PROVIDER["Provider Adapter"]
-end
-subgraph Governance
-CHALLENGER["Challenger Layer"]
-end
-CLI --> ENGINE
-ENGINE --> CTX
-CTX --> ASSEMBLY
-ASSEMBLY --> PROVIDER
-PROVIDER --> CHALLENGER
+    subgraph Interface["Entry Points"]
+        CLI["CLI\npython -m io_iii"]
+        HTTP["HTTP API\nPOST /run  ·  GET /stream"]
+    end
+    subgraph APILayer["API Layer  (Phase 9)"]
+        SERVER["server.py"]
+        HANDLERS["_handlers.py"]
+        SSE["_sse.py — SSE streaming"]
+        WEBHOOKS["_webhooks.py — webhooks"]
+    end
+    subgraph Dialogue["Dialogue Layer  (Phase 8)"]
+        DSESSION["DialogueSession"]
+        GATE["StewardGate"]
+    end
+    subgraph ControlPlane["Execution Core"]
+        ROUTING["routing.py  (frozen)"]
+        ENGINE["engine.py  (frozen)"]
+        ASSEMBLY["context_assembly.py"]
+        ORCH["orchestrator.py"]
+    end
+    subgraph Memory["Memory Layer  (Phase 6)"]
+        MEM["MemoryStore  +  MemoryPacks"]
+    end
+    subgraph Runtime["Provider Adapters"]
+        PROVIDER["Ollama  /  Null"]
+    end
+    subgraph Governance["Governance"]
+        CHALLENGER["Challenger"]
+    end
+    CLI --> ROUTING
+    CLI --> DSESSION
+    HTTP --> SERVER
+    SERVER --> HANDLERS
+    SERVER --> SSE
+    HANDLERS --> ORCH
+    HANDLERS --> DSESSION
+    HANDLERS --> WEBHOOKS
+    ORCH --> ENGINE
+    SSE --> DSESSION
+    DSESSION --> GATE
+    DSESSION --> ENGINE
+    ROUTING --> ENGINE
+    ENGINE --> ASSEMBLY
+    ASSEMBLY --> MEM
+    ENGINE --> PROVIDER
+    ENGINE --> CHALLENGER
 ```
 
 ---
 
-## Python Module Architecture
-
-```mermaid
-flowchart LR
-subgraph CLI
-    ID_CLI["io_iii/cli.py"]
-end
-subgraph Core
-    ID_ENGINE["core/engine.py"]
-    ID_SESSION["core/session_state.py"]
-    ID_CTX["core/execution_context.py"]
-    ID_ASSEMBLY["core/context_assembly.py"]
-end
-subgraph Routing
-    ID_ROUTING["routing.py"]
-end
-subgraph Providers
-    ID_OLLAMA["providers/ollama_provider.py"]
-    ID_NULLP["providers/null_provider.py"]
-end
-subgraph Config
-    ID_CONFIG["config loader"]
-    ID_RUNTIMECFG["runtime/config/*.yaml"]
-end
-ID_CLI --> ID_CONFIG
-ID_CLI --> ID_ROUTING
-ID_CLI --> ID_ENGINE
-ID_CONFIG --> ID_RUNTIMECFG
-ID_ENGINE --> ID_SESSION
-ID_ENGINE --> ID_CTX
-ID_ENGINE --> ID_ASSEMBLY
-ID_ENGINE --> ID_OLLAMA
-ID_ENGINE --> ID_NULLP
-ID_ROUTING --> ID_OLLAMA
-ID_ROUTING --> ID_NULLP
-```
-
----
-
-## Quick Run
-```bash
-python -m io_iii run executor --prompt "Explain deterministic routing in one sentence."
-```
-Expected behaviour:
-
-- the CLI loads runtime configuration
-- deterministic routing selects the provider
-- the execution engine runs the prompt pipeline
-- the challenger optionally audits the output (if enabled)
-
----
-
-## Architecture Validation
-
-Run the invariant validator:
-```bash
-python architecture/runtime/scripts/validate_invariants.py
-```
-Run the full test suite:
-```bash
-pytest
-```
-Both commands verify that the system satisfies its core architectural invariants.
-
----
-
-## Capability Invocation (Phase 3)
-
-Capabilities are introduced in Phase 3 as bounded runtime extensions.
-|  **Capabilities are:** |  They do **not** introduce: |
-|---|---|
-|  - explicitly invoked |  - autonomous behaviour |
-|  - registry-controlled |  - tool selection |
-|  - single-execution only |  - recursive execution |
-|  - payload-bounded |  - workflow orchestration |
-|  - output-bounded |   |
+## Request Lifecycle
 
 ```mermaid
 sequenceDiagram
-participant CLI
-participant Engine
-participant Registry
-participant Capability
-participant Result
-CLI->>Engine: run(capability_id)
-Engine->>Registry: resolve capability
-Registry-->>Engine: capability spec
-Engine->>Capability: invoke(payload)
-Capability-->>Engine: CapabilityResult
-Engine-->>Result: ExecutionResult.meta["capability"]
+    participant Client as Client (CLI or HTTP)
+    participant Entry as CLI / API Server
+    participant Routing as routing.py
+    participant Session as DialogueSession
+    participant Engine as engine.py
+    participant Context as context_assembly.py
+    participant Memory as MemoryStore
+    participant Provider
+    participant Challenger
+
+    Client->>Entry: prompt + mode
+    Entry->>Routing: resolve_route()
+    Routing-->>Entry: provider + model
+    alt session turn (Phase 8+)
+        Entry->>Session: run_turn()
+        Session->>Session: steward gate check
+        Session->>Engine: engine.run()
+    else single run
+        Entry->>Engine: engine.run()
+    end
+    Engine->>Context: assemble_context()
+    Context->>Memory: load memory packs
+    Memory-->>Context: bounded records
+    Context-->>Engine: structured prompt
+    Engine->>Provider: generate()
+    Provider-->>Engine: draft response
+    opt audit enabled
+        Engine->>Challenger: audit draft
+        Challenger-->>Engine: verdict
+    end
+    Engine-->>Entry: ExecutionResult
+    Entry-->>Client: output
 ```
+
+---
+
+## Architecture Principles
+
+**Determinism First**
+Routing and execution behaviour must be predictable and reproducible. No dynamic routing, no output-driven model selection, no autonomous behaviour.
+
+**Bounded Execution**
+Every control flow has explicit limits: audit passes, revision passes, capability invocations, session turn counts. The system structurally rejects recursive or unbounded execution paths.
+
+**Architecture Before Implementation**
+Any change affecting control-plane design, routing logic, provider selection, audit behaviour, memory, or persistence requires a new ADR inside `ADR/` before implementation begins.
+
+**Governance by Design**
+Runtime constraints — audit limits, routing discipline, content-safe output, steward gate thresholds — are enforced structurally in code, not through convention or documentation.
+
+**Minimal Reference Implementation**
+The Python runtime demonstrates boundary discipline and deterministic structure. It is not an orchestration framework, agent system, or production deployment platform.
+
+---
+
+## Non-Goals
+
+IO-III is explicitly **not**:
+
+- an agent framework or autonomous reasoning pipeline
+- a dynamic tool orchestrator or workflow engine
+- a retrieval or embedding-based search system
+- a multi-model arbitration system
+- a cloud deployment platform or SaaS runtime
+
+These exclusions are structural. The ADR record governs what has been ruled out and why.
 
 ---
 
 ## Core Invariants
 
-IO-III enforces the following system-level guarantees:
-- deterministic routing only
-- challenger enforcement internal to the engine
-- audit execution explicitly user-toggled
-- bounded audit passes (`MAX_AUDIT_PASSES = 1`)
-- bounded revision passes (`MAX_REVISION_PASSES = 1`)
-- no recursion loops
-- no multi-pass execution chains
-- single unified final output
+Enforced by the test suite and invariant validator, not by convention:
 
-These are treated as contract-level invariants enforced by the test suite and invariant validator, not by convention.
+- deterministic routing only — no output-driven fallback
+- challenger enforcement is internal to the engine
+- audit execution requires explicit user opt-in (`--audit`)
+- bounded audit passes: `MAX_AUDIT_PASSES = 1`
+- bounded revision passes: `MAX_REVISION_PASSES = 1`
+- no recursion, no multi-pass execution chains
+- single unified final output surface
+- no prompt text, model output, or memory values in any log field or metadata record
 
 ---
 
@@ -273,182 +195,355 @@ These are treated as contract-level invariants enforced by the test suite and in
 All structural changes follow an ADR-first development model.
 
 Any modification affecting:
+
 - control-plane design
 - routing logic or fallback policy
 - provider or model selection
 - audit gate behaviour
 - persona binding or runtime governance
 - memory or persistence layers
-- cross-model interaction
+- API surface or integration contracts
 
 requires a new Architecture Decision Record inside `ADR/` before implementation begins.
 
-The repository functions as the source of truth for IO-III architectural boundaries.
+The repository is the source of truth for IO-III architectural boundaries.
 
 ---
 
-## Control-Plane Reference Implementation
+## Python Module Architecture
 
-The Python implementation is deliberately minimal. Its purpose is to demonstrate boundary
-discipline and deterministic control-plane structure under governance constraints.
+```mermaid
+flowchart LR
+    subgraph API["api/"]
+        APISERVER["server.py"]
+        APIH["_handlers.py"]
+        APISSE["_sse.py"]
+        APIWH["_webhooks.py"]
+    end
+    subgraph CLI["cli/"]
+        CLIMAIN["__init__.py"]
+        CLISESS["_session_shell.py"]
+    end
+    subgraph Core["core/"]
+        ENGINE["engine.py"]
+        DIALOGUE["dialogue_session.py"]
+        SMODE["session_mode.py"]
+        ORCH["orchestrator.py"]
+        ASSEMBLY["context_assembly.py"]
+        TELEMETRY["telemetry.py"]
+    end
+    subgraph Memory["memory/"]
+        MEMSTORE["store.py"]
+        MEMPACKS["packs.py"]
+        MEMPOL["policy.py"]
+    end
+    subgraph Routing[""]
+        ROUTING["routing.py"]
+    end
+    subgraph Providers["providers/"]
+        OLLAMA["ollama_provider.py"]
+        NULL["null_provider.py"]
+    end
+    APISERVER --> APIH
+    APISERVER --> APISSE
+    APIH --> ORCH
+    APIH --> DIALOGUE
+    APIH --> APIWH
+    CLIMAIN --> CLISESS
+    CLIMAIN --> ENGINE
+    CLIMAIN --> ROUTING
+    CLISESS --> DIALOGUE
+    DIALOGUE --> SMODE
+    DIALOGUE --> ENGINE
+    ORCH --> ROUTING
+    ORCH --> ENGINE
+    ENGINE --> ASSEMBLY
+    ENGINE --> OLLAMA
+    ENGINE --> NULL
+    ASSEMBLY --> MEMSTORE
+    ASSEMBLY --> MEMPACKS
+    MEMPACKS --> MEMPOL
+```
 
-Core modules:
-| Module | Responsibility |
-|---|---|
-| `config.py` | runtime config loading |
-| `routing.py` | deterministic route resolution |
-| `core/engine.py` | execution engine |
-| `core/context_assembly.py` | context assembly (ADR-010) |
-| `core/session_state.py` | control-plane state container |
-| `core/execution_context.py` | engine-local runtime container |
-| `core/preflight.py` | token pre-flight estimator (M5.1) |
-| `core/telemetry.py` | execution telemetry metrics (M5.2) |
-| `core/constellation.py` | constellation integrity guard (M5.3) |
-| `core/portability.py` | portability validation pass (M7.4) |
-| `providers/null_provider.py` | null provider adaptor |
-| `providers/ollama_provider.py` | Ollama provider adaptor |
-| `cli.py` | CLI entrypoint |
+---
+
+## Control-Plane Reference
+
+Two parallel surfaces: the CLI (direct execution) and the HTTP API (transport adapter to the same execution layer).
 
 Execution path:
 
-`CLI → Engine.run() → ExecutionContext → Context Assembly → Provider → Challenger (optional)`
+`CLI / API → routing.py → engine.run() → ExecutionContext → context_assembly → Provider → Challenger (optional)`
+
+For multi-turn sessions:
+
+`CLI / API → DialogueSession → StewardGate → engine.run() → ...`
+
+Core modules:
+
+| Module | Responsibility | Phase |
+| --- | --- | --- |
+| `config.py` | runtime config loading | 1 |
+| `routing.py` | deterministic route resolution — **frozen** | 1 |
+| `core/engine.py` | execution engine — **frozen** | 1 |
+| `core/session_state.py` | control-plane state container | 1 |
+| `core/execution_context.py` | engine-local runtime container | 2 |
+| `core/context_assembly.py` | context assembly (ADR-010) | 2 |
+| `core/failure_model.py` | structured failure semantics (ADR-013) | 3 |
+| `core/orchestrator.py` | runbook orchestration layer | 4 |
+| `core/runbook.py` | runbook schema and validation | 4 |
+| `core/runbook_runner.py` | bounded step execution with checkpoint | 4 |
+| `core/replay_resume.py` | deterministic replay and resume (ADR-020) | 4 |
+| `core/preflight.py` | token pre-flight estimator (M5.1) | 5 |
+| `core/telemetry.py` | execution telemetry metrics — **frozen** | 5 |
+| `core/constellation.py` | constellation integrity guard (M5.3) | 5 |
+| `memory/store.py` | atomic versioned memory record store | 6 |
+| `memory/packs.py` | named memory bundle resolution | 6 |
+| `memory/policy.py` | retrieval policy and sensitivity gating | 6 |
+| `core/portability.py` | portability validation pass (M7.4) | 7 |
+| `core/dialogue_session.py` | governed multi-turn session (ADR-024) | 8 |
+| `core/session_mode.py` | work/steward mode + StewardGate | 8 |
+| `core/snapshot.py` | session snapshot export/import (M6.7/M8.3) | 8 |
+| `api/server.py` | HTTP server and path routing | 9 |
+| `api/_handlers.py` | request handlers — transport adapter only | 9 |
+| `api/_sse.py` | Server-Sent Events streaming | 9 |
+| `api/_webhooks.py` | best-effort webhook dispatcher | 9 |
+| `providers/ollama_provider.py` | Ollama provider adapter | 1 |
+| `providers/null_provider.py` | null provider (test/offline) | 1 |
+
+---
+
+## Quick Start
+
+Single run:
+
+```bash
+python -m io_iii run executor --prompt "Explain deterministic routing in one sentence."
+```
+
+Multi-turn session:
+
+```bash
+python -m io_iii session start --mode work
+python -m io_iii session continue --session-id <id> --prompt "Next question."
+```
+
+Serve the HTTP API and web UI:
+
+```bash
+python -m io_iii serve --host 127.0.0.1 --port 8080
+# then open http://127.0.0.1:8080 in a browser
+```
+
+What happens on `run`:
+
+1. CLI loads runtime configuration from `architecture/runtime/config/`
+2. `routing.py` resolves exactly one provider + model via the routing table
+3. `engine.run()` builds an `ExecutionContext`, assembles context (including any memory packs), and calls the provider
+4. The challenger optionally audits the draft (if `--audit` is supplied)
+5. A content-safe `ExecutionResult` is returned to the output surface
+
+---
+
+## Architecture Validation
+
+Invariant validator:
+
+```bash
+python architecture/runtime/scripts/validate_invariants.py
+```
+
+Full test suite:
+
+```bash
+pytest
+```
+
+Capability listing:
+
+```bash
+python -m io_iii capabilities --json
+```
+
+---
+
+## Capability Invocation
+
+Capabilities are bounded runtime extensions introduced in Phase 3. They are deterministic, explicitly invoked, registry-controlled, and single-execution only.
+
+| **Capabilities are** | **They do not introduce** |
+| --- | --- |
+| explicitly invoked | autonomous behaviour |
+| registry-controlled | dynamic tool selection |
+| single-execution only | recursive execution |
+| payload-bounded | workflow orchestration |
+| output-bounded | multi-step agent loops |
+
+```mermaid
+sequenceDiagram
+    participant CLI
+    participant Engine
+    participant Registry
+    participant Capability
+
+    CLI->>Engine: run(capability_id)
+    Engine->>Registry: resolve capability
+    Registry-->>Engine: capability spec
+    Engine->>Capability: invoke(payload)
+    Capability-->>Engine: CapabilityResult
+    Engine-->>CLI: ExecutionResult.meta["capability"]
+```
 
 ---
 
 ## Documentation Structure
 
-```
-DOC-OVW   system overview documents
-DOC-ARCH  architecture definitions
-DOC-IMPL  implementation documentation
-DOC-RUN   runtime configuration documentation
-DOC-GOV   governance documentation
-ADR       architectural decision records
+```text
+ADR/            25 architectural decision records (ADR-001 through ADR-025)
+
+docs/
+  overview/     high-level system documentation (DOC-OVW-*)
+  architecture/ phase guides and architecture definitions (DOC-ARCH-*)
+  governance/   governance rules and lifecycle policies (DOC-GOV-*)
+  runtime/      runtime metadata and execution contracts (DOC-RUN-*)
 ```
 
 Primary entry points:
-```
+
+```text
 docs/overview/DOC-OVW-001-architecture-overview-index.md
-docs/architecture/DOC-ARCH-001-runtime-architecture.md
+docs/architecture/DOC-ARCH-001-io-iii-llm-architecture.md
+docs/architecture/DOC-ARCH-003-io-iii-master-project-roadmap.md
 ```
 
 ---
 
 ## Repository Layout
 
-```
-ADR/                       architecture decision records
+```text
+ADR/                        architectural decision records (ADR-001–025)
 
 docs/
-  overview/                high-level system documentation
-  architecture/            architecture definitions
-  governance/              governance rules and lifecycle policies
-  runtime/                 runtime metadata and execution contracts
+  overview/                 high-level system documentation
+  architecture/             phase guides and architecture definitions
+  governance/               governance rules and lifecycle policies
+  runtime/                  runtime metadata and execution contracts
 
 architecture/
   runtime/
-    config/                canonical runtime configuration
-    tests/                 invariant fixtures
-    scripts/               invariant validator
+    config/                 canonical runtime configuration (YAML)
+    tests/                  invariant fixtures
+    scripts/                invariant validator
 
-io_iii/                    reference runtime implementation
-  core/                    engine components
-  providers/               provider adapters
-  routing.py               deterministic routing
-  cli.py                   CLI interface
+io_iii/                     reference runtime implementation
+  api/                      HTTP transport layer (Phase 9)
+    static/                 self-hosted web UI (index.html)
+  capabilities/             bounded capability registry (Phase 3)
+  cli/                      CLI entry points and subcommands
+  core/                     engine, session, orchestration, telemetry
+  memory/                   memory store, packs, retrieval policy (Phase 6)
+  providers/                provider adapters (Ollama, null)
+  config.py                 runtime config loader
+  routing.py                deterministic route resolution (frozen)
+
+tests/                      test suite (1046 tests)
 ```
 
 ---
 
 ## Milestones
 
-### Phase 1 - Control Plane Stabilisation
+### Phase 1 — Control Plane Stabilisation
 
-- deterministic routing
+- deterministic routing (ADR-002)
 - challenger enforcement (ADR-008)
 - bounded audit gate contract (ADR-009)
 - invariant validation suite
 - regression enforcement
 
-### Phase 2 - Structural Consolidation
+### Phase 2 — Structural Consolidation
 
-- SessionState v0 implemented
-- execution engine extracted
-- CLI to engine boundary established
+- `SessionState` v0 implemented
+- execution engine extracted from CLI
+- CLI-to-engine boundary established
+- `ExecutionContext` introduced
 - context assembly integrated (ADR-010)
-- ExecutionContext introduced
 - challenger ownership consolidated inside the engine
 - provider injection seams implemented
-- tests passing (pytest)
-- invariant validator passing
 
-### Phase 3 - Capability Layer
+### Phase 3 — Capability Layer
 
-Bounded capability extensions introduced inside the execution engine. Capabilities remain
-deterministic, explicitly invoked, registry-controlled, and single-execution only. No
-autonomous behaviour or dynamic routing introduced.
+Bounded capability extensions introduced inside the execution engine. Deterministic, explicitly invoked, registry-controlled, single-execution only. No autonomous behaviour or dynamic routing introduced.
 
-### Phase 4 - Context Architecture Formalisation
+### Phase 4 — Context Architecture Formalisation
 
-Phase 4 extends bounded runbook execution into deterministic continuity semantics.
+Bounded runbook execution with deterministic continuity semantics.
 
-Implemented guarantees:
-
-- run identity and immutable lineage
-- checkpoint persistence contracts
+- run identity and immutable lineage (ADR-018)
+- checkpoint persistence contracts (ADR-019)
 - replay from checkpoint snapshot
-- resume from first incomplete or failed step
-- checkpoint integrity validation before execution
-- new `run_id` per replay/resume invocation
+- resume from first incomplete or failed step (ADR-020)
 - `source_run_id` preserved for lineage traceability
 
-Execution continuity now remains bounded, deterministic, and structurally governed.
+Tag: `v0.4.0`. Governing document: `DOC-ARCH-012`.
 
-### Phase 5 - Runtime Observability & Optimisation
+### Phase 5 — Runtime Observability & Optimisation
 
-Phase 5 introduces measurement and governance signals into the runtime without expanding its execution surface. The Phase 1–4 execution stack remains frozen throughout.
+Measurement and governance signals added to the runtime without expanding its execution surface. Phase 1–4 execution stack remains frozen throughout.
 
-Delivered capabilities:
+- **M5.1** Token pre-flight estimator — configurable context ceiling enforced before every provider call
+- **M5.2** Execution telemetry — `ExecutionMetrics` dataclass; Ollama native token counts; content-safe projection to `metadata.jsonl`
+- **M5.3** Constellation integrity guard — config-time validation; `CONSTELLATION_DRIFT` failure code
 
-- **M5.1 Token Pre-flight Estimator** — heuristic character-count estimator enforcing a configurable context limit ceiling before every provider call; prerequisite for Phase 6 M6.4
-- **M5.2 Execution Telemetry Metrics** — `ExecutionMetrics` dataclass attached to `ExecutionResult.meta["telemetry"]`; Ollama native token counts (`prompt_eval_count`, `eval_count`) surfaced; content-safe projection to `metadata.jsonl`
-- **M5.3 Constellation Integrity Guard** — config-time validation detecting role-model collapse, missing role bindings, and call chain bound violations before execution begins; `CONSTELLATION_DRIFT` failure code; `--no-constellation-check` bypass flag
+Tag: `v0.5.0`. Governing document: `DOC-ARCH-013`.
 
-Phase 5 is complete. Tag: `v0.5.0`.
+### Phase 6 — Memory Architecture
 
-### Phase 6 - Memory Architecture
+Governed, deterministic memory as a bounded input to context assembly. Execution stack frozen throughout. No retrieval autonomy, no dynamic routing.
 
-Phase 6 introduced governed, deterministic memory as a bounded input to context assembly. The execution stack remained frozen throughout. No retrieval autonomy, no persistent session state, no dynamic routing.
+- **M6.1** Memory store — atomic, scoped, versioned records
+- **M6.2** Memory pack system — named bundles declared in `memory_packs.yaml`
+- **M6.3** Memory retrieval policy — route and capability allowlists; sensitivity-gated access
+- **M6.4** Memory injection — bounded injection via context assembly; budget-enforced
+- **M6.5** Memory safety invariants — INV-005 enforces content-safe logging via invariant validator
+- **M6.6** Memory write contract — user-confirmed atomic single-record write
+- **M6.7** Session snapshot export/import — portable control-plane artefact
 
-Delivered capabilities:
+Tag: `v0.6.0`. Governing document: `DOC-ARCH-014`.
 
-- **M6.1 Memory Store** — atomic, scoped, versioned records; local file store under configurable root
-- **M6.2 Memory Pack System** — named bundles declared in `memory_packs.yaml`; deterministic resolution
-- **M6.3 Memory Retrieval Policy** — route and capability allowlists; sensitivity-gated access
-- **M6.4 Memory Injection** — bounded injection into `ExecutionContext` via context assembly; budget-enforced; declaration-order deterministic
-- **M6.5 Memory Safety Invariants** — INV-005 enforces content-safe logging via invariant validator; `python_requires_pattern` and `python_forbids_pattern` assertion types added
-- **M6.6 Memory Write Contract** — user-confirmed atomic single-record write; `MEMORY_WRITE_FAILED` on any failure; no value logged
-- **M6.7 Session Snapshot Export/Import** — portable control-plane artefact; `SNAPSHOT_SCHEMA_INVALID` on validation failure; prerequisite for Phase 8 M8.3
+### Phase 7 — Open-Source Initialisation Layer
 
-Phase 6 is complete. Tag: `v0.6.0`.
+Runtime made self-initialising for external users. Clone → configure → run without modifying structural code.
 
-Governing document: `docs/architecture/DOC-ARCH-014-phase-6-guide.md`.
-
-### Phase 7 - Open-Source Initialisation Layer
-
-Phase 7 makes the IO-III runtime self-initialising for external users. The goal: clone → configure → run, without modifying structural code.
-
-Delivered capabilities:
-
-- initialisation contract defining the minimum required user configuration (M7.1)
-- `python -m io_iii init` command and `python -m io_iii validate` command (M7.2, M7.4)
-- neutral template files: `persona.yaml`, `chat_session.yaml` bounded session template (M7.3)
+- `python -m io_iii init` and `python -m io_iii validate` commands (M7.2, M7.4)
+- neutral template files: `persona.yaml`, `chat_session.yaml` (M7.3)
 - portability validation pass with `PORTABILITY_CHECK_FAILED` failure code (M7.4)
-- clean config/structural separation confirmed by Phase 7 audit (M7.0)
-- Work Mode / Steward Mode ADR-024 — governance prerequisite for Phase 8 M8.1 (M7.5)
+- Work Mode / Steward Mode ADR-024 — governance prerequisite for Phase 8 (M7.5)
 
-Phase 7 is complete. Tag: `v0.7.0`.
+Tag: `v0.7.0`. Governing document: `DOC-ARCH-015`.
 
-Governing document: `docs/architecture/DOC-ARCH-015-phase-7-guide.md`.
+### Phase 8 — Governed Dialogue Layer
+
+Multi-turn session governance with human supervision capability. Engine stack unchanged throughout.
+
+- **M8.1 + M8.4** Work mode and steward mode (`SessionMode`); `StewardGate` evaluating configurable thresholds; session pause state contract
+- **M8.2 + M8.3** Session persistence (`save_session` / `load_session`); snapshot import/export wired to snapshot layer (M6.7)
+- **M8.5** Session shell CLI — `session start`, `session continue`, `session status`, `session close`; structured exit code 3 for steward pause
+- **M8.6** Dialogue session test suite — 916 tests passing at phase close
+
+Tag: `v0.8.0`. Governing document: `DOC-ARCH-016`.
+
+### Phase 9 — API & Integration Surface
+
+Thin, content-safe HTTP surface wrapping the existing CLI and session layer. No new execution semantics. All Phase 1–8 invariants preserved. The API is a transport adapter only (ADR-025).
+
+- **M9.0** ADR-025: transport adapter contract — endpoint-to-CLI mapping, content safety extension, SSE contract, webhook contract, structured exit codes, web UI contract
+- **M9.1** HTTP API layer: `POST /run`, `POST /runbook`, `POST /session/start`, `POST /session/{id}/turn`, `GET /session/{id}/state`, `DELETE /session/{id}`
+- **M9.2** Server-Sent Events on `GET /session/{id}/stream` — `turn_started`, `turn_output`, `turn_completed`, `steward_gate_triggered`, `turn_error`
+- **M9.3** Webhook dispatcher — best-effort delivery on `SESSION_COMPLETE`, `RUNBOOK_COMPLETE`, `STEWARD_GATE_TRIGGERED`; content-safe payloads; silent failure
+- **M9.4** CLI improvements — `--output json` flag formalised; `serve` subcommand; structured exit codes (0/1/2/3)
+- **M9.5** Self-hosted web UI — single static HTML file; no external dependencies; `EventSource` SSE; work/steward mode selector; steward pause controls
+
+Tag: `v0.9.0`. Governing document: `DOC-ARCH-017`.
 
 ---
