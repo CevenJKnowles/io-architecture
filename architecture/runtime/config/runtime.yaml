@@ -10,3 +10,15 @@ version: "v1.0"
 # tokens. Raise this value for models with larger context windows.
 # Set to 0 to disable the check (not recommended for production use).
 context_limit_chars: 32000
+
+# Steward threshold configuration (ADR-024 §5, Phase 8 M8.1).
+# Declares conditions under which a steward-mode session pauses at a step
+# boundary and waits for explicit user action (approve / redirect / close).
+# All sub-keys are optional. Absent key = no threshold of that type active.
+# Thresholds are not evaluated in work mode (ADR-024 §2.2).
+# No values are hardcoded; absence of this block is safe (ADR-024 §5.6).
+#
+# steward_thresholds:
+#   step_count: 5          # pause every N cumulative steps (from session start)
+#   token_budget: 50000    # pause when cumulative session tokens exceed N
+#   capability_classes: [] # pause when any listed capability class is invoked

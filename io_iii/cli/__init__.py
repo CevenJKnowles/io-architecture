@@ -47,6 +47,12 @@ from ._memory import (
     _build_minimal_session_state,
 )
 from ._init import cmd_validate, cmd_init
+from ._session_shell import (
+    cmd_session_start,
+    cmd_session_continue,
+    cmd_session_status,
+    cmd_session_close,
+)
 
 __all__ = [
     "main",
@@ -64,6 +70,10 @@ __all__ = [
     "cmd_session_import",
     "cmd_validate",
     "cmd_init",
+    "cmd_session_start",
+    "cmd_session_continue",
+    "cmd_session_status",
+    "cmd_session_close",
 ]
 
 
@@ -570,6 +580,42 @@ def main(argv=None) -> int:
     p_session_import = p_session_sub.add_parser("import")
     p_session_import.add_argument("--snapshot", required=True, help="Path to snapshot file")
     p_session_import.set_defaults(func=cmd_session_import)
+
+    # Phase 8 M8.3 — session shell commands (ADR-024)
+    p_session_start = p_session_sub.add_parser("start")
+    p_session_start.add_argument(
+        "--mode", default="work", choices=["work", "steward"],
+        help="Session operating mode: work (default) or steward (ADR-024)",
+    )
+    p_session_start.add_argument(
+        "--persona-mode", dest="persona_mode", default="executor",
+        help="Persona execution mode for turns (default: executor)",
+    )
+    p_session_start.add_argument("--prompt", default=None, help="Optional first-turn prompt")
+    p_session_start.add_argument("--audit", action="store_true", help="Enable challenger audit pass")
+    p_session_start.set_defaults(func=cmd_session_start)
+
+    p_session_continue = p_session_sub.add_parser("continue")
+    p_session_continue.add_argument("--session-id", required=True, dest="session_id", help="Session ID to continue")
+    p_session_continue.add_argument("--prompt", default=None, help="Prompt for this turn")
+    p_session_continue.add_argument(
+        "--persona-mode", dest="persona_mode", default="executor",
+        help="Persona execution mode (default: executor)",
+    )
+    p_session_continue.add_argument("--audit", action="store_true", help="Enable challenger audit pass")
+    p_session_continue.add_argument(
+        "--action", default=None, choices=["approve", "redirect", "close"],
+        help="Steward pause action (ADR-024 §6.3)",
+    )
+    p_session_continue.set_defaults(func=cmd_session_continue)
+
+    p_session_status = p_session_sub.add_parser("status")
+    p_session_status.add_argument("--session-id", required=True, dest="session_id", help="Session ID to query")
+    p_session_status.set_defaults(func=cmd_session_status)
+
+    p_session_close = p_session_sub.add_parser("close")
+    p_session_close.add_argument("--session-id", required=True, dest="session_id", help="Session ID to close")
+    p_session_close.set_defaults(func=cmd_session_close)
 
     args = parser.parse_args(argv)
     return int(args.func(args))

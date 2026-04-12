@@ -136,14 +136,16 @@ def _inject_failure(monkeypatch, fail_at_index: int, failure_envelope=None):
 # ---------------------------------------------------------------------------
 
 class TestTaxonomyContract:
-    def test_frozen_taxonomy_has_exactly_six_events(self):
-        assert len(_RUNBOOK_LIFECYCLE_EVENTS) == 6
+    def test_frozen_taxonomy_has_exactly_seven_events(self):
+        # M8.5 added runbook_step_skipped for conditional branch skip events.
+        assert len(_RUNBOOK_LIFECYCLE_EVENTS) == 7
 
     def test_frozen_taxonomy_contains_required_events(self):
         required = {
             "runbook_started",
             "runbook_step_started",
             "runbook_step_completed",
+            "runbook_step_skipped",
             "runbook_step_failed",
             "runbook_completed",
             "runbook_terminated",

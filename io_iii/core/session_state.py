@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
+from io_iii.core.session_mode import SessionMode, DEFAULT_SESSION_MODE
+
 
 # ----------------------------
 # Route snapshot (control-plane)
@@ -131,6 +133,13 @@ class SessionState:
     # Logging policy snapshot (metadata-only posture; write-once)
     logging_policy: Dict[str, Any] = field(default_factory=dict)
 
+    # Session operating mode (ADR-024, Phase 8 M8.1).
+    # Governs whether execution proceeds without pause (WORK) or with
+    # threshold-gated human-review pauses (STEWARD). Write-once at session
+    # start; updated only by explicit user-initiated transition via StewardGate.
+    # Never inferred from runtime observables. Default: WORK (ADR-024 §1.2).
+    session_mode: SessionMode = DEFAULT_SESSION_MODE
+
 
 # ----------------------------
 # Validation helpers (non-wiring)
@@ -186,6 +195,13 @@ def validate_session_state(state: SessionState) -> None:
         raise ValueError(f"AuditGateState.audit_passes exceeds MAX_AUDIT_PASSES={MAX_AUDIT_PASSES}")
     if a.revision_passes > MAX_REVISION_PASSES:
         raise ValueError(f"AuditGateState.revision_passes exceeds MAX_REVISION_PASSES={MAX_REVISION_PASSES}")
+
+    # session_mode (ADR-024 §1): must be a valid SessionMode value
+    if not isinstance(state.session_mode, SessionMode):
+        raise ValueError(
+            f"SessionState.session_mode must be a SessionMode instance, "
+            f"got {type(state.session_mode).__name__}"
+        )
 
     # Route snapshot sanity (if present)
     if state.route is not None:

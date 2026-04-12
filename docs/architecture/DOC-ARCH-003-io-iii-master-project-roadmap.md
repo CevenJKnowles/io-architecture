@@ -189,32 +189,31 @@ Phase 8 M8.1 (implementation). ADR accepted. Phase 8 may begin.
 
 ---
 
-## Phase 8 — Governed Dialogue Layer (Planned)
+## Phase 8 — Governed Dialogue Layer (Complete)
 
-**Status: Planned. ADR to be authored at M8.0.**
+**Status: Complete. Tagged v0.8.0.**
 
-Phase 8 is where IO-III becomes conversational. It introduces a bounded conversation loop
-above the frozen execution stack, using all prior infrastructure (memory, session snapshots,
-replay/resume, telemetry) as its substrate. The execution stack is not modified.
+Phase 8 made IO-III conversational. It introduced a bounded dialogue loop above the frozen
+execution stack, using all prior infrastructure (memory, session snapshots, replay/resume,
+telemetry) as its substrate. The execution stack was not modified.
 
 Milestones:
 
-- M8.0 — Phase 8 ADR + milestone definition; `SESSION_MAX_TURNS` ceiling established
-- M8.1 — Work Mode / Steward Mode implementation (`SessionMode`, mode transitions, thresholds)
-- M8.2 — Bounded session loop (user turn → context assembly + memory → engine.run() →
-  steward gate → memory write gate → response; bounded by `SESSION_MAX_TURNS`)
+- M8.1 — Work Mode / Steward Mode (`SessionMode`, `StewardGate`, `StewardThresholds`;
+  `session_mode` field added to `SessionState`)
+- M8.2 — Bounded session loop (`DialogueSession`, `TurnRecord`, `run_turn()`; hard
+  `SESSION_MAX_TURNS` ceiling; steward gate at each turn boundary)
 - M8.3 — Session shell CLI (`session start`, `session continue`, `session status`,
-  `session export`, `session close`); optional TUI extension using a terminal UI
-  library (`rich` / `textual`) — panels, live session state, colour-coded verdicts;
-  no structural change required, CLI remains the canonical interface
-- M8.4 — Steward approval gates (configurable pause triggers; content-safe state summary;
-  `approve` / `redirect` / `close` user actions)
-- M8.5 — Conditional runbook branches (`when:` conditions declared in config, not
-  output-driven; max 1 branch level; determinism preserved)
-- M8.6 — Session continuity via memory (cross-turn context as bounded memory records;
-  `pack.default.session` loaded automatically on `session continue`)
+  `session close`; content-safe turn output; pause/approve/redirect/close flow)
+- M8.4 — Steward approval gates (combined with M8.1; `PauseState`, `ModeTransitionEvent`,
+  threshold-gated pauses with `approve` / `redirect` / `close` user actions)
+- M8.5 — Conditional runbook branches (`WhenCondition`, `RunbookStep`, `ConditionalRunbook`,
+  `WhenContext`, `run_with_context()`; `when:` evaluated against structural fields only;
+  max 1 branch level structurally enforced)
+- M8.6 — Session continuity via memory (`SessionMemoryContext`, `load_session_memory()`;
+  `pack.io_iii.session_resume` auto-loaded on `session continue`; `TurnRecord.memory_keys_loaded`)
 
-Target: v0.8.0.
+Tagged: v0.8.0. Test count at close: 916 passing.
 
 ---
 

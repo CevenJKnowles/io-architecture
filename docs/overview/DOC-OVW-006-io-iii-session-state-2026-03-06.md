@@ -1,6 +1,6 @@
 ---
 id: DOC-OVW-006
-title: IO-III Session State — Phase 3 Hardening Complete
+title: Session State | Previous
 type: overview
 status: active
 version: v0.3.2
@@ -8,7 +8,7 @@ canonical: true
 scope: repository
 audience: developer
 created: "2026-03-06"
-updated: "2026-03-06"
+updated: "2026-04-12"
 tags:
 - io-iii
 - runtime
@@ -20,7 +20,7 @@ roles_focus:
 provenance: io-iii-runtime-development
 ---
 
-# IO-III Session State — Phase 3 Hardening Complete
+# IO-III Session State | Previous
 
 ---
 

@@ -171,10 +171,181 @@ established as Phase 8 M8.1 prerequisite.
 
 ---
 
-## Next Phase
+---
 
-**Phase 8** — Work Mode / Steward Mode
+## Phase 8 — Governed Dialogue Layer (Complete)
+
+**Governing ADR:** ADR-024 — Work Mode / Steward Mode Contract (accepted)
+
+**Status:** Phase 8 complete. M8.1+M8.4, M8.2+M8.3, M8.5, M8.6 delivered. All invariants passing. Ready for tagging v0.8.0.
+
+**Tag:** v0.8.0 (pending)
 
 **Prerequisite:** ADR-024 accepted ✓
 
-**Governing ADR:** ADR-024 — Work Mode / Steward Mode Contract
+---
+
+### M8.1 + M8.4 — Work Mode / Steward Mode + Steward Approval Gates ✓
+
+Combined milestone: full steward governance cycle delivered in one pass.
+
+**New module:** `io_iii/core/session_mode.py`
+
+| Symbol | Description |
+| --- | --- |
+| `SessionMode` | Closed two-value enum: `WORK` \| `STEWARD` (ADR-024 §1) |
+| `DEFAULT_SESSION_MODE` | `SessionMode.WORK` — default at session start (ADR-024 §1.2) |
+| `StewardThresholds` | Frozen dataclass: `step_count`, `token_budget`, `capability_classes` (ADR-024 §5) |
+| `load_steward_thresholds` | Loads `steward_thresholds` key from `runtime.yaml`; absent = safe (ADR-024 §7.2) |
+| `PauseState` | Content-safe pause summary: threshold key, step/total, mode, run_id (ADR-024 §6.2) |
+| `ModeTransitionEvent` | Content-safe telemetry record for work ↔ steward transitions (ADR-021) |
+| `transition_mode` | User-initiated-only mode switch; returns `(SessionMode, ModeTransitionEvent)` (ADR-024 §4) |
+| `evaluate_thresholds` | Pure threshold evaluator at step boundary; returns fired key or None (ADR-024 §5.3) |
+| `StewardGate` | Gate class: evaluates thresholds at step boundaries; holds mutable mode (ADR-024 §5–§6) |
+
+**SessionState extension:** `session_mode: SessionMode = DEFAULT_SESSION_MODE` added as new
+field (co-exists with `mode: str` persona field). `validate_session_state` updated to enforce
+`SessionMode` type.
+
+**Config extension:** `architecture/runtime/config/runtime.yaml` — `steward_thresholds` block
+documented (commented); absent by default is safe (ADR-024 §5.6).
+
+**Tests:** `tests/test_session_mode_m81_m84.py` — 72 tests
+
+**Test trajectory:** 702 (Ph7 close) → **774 (M8.1+M8.4)**
+
+**ADR-003 / ADR-024 content-safety invariants upheld:**
+
+- `PauseState` carries threshold key name only — never threshold values, model names, prompt content, or config paths
+- `ModeTransitionEvent` carries only direction strings and user action label
+- No forbidden fields added to logging surfaces
+
+**ADR freeze boundary respected:** `engine.py`, `routing.py`, `telemetry.py` unchanged.
+
+---
+
+### M8.2 + M8.3 — Bounded Session Loop + Session Shell CLI ✓
+
+Combined milestone: session loop and CLI surface delivered together.
+
+**New module:** `io_iii/core/dialogue_session.py`
+
+| Symbol | Description |
+| --- | --- |
+| `SESSION_MAX_TURNS` | Hard turn ceiling (default: 50); configurable via `runtime.yaml` `session_max_turns` |
+| `TurnRecord` | Frozen, content-safe per-turn record: `turn_index`, `run_id`, `status`, `persona_mode`, `latency_ms`, `error_code` |
+| `DialogueSession` | Mutable session state: `session_id`, `session_mode`, `turn_count`, `max_turns`, `status`, `turns`, timestamps |
+| `DialogueTurnResult` | Frozen result of one turn: updated session, turn record, `SessionState`, `ExecutionResult`, optional `PauseState` |
+| `new_session` | Factory: fresh session with unique ID; resolves `max_turns` from runtime config or explicit arg |
+| `run_turn` | One bounded turn: checks limits → builds `TaskSpec` → `orchestrator.run()` → steward gate → returns result |
+| `save_session` / `load_session` | Content-safe JSON persistence to `.io_iii/sessions/` |
+| `list_sessions` | Returns sorted session IDs from storage root |
+| `session_status_summary` | Content-safe dict for CLI display; no prompt/output/model content |
+
+**New CLI module:** `io_iii/cli/_session_shell.py`
+
+| Command | CLI surface |
+| --- | --- |
+| `session start` | `python -m io_iii session start [--mode work\|steward] [--persona-mode executor] [--prompt TEXT] [--audit]` |
+| `session continue` | `python -m io_iii session continue --session-id ID --prompt TEXT [--persona-mode executor] [--audit] [--action approve\|redirect\|close]` |
+| `session status` | `python -m io_iii session status --session-id ID` |
+| `session close` | `python -m io_iii session close --session-id ID` |
+
+**Turn loop contract (ADR-012 / ADR-014 / ADR-024):**
+
+- Exactly one `orchestrator.run()` call per turn (never `engine.run()` directly)
+- Bounded by `SESSION_MAX_TURNS`; raises `SESSION_AT_LIMIT` when reached
+- Steward gate evaluated at each turn boundary (ADR-024 §5.3)
+- No prompt or output content stored in `TurnRecord` or session JSON
+- Memory writes never triggered automatically (ADR-022 §7)
+- No output-driven control flow
+
+**Tests:** `tests/test_session_shell_m82_m83.py` — 59 tests
+
+**Test trajectory:** 774 (M8.1+M8.4) → **833 (M8.2+M8.3)**
+
+**ADR freeze boundary respected:** `engine.py`, `routing.py`, `telemetry.py` unchanged.
+
+---
+
+### M8.5 — Conditional Runbook Branches ✓
+
+Config-declared `when:` conditions on runbook steps. Conditions evaluate structural session
+fields only (never model output). Max 1 branch level structurally guaranteed by the type system.
+
+**New types in `io_iii/core/runbook.py`:**
+
+| Symbol | Description |
+| --- | --- |
+| `WHEN_CONDITION_ALLOWED_KEYS` | Frozenset of permitted condition keys: `session_mode`, `persona_mode` |
+| `WHEN_CONDITION_ALLOWED_OPS` | Frozenset of permitted operators: `eq`, `neq` |
+| `WhenCondition` | Frozen config-declared predicate: `key`, `value`, `op` |
+| `RunbookStep` | Frozen wrapper: `task_spec: TaskSpec` + `when: Optional[WhenCondition]` |
+| `ConditionalRunbook` | Frozen ordered list of `RunbookStep` objects; same RUNBOOK_MAX_STEPS ceiling |
+
+**New types and functions in `io_iii/core/runbook_runner.py`:**
+
+| Symbol | Description |
+| --- | --- |
+| `WhenContext` | Frozen structural context for evaluation: `session_mode`, `persona_mode` |
+| `evaluate_when` | Pure predicate evaluator: `WhenCondition × WhenContext → bool` |
+| `run_with_context` | Executes a `ConditionalRunbook`; skips steps whose `when` is False |
+| `runbook_step_skipped` | New lifecycle event in `_RUNBOOK_LIFECYCLE_EVENTS` (7 total, was 6) |
+
+**Contract invariants (ADR-003 / ADR-014):**
+
+- Conditions evaluate `session_mode` and `persona_mode` only — never model output
+- Max 1 branch level: `RunbookStep.task_spec` is always `TaskSpec`, nesting structurally impossible
+- Skipped steps emit `runbook_step_skipped` lifecycle event (content-safe: `task_spec_id` + `step_index` only)
+- `RunbookResult.steps_skipped` field added (default 0; backward-compatible)
+- `test_runbook_m48.py` taxonomy contract updated: 7 events (was 6)
+
+**Tests:** `tests/test_conditional_runbook_m85.py` — 56 tests
+
+**Test trajectory:** 833 (M8.2+M8.3) → **889 (M8.5)**
+
+**ADR freeze boundary respected:** `engine.py`, `routing.py`, `telemetry.py` unchanged.
+
+---
+
+### M8.6 — Session Continuity via Memory ✓
+
+Cross-turn context as bounded memory records. `pack.io_iii.session_resume` auto-loaded
+on `session continue`. Memory writes never triggered automatically (ADR-022 §7).
+
+**New module:** `io_iii/memory/session_continuity.py`
+
+| Symbol | Description |
+| --- | --- |
+| `SESSION_CONTINUITY_PACK_ID` | Default pack id: `"pack.io_iii.session_resume"` |
+| `SessionMemoryContext` | Frozen, content-safe record of memory loaded for a turn |
+| `load_session_memory()` | Policy-gated pack loader; absent pack → `([], None)` safe default |
+
+**`SessionMemoryContext` fields (all structural — no values):**
+`pack_id`, `scope`, `keys_declared`, `keys_loaded`, `keys_missing`, `policy_route`
+
+**Modifications:**
+
+| Location | Change |
+| --- | --- |
+| `io_iii/core/dialogue_session.py` | `TurnRecord.memory_keys_loaded: int = 0` (count only, ADR-003) |
+| `io_iii/core/dialogue_session.py` | `DialogueTurnResult.memory_context: Optional[SessionMemoryContext]` |
+| `io_iii/core/dialogue_session.py` | `run_turn()` accepts `session_memory` and `memory_context` params |
+| `io_iii/core/dialogue_session.py` | `save_session` / `_deserialise_session` persist `memory_keys_loaded` |
+| `io_iii/cli/_session_shell.py` | `cmd_session_continue()` calls `_load_continuity_memory()` before turn |
+| `io_iii/cli/_session_shell.py` | `_emit_turn_result()` surfaces `memory_keys_loaded` and `memory_context` |
+
+**Contract invariants:**
+
+- Absent pack is the safe default (`([], None)`) — not an error
+- Retrieval policy applied before records returned (ADR-022 §4)
+- No MemoryRecord values in any persisted field (TurnRecord, session JSON)
+- Memory writes never triggered automatically (ADR-022 §7)
+- Engine injection deferred — engine.py frozen; session-layer read path complete
+- `keys_missing` = keys declared in pack but absent from store (not policy-dropped)
+
+**Tests:** `tests/test_session_continuity_m86.py` — 27 tests
+
+**Test trajectory:** 889 (M8.5) → **916 (M8.6)**
+
+**ADR freeze boundary respected:** `engine.py`, `routing.py`, `telemetry.py` unchanged.
