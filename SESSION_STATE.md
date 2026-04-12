@@ -530,6 +530,7 @@ Repository is in a taggable phase-close state (v0.4.0 candidate).
 
 All three Phase 5 milestones are implemented, tested, and committed.
 Test count at phase close: 419 passing.
+Test count after post-phase hardening pass: 515 passing.
 
 ### M5 Completed
 
