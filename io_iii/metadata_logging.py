@@ -41,6 +41,27 @@ def make_request_id() -> str:
     return f"{time.time_ns()}-{os.getpid()}"
 
 
+_ROTATION_MAX_ENTRIES = 200
+_ROTATION_MAX_BYTES = 100_000
+
+
+def _rotate_if_needed(path: Path) -> None:
+    """Drop oldest entries when the log exceeds 200 entries or 100 KB."""
+    if not path.exists():
+        return
+    if path.stat().st_size <= _ROTATION_MAX_BYTES:
+        raw = path.read_bytes()
+        lines = [l for l in raw.splitlines() if l.strip()]
+        if len(lines) <= _ROTATION_MAX_ENTRIES:
+            return
+        keep = lines[-_ROTATION_MAX_ENTRIES:]
+    else:
+        raw = path.read_bytes()
+        lines = [l for l in raw.splitlines() if l.strip()]
+        keep = lines[-_ROTATION_MAX_ENTRIES:]
+    path.write_bytes(b"\n".join(keep) + b"\n")
+
+
 def append_metadata(logging_cfg: Dict[str, Any], record: Dict[str, Any]) -> Optional[Path]:
     """
     Appends one JSON object per line into metadata.jsonl (JSONL).
@@ -55,6 +76,8 @@ def append_metadata(logging_cfg: Dict[str, Any], record: Dict[str, Any]) -> Opti
 
     path = metadata_log_path(logging_cfg)
     path.parent.mkdir(parents=True, exist_ok=True)
+
+    _rotate_if_needed(path)
 
     payload = dict(record)
 
