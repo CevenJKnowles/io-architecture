@@ -29,6 +29,12 @@ from io_iii.core.replay_resume import (
     ReplayResumeResult,
 )
 
+# Phase 6 M6.6 — memory write contract (ADR-022 §7)
+from io_iii.memory.write import memory_write as _memory_write
+
+# Phase 6 M6.7 — session snapshot export/import (ADR-022 §8)
+from io_iii.core.snapshot import export_snapshot as _export_snapshot, import_snapshot as _import_snapshot
+
 # -----------------------------
 # Audit Gate Hard Limits (ADR-009)
 # -----------------------------
@@ -760,6 +766,179 @@ def cmd_about(args) -> int:
     return 0
 
 
+def cmd_memory_write(args) -> int:
+    """
+    Write a single memory record to the store (Phase 6 M6.6 / ADR-022 §7).
+
+    Command surface:
+        python -m io_iii memory write --scope <scope> --key <key> --value <value>
+        [--sensitivity standard|elevated|restricted] [--provenance human|mixed|llm:<slug>]
+
+    Properties:
+    - Requires explicit user confirmation before writing.
+    - Atomic: single record, single operation.
+    - Version auto-incremented when key already exists.
+    - No memory value logged.
+    """
+    cfg_dir = _get_cfg_dir(args)
+    cfg = load_io3_config(cfg_dir)
+
+    # Resolve storage_root from memory_packs config if available.
+    try:
+        from io_iii.memory.packs import load_memory_packs_config
+        packs_cfg = load_memory_packs_config(cfg_dir)
+        storage_root = packs_cfg.storage_root
+    except Exception:
+        storage_root = "./memory_store"
+
+    scope = args.scope
+    key = args.key
+    value = args.value
+    sensitivity = getattr(args, "sensitivity", "standard")
+    provenance = getattr(args, "provenance", "human")
+
+    try:
+        identifier = _memory_write(
+            scope=scope,
+            key=key,
+            value=value,
+            storage_root=storage_root,
+            provenance=provenance,
+            sensitivity=sensitivity,
+            # confirm_fn=None → uses interactive stdin confirmation
+        )
+        _print({"status": "ok", "identifier": identifier})
+        return 0
+    except ValueError as e:
+        _print({"status": "error", "error_code": str(e).split(":")[0].strip()})
+        return 1
+
+
+def cmd_session_export(args) -> int:
+    """
+    Export a portable session snapshot (Phase 6 M6.7 / ADR-022 §8).
+
+    Command surface:
+        python -m io_iii session export --run-id <id> --mode <mode>
+            [--workflow-position <pos>] [--output <path>] [--pack <id>]...
+
+    Properties:
+    - User-initiated only; no automatic exports.
+    - Snapshot contains control-plane fields only; no content.
+    - Default path: <storage_root>/<run_id>.snapshot.json
+    """
+    from io_iii.core.session_state import AuditGateState, RouteInfo
+
+    run_id = args.run_id
+    mode = args.mode
+    workflow_position = getattr(args, "workflow_position", None) or mode
+    packs = getattr(args, "pack", []) or []
+    output = getattr(args, "output", None)
+
+    cfg_dir = _get_cfg_dir(args)
+    cfg = load_io3_config(cfg_dir)
+
+    try:
+        from io_iii.memory.packs import load_memory_packs_config
+        packs_cfg = load_memory_packs_config(cfg_dir)
+        storage_root = packs_cfg.storage_root
+    except Exception:
+        storage_root = "./memory_store"
+
+    # Build a minimal SessionState for snapshot export (control-plane only).
+    state = _build_minimal_session_state(
+        request_id=run_id,
+        mode=mode,
+        route_id=workflow_position,
+        cfg=cfg,
+    )
+
+    try:
+        snap = _export_snapshot(
+            state,
+            active_memory_pack_ids=packs,
+            output_path=output,
+            storage_root=None if output else storage_root,
+        )
+        _print({
+            "status": "ok",
+            "schema_version": snap.schema_version,
+            "run_id": snap.run_id,
+            "workflow_position": snap.workflow_position,
+            "active_memory_pack_ids": snap.active_memory_pack_ids,
+            "governance_mode": snap.governance_mode,
+            "exported_at": snap.exported_at,
+        })
+        return 0
+    except ValueError as e:
+        _print({"status": "error", "error_code": str(e).split(":")[0].strip()})
+        return 1
+
+
+def cmd_session_import(args) -> int:
+    """
+    Import and validate a session snapshot from disk (Phase 6 M6.7 / ADR-022 §8).
+
+    Command surface:
+        python -m io_iii session import --snapshot <path>
+    """
+    snapshot_path = args.snapshot
+
+    try:
+        snap = _import_snapshot(snapshot_path)
+        _print({
+            "status": "ok",
+            "schema_version": snap.schema_version,
+            "run_id": snap.run_id,
+            "workflow_position": snap.workflow_position,
+            "active_memory_pack_ids": snap.active_memory_pack_ids,
+            "governance_mode": snap.governance_mode,
+            "exported_at": snap.exported_at,
+        })
+        return 0
+    except ValueError as e:
+        _print({"status": "error", "error_code": str(e).split(":")[0].strip()})
+        return 1
+
+
+def _build_minimal_session_state(
+    *,
+    request_id: str,
+    mode: str,
+    route_id: str,
+    cfg,
+):
+    """Build a minimal SessionState for snapshot export (no execution performed)."""
+    from io_iii.core.session_state import AuditGateState, RouteInfo, SessionState
+    from io_iii.persona_contract import PERSONA_CONTRACT_VERSION
+
+    route = RouteInfo(
+        mode=mode,
+        primary_target=None,
+        secondary_target=None,
+        selected_target=None,
+        selected_provider="null",
+        fallback_used=False,
+        fallback_reason=None,
+        boundaries={},
+    )
+    return SessionState(
+        request_id=request_id,
+        started_at_ms=0,
+        mode=mode,
+        config_dir=str(cfg.config_dir),
+        route=route,
+        audit=AuditGateState(audit_enabled=False),
+        status="ok",
+        provider="null",
+        model=None,
+        route_id=route_id,
+        persona_contract_version=PERSONA_CONTRACT_VERSION,
+        persona_id=None,
+        logging_policy=cfg.logging,
+    )
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="io-iii")
     parser.add_argument(
@@ -839,6 +1018,46 @@ def main(argv=None) -> int:
 
     p_about = sub.add_parser("about")
     p_about.set_defaults(func=cmd_about)
+
+    # Phase 6 M6.6 — memory write command (ADR-022 §7)
+    p_memory = sub.add_parser("memory")
+    p_memory_sub = p_memory.add_subparsers(dest="memory_subcmd", required=True)
+    p_memory_write = p_memory_sub.add_parser("write")
+    p_memory_write.add_argument("--scope", required=True, help="Memory record scope")
+    p_memory_write.add_argument("--key", required=True, help="Memory record key")
+    p_memory_write.add_argument("--value", required=True, help="Memory record value (content-plane)")
+    p_memory_write.add_argument(
+        "--sensitivity", default="standard",
+        choices=["standard", "elevated", "restricted"],
+        help="Sensitivity tier (default: standard)",
+    )
+    p_memory_write.add_argument(
+        "--provenance", default="human",
+        help="Provenance string (default: human)",
+    )
+    p_memory_write.set_defaults(func=cmd_memory_write)
+
+    # Phase 6 M6.7 — session export/import commands (ADR-022 §8)
+    p_session = sub.add_parser("session")
+    p_session_sub = p_session.add_subparsers(dest="session_subcmd", required=True)
+
+    p_session_export = p_session_sub.add_parser("export")
+    p_session_export.add_argument("--run-id", required=True, dest="run_id", help="Source run identifier")
+    p_session_export.add_argument("--mode", required=True, help="Governance mode (e.g. executor)")
+    p_session_export.add_argument(
+        "--workflow-position", dest="workflow_position", default=None,
+        help="Workflow position identifier (defaults to --mode)",
+    )
+    p_session_export.add_argument(
+        "--pack", action="append", dest="pack", default=[], metavar="PACK_ID",
+        help="Active memory pack ID (repeatable)",
+    )
+    p_session_export.add_argument("--output", default=None, help="Output path (overrides default)")
+    p_session_export.set_defaults(func=cmd_session_export)
+
+    p_session_import = p_session_sub.add_parser("import")
+    p_session_import.add_argument("--snapshot", required=True, help="Path to snapshot file")
+    p_session_import.set_defaults(func=cmd_session_import)
 
     args = parser.parse_args(argv)
     return int(args.func(args))

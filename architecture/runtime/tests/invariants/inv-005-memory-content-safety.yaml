@@ -1,0 +1,106 @@
+schema: "io-iii-invariant-spec"
+version: "v1.0"
+
+id: "INV-005"
+title: "Memory Content Safety (ADR-022 §6)"
+status: "active"
+source_of_truth:
+  - "./ADR/ADR-022-memory-architecture-contract.md"
+  - "./architecture/runtime/config/memory_retrieval_policy.yaml"
+  - "./architecture/runtime/config/memory_packs.yaml"
+  - "./io_iii/memory/store.py"
+  - "./io_iii/core/context_assembly.py"
+
+assertions:
+
+  # ---------------------------------------------------------------------------
+  # Config structural integrity
+  # ---------------------------------------------------------------------------
+
+  - name: "memory_retrieval_policy.yaml has required top-level keys"
+    type: "yaml_has_keys"
+    file: "./architecture/runtime/config/memory_retrieval_policy.yaml"
+    path: ""
+    expected_keys:
+      - schema
+      - version
+      - route_allowlist
+      - capability_allowlist
+      - sensitivity_allowlist
+
+  - name: "memory_packs.yaml has required top-level keys"
+    type: "yaml_has_keys"
+    file: "./architecture/runtime/config/memory_packs.yaml"
+    path: ""
+    expected_keys:
+      - schema
+      - version
+      - storage_root
+      - packs
+
+  - name: "Retrieval policy schema identifier is correct"
+    type: "yaml_equals"
+    file: "./architecture/runtime/config/memory_retrieval_policy.yaml"
+    path: "schema"
+    expected: "io-iii-memory-retrieval-policy"
+
+  - name: "Packs config schema identifier is correct"
+    type: "yaml_equals"
+    file: "./architecture/runtime/config/memory_packs.yaml"
+    path: "schema"
+    expected: "io-iii-memory-packs"
+
+  - name: "sensitivity_allowlist has elevated and restricted sub-keys"
+    type: "yaml_has_keys"
+    file: "./architecture/runtime/config/memory_retrieval_policy.yaml"
+    path: "sensitivity_allowlist"
+    expected_keys:
+      - elevated
+      - restricted
+
+  # ---------------------------------------------------------------------------
+  # Content safety: to_log_safe() method boundary
+  # ---------------------------------------------------------------------------
+
+  - name: "MemoryRecord defines to_log_safe() method"
+    type: "python_requires_pattern"
+    glob: "./io_iii/memory/store.py"
+    pattern: "def to_log_safe"
+
+  - name: "to_log_safe() documents explicit exclusion of the value field"
+    type: "python_requires_pattern"
+    glob: "./io_iii/memory/store.py"
+    pattern: "Never includes .value."
+
+  # ---------------------------------------------------------------------------
+  # Content safety: assembly_metadata allowed log fields (ADR-022 §6)
+  # ---------------------------------------------------------------------------
+
+  - name: "assembly_metadata declares memory_keys_released log field"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/context_assembly.py"
+    pattern: "\"memory_keys_released\""
+
+  - name: "assembly_metadata declares memory_records_count log field"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/context_assembly.py"
+    pattern: "\"memory_records_count\""
+
+  - name: "assembly_metadata declares memory_total_chars log field"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/context_assembly.py"
+    pattern: "\"memory_total_chars\""
+
+  # ---------------------------------------------------------------------------
+  # Content safety: forbidden log field names never introduced
+  # ---------------------------------------------------------------------------
+
+  - name: "Forbidden log field 'memory_values' never referenced in source"
+    type: "python_forbids_pattern"
+    glob: "./io_iii/**/*.py"
+    pattern: "\"memory_values\""
+
+  - name: "Forbidden log field 'record_content' never referenced in source"
+    type: "python_forbids_pattern"
+    glob: "./io_iii/**/*.py"
+    pattern: "\"record_content\""

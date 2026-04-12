@@ -12,11 +12,11 @@
 
 ## Phase Status
 
-**Current Phase:** Phase 6 — Memory Architecture (active)
+**Current Phase:** Phase 6 — Memory Architecture (complete)
 
-**Status:** Phase 5 complete (M5.0–M5.3 delivered; tagged v0.5.0). Phase 6 active — M6.0 complete.
+**Status:** Phase 6 complete. M6.0–M6.7 delivered and tested. All invariants passing. Ready for tagging v0.6.0.
 
-**Tag:** v0.5.0
+**Tag:** v0.5.0 → v0.6.0 pending
 
 **Branch:** phase-6-0
 
@@ -713,10 +713,38 @@ python -m io_iii session import --snapshot <path>
 ### Phase 6 Definition of Done
 
 - ADR-022 accepted and indexed ✓
-- M6.1–M6.7 milestones delivered and tested
-- Memory injection active and bounded by M5.1
-- Memory values absent from all log output (invariant validator confirms)
-- `pytest` passing
-- Invariant validator passing
-- SESSION_STATE.md updated with phase close state
-- Repository tagged `v0.6.0`
+- M6.1–M6.7 milestones delivered and tested ✓
+- Memory injection active and bounded by M5.1 ✓
+- Memory values absent from all log output (invariant validator confirms) ✓
+- `pytest` passing — **603 tests** ✓
+- Invariant validator passing — **5/5 PASS** ✓
+- SESSION_STATE.md updated with phase close state ✓
+- Repository tagged `v0.6.0` — pending
+
+---
+
+## Phase 6 Close State — 2026-04-12
+
+**Deliverables:**
+
+| Milestone | Module | Tests |
+| --- | --- | --- |
+| M6.1 — Memory Store Architecture | `io_iii/memory/store.py` | `tests/test_memory_store_m61.py` |
+| M6.2 — Memory Pack System | `io_iii/memory/packs.py` | `tests/test_memory_packs_m62.py` |
+| M6.3 — Memory Retrieval Policy | `io_iii/memory/policy.py` | `tests/test_memory_policy_m63.py` |
+| M6.4 — Memory Injection via Context Assembly | `io_iii/core/context_assembly.py`, `io_iii/core/execution_context.py` | `tests/test_memory_injection_m64.py` |
+| M6.5 — Memory Safety Invariants | `architecture/runtime/scripts/validate_invariants.py`, `architecture/runtime/tests/invariants/inv-005-memory-content-safety.yaml` | `tests/test_invariants_m65.py` |
+| M6.6 — Memory Write Contract | `io_iii/memory/write.py` | `tests/test_memory_write_m66.py` |
+| M6.7 — SessionState Snapshot Export | `io_iii/core/snapshot.py` | `tests/test_session_snapshot_m67.py` |
+
+**Test trajectory:** 419 (Ph5 close) → 472 (M6.1) → 537 (M6.2+M6.3) → 565 (M6.4) → 577 (M6.5) → **603 (M6.6+M6.7)**
+
+**Invariant validator:** 5/5 PASS (INV-001 through INV-005)
+
+**CLI additions (Phase 6):**
+
+- `python -m io_iii memory write --scope <scope> --key <key> --value <value>` — M6.6
+- `python -m io_iii session export --run-id <id> --mode <mode> [--output <path>]` — M6.7
+- `python -m io_iii session import --snapshot <path>` — M6.7
+
+**ADR freeze boundary respected:** engine.py, routing.py, telemetry.py unchanged throughout Phase 6.

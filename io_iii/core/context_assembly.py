@@ -6,9 +6,15 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from io_iii.core.session_state import SessionState
+from io_iii.memory.store import MemoryRecord
 
 
 ASSEMBLY_VERSION = "adr-010/v1"
+
+# Memory injection budget (ADR-022 §5).
+# Records are included in declaration order until cumulative value chars
+# exceed this ceiling. Overflow records are dropped silently.
+_DEFAULT_MEMORY_BUDGET_CHARS: int = 4_000
 
 
 @dataclass(frozen=True)
@@ -34,6 +40,8 @@ def assemble_context(
     user_prompt: str,
     persona_contract: str,
     route_metadata: Mapping[str, Any] | None = None,
+    memory: Sequence[MemoryRecord] | None = None,
+    memory_budget_chars: int = _DEFAULT_MEMORY_BUDGET_CHARS,
 ) -> AssembledContext:
     """
     Deterministically assemble the provider-neutral prompt/messages.
@@ -43,6 +51,10 @@ def assemble_context(
     - user_prompt: explicit user content (content-plane)
     - persona_contract: persona contract text (content-plane)
     - route_metadata: non-content routing/provider metadata (control-plane-ish)
+    - memory: policy-filtered MemoryRecord list (content-plane); injected as
+      a '=== Memory ===' section in the system prompt when non-empty (ADR-022 §5)
+    - memory_budget_chars: maximum chars of record values to inject; overflow
+      records are dropped silently in declaration order
 
     Output:
     - AssembledContext (content-plane)
@@ -50,10 +62,13 @@ def assemble_context(
     if route_metadata is None:
         route_metadata = {}
 
+    injected = _select_bounded_memory(memory or [], budget_chars=memory_budget_chars)
+
     system_prompt = _build_system_prompt(
         session_state=session_state,
         persona_contract=persona_contract,
         route_metadata=route_metadata,
+        injected_memory=injected,
     )
 
     messages = _build_messages(system_prompt=system_prompt, user_prompt=user_prompt)
@@ -66,6 +81,7 @@ def assemble_context(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         messages=messages,
+        injected_memory=injected,
     )
 
     return AssembledContext(
@@ -87,6 +103,7 @@ def _build_system_prompt(
     session_state: SessionState,
     persona_contract: str,
     route_metadata: Mapping[str, Any],
+    injected_memory: List[MemoryRecord],
 ) -> str:
     """
     Canonical system prompt layout (stable ordering, no randomness).
@@ -96,6 +113,7 @@ def _build_system_prompt(
     2) Persona contract
     3) Runtime boundaries summary (non-content)
     4) Execution envelope (mode, audit toggle)
+    5) Memory context (omitted when empty) — ADR-022 §5
     """
     header = (
         "You are IO-III.\n"
@@ -119,8 +137,13 @@ def _build_system_prompt(
         f"max_revision_passes: 1\n"
     )
 
+    sections = [header.strip(), persona_section.strip(), boundaries_section.strip(), envelope_section.strip()]
+
+    if injected_memory:
+        sections.append(_format_memory_section(injected_memory).strip())
+
     # Stable join with explicit separators
-    return "\n".join([header.strip(), persona_section.strip(), boundaries_section.strip(), envelope_section.strip()]).strip() + "\n"
+    return "\n".join(sections).strip() + "\n"
 
 
 def _format_boundaries_section(*, session_state: SessionState, route_metadata: Mapping[str, Any]) -> str:
@@ -184,14 +207,25 @@ def _build_assembly_metadata(
     system_prompt: str,
     user_prompt: str,
     messages: Sequence[Mapping[str, str]],
+    injected_memory: List[MemoryRecord],
 ) -> Dict[str, Any]:
     """
     Non-content metrics only.
+
+    Memory fields (ADR-022 §6 allowed log fields):
+    - memory_keys_released: list of scope/key identifiers — safe to log
+    - memory_records_count: integer count
+    - memory_total_chars: total chars of injected values
+    Memory values are never included.
     """
     # Char counts only (no content)
     sys_len = len(system_prompt)
     user_len = len(user_prompt)
     msg_count = len(messages)
+
+    # Safe memory log fields — identifiers and counts only, never values
+    memory_keys_released = [r.identifier() for r in injected_memory]
+    memory_total_chars = sum(len(r.value) for r in injected_memory)
 
     return {
         "assembly_version": ASSEMBLY_VERSION,
@@ -209,7 +243,56 @@ def _build_assembly_metadata(
             for k in ("selected_provider", "selected_target", "fallback_used", "route_id")
             if k in route_metadata
         },
+        # Memory safe log fields (ADR-022 §6)
+        "memory_keys_released": memory_keys_released,
+        "memory_records_count": len(injected_memory),
+        "memory_total_chars": memory_total_chars,
     }
+
+
+def _select_bounded_memory(
+    records: Sequence[MemoryRecord],
+    *,
+    budget_chars: int,
+) -> List[MemoryRecord]:
+    """
+    Return the largest prefix of records whose cumulative value length ≤ budget_chars.
+
+    Records are evaluated in declaration order. The first record that would push
+    the total over budget — and all subsequent records — are dropped silently.
+    A budget of 0 drops all records.
+    """
+    selected: List[MemoryRecord] = []
+    total = 0
+    for record in records:
+        cost = len(record.value)
+        if total + cost > budget_chars:
+            break
+        selected.append(record)
+        total += cost
+    return selected
+
+
+def _format_memory_section(records: List[MemoryRecord]) -> str:
+    """
+    Render injected memory records as a system-prompt section (ADR-022 §5).
+
+    Format (content-plane — never logged):
+        === Memory ===
+        [scope/key]
+        <value>
+
+        [scope/key]
+        <value>
+
+    Keys identify the record; values are the injected context.
+    """
+    lines = ["=== Memory ==="]
+    for record in records:
+        lines.append(f"[{record.identifier()}]")
+        lines.append(record.value)
+        lines.append("")  # blank line between records
+    return "\n".join(lines)
 
 
 def _canonical_json(obj: Any) -> str:
