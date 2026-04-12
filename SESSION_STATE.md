@@ -349,3 +349,147 @@ on `session continue`. Memory writes never triggered automatically (ADR-022 §7)
 **Test trajectory:** 889 (M8.5) → **916 (M8.6)**
 
 **ADR freeze boundary respected:** `engine.py`, `routing.py`, `telemetry.py` unchanged.
+
+---
+
+---
+
+## Phase 9 — API & Integration Surface (Complete)
+
+**Governing ADR:** ADR-025 — API & Integration Surface — Transport Adapter Contract (accepted)
+
+**Status:** Phase 9 complete. M9.0–M9.5 delivered. All invariants passing. Ready for tagging v0.9.0.
+
+**Tag:** v0.9.0 (pending)
+
+**Prerequisite:** Phase 8 tagged v0.8.0 ✓
+
+---
+
+### M9.0 — Phase 9 ADR and Milestone Definition ✓
+
+ADR-025 authored and accepted. Transport adapter contract, content-safety extension to HTTP,
+endpoint-to-CLI mapping, SSE contract, webhook contract, structured exit codes, and server
+entrypoint all formalised. Phase 9 milestones defined.
+
+**Deliverable:** `ADR/ADR-025-api-integration-surface.md`
+
+---
+
+### M9.1 — HTTP API Layer ✓
+
+Thin HTTP transport adapter over the existing session and execution layers.
+No new execution semantics. All execution through `orchestrator.run()` or session-layer functions.
+
+**New package:** `io_iii/api/`
+
+| Module | Responsibility |
+| --- | --- |
+| `io_iii/api/__init__.py` | Package init |
+| `io_iii/api/_handlers.py` | Route handlers (map HTTP → session/orchestrator) |
+| `io_iii/api/_sse.py` | SSE formatting + session stream handler (M9.2) |
+| `io_iii/api/_webhooks.py` | Webhook dispatcher (M9.3) |
+| `io_iii/api/server.py` | HTTPServer + request handler + `serve` CLI entrypoint |
+| `io_iii/api/static/index.html` | Self-hosted web UI (M9.5) |
+
+**Endpoints delivered:**
+
+| Method | Path | Maps to |
+| --- | --- | --- |
+| `POST` | `/run` | `orchestrator.run()` — includes model output (primary surface) |
+| `POST` | `/runbook` | `runbook_runner.run()` — includes step outputs (primary surface) |
+| `POST` | `/session/start` | `new_session()` + optional first `run_turn()` |
+| `POST` | `/session/{id}/turn` | `run_turn()` — content-safe governance metadata only |
+| `GET` | `/session/{id}/state` | `session_status_summary()` |
+| `DELETE` | `/session/{id}` | session close + persist |
+| `GET` | `/session/{id}/stream` | SSE stream: turn execution + model output (M9.2) |
+| `GET` | `/` | Self-hosted web UI (M9.5) |
+
+**CLI addition:** `python -m io_iii serve [--host 127.0.0.1] [--port 8080]`
+
+**ADR freeze boundary respected:** `engine.py`, `routing.py`, `telemetry.py` unchanged.
+
+---
+
+### M9.2 — SSE Streaming ✓
+
+Server-Sent Events on `GET /session/{id}/stream?prompt=TEXT`.
+
+**Event sequence:** `turn_started` → `turn_output` → `turn_completed` (or `steward_gate_triggered`)
+
+`turn_output` carries model text (user-facing; not logged or forwarded — ADR-025 §5).
+All other events are content-safe. Execution is synchronous (engine frozen — no token streaming).
+
+**SSE event taxonomy:** `_SSE_SESSION_EVENTS` (5 events, frozen)
+
+---
+
+### M9.3 — Webhooks ✓
+
+Best-effort HTTP POST callbacks on three governed lifecycle events.
+
+**Class:** `WebhookDispatcher` in `io_iii/api/_webhooks.py`
+
+| Event constant | Trigger |
+| --- | --- |
+| `WEBHOOK_SESSION_COMPLETE` | Session closed via `DELETE /session/{id}` or steward close action |
+| `WEBHOOK_RUNBOOK_COMPLETE` | `POST /runbook` succeeds |
+| `WEBHOOK_STEWARD_GATE_TRIGGERED` | Turn response contains pause state |
+
+**Contract invariants:**
+
+- Absent `webhooks:` key in `runtime.yaml` → safe default (no webhooks fired)
+- Best-effort: single attempt, 5-second timeout, silent failure
+- All payloads strictly content-safe — no model output, no prompt, no memory values
+
+**Webhook event taxonomy:** `_WEBHOOK_EVENTS` (3 events, frozen)
+
+---
+
+### M9.4 — CLI Surface Improvements ✓
+
+**`--output json` flag:** Added to `main()` parser. All CLI output was already JSON (`_print()`
+always uses `json.dumps`). The flag formalises this as the declared contract (ADR-025 §7).
+
+**`serve` subcommand:** `python -m io_iii serve [--host H] [--port P]` wired into `main()`.
+
+**Structured exit codes (ADR-025 §7):**
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success |
+| 1 | Execution error |
+| 2 | Configuration error / server binding failure |
+| 3 | Steward gate pause — session paused, awaiting human action |
+
+Exit code 3 now returned by `cmd_session_continue()` when:
+
+- Session is paused on load with no `--action` supplied
+- A just-completed turn fires the steward gate
+
+---
+
+### M9.5 — Self-Hosted Web UI ✓
+
+Single static HTML file (`io_iii/api/static/index.html`). Served at `GET /`.
+
+- Chat-style session interface; governed entry point only
+- Uses `EventSource` for SSE streaming (model output via `turn_output` event)
+- Uses `fetch()` for API calls (`/session/start`, `/session/{id}/turn`, `DELETE /session/{id}`)
+- Supports work/steward mode selection and steward pause actions (approve/redirect/close)
+- No external JavaScript framework; no CDN dependencies
+- API base derived from `window.location.origin` — no hard-coded ports
+
+---
+
+### Phase 9 Definition of Done
+
+- ADR-025 accepted and indexed ✓
+- M9.0–M9.5 milestones delivered ✓
+- All API responses from session endpoints content-safe (ADR-003 / ADR-025 §4) ✓
+- No endpoint bypasses the session layer ✓
+- Webhook payloads strictly content-safe ✓
+- `engine.py`, `routing.py`, `telemetry.py` unchanged throughout Phase 9 ✓
+- `pytest` passing — 1046 tests ✓
+- SESSION_STATE.md updated with phase close state ✓
+- Repository tagged `v0.9.0` (pending)
