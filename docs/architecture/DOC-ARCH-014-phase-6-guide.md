@@ -2,8 +2,8 @@
 id: DOC-ARCH-014
 title: Phase 6 Guide | Memory Architecture
 type: architecture
-status: planned
-version: v0.1
+status: complete
+version: v1.0
 canonical: true
 scope: phase-6
 audience: developer
@@ -243,11 +243,11 @@ Define a governed export/import contract for a portable session artefact.
 
 Phase 6 is complete when:
 
-- Phase 6 governing ADR accepted and indexed
-- M6.1–M6.6 milestones delivered and tested
-- memory injection active and bounded by Phase 5 M5.1
-- memory values absent from all log output (invariant validator confirms)
-- `pytest` passing
-- invariant validator passing
-- SESSION_STATE.md updated with phase close state
-- repository tagged `v0.6.0`
+- Phase 6 governing ADR accepted and indexed ✓
+- M6.1–M6.7 milestones delivered and tested ✓
+- memory injection active and bounded by Phase 5 M5.1 ✓
+- memory values absent from all log output (invariant validator confirms) ✓
+- `pytest` passing — 603 tests ✓
+- invariant validator passing — 5/5 PASS ✓
+- SESSION_STATE.md updated with phase close state ✓
+- repository tagged `v0.6.0` ✓

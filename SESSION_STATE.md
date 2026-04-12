@@ -16,7 +16,7 @@
 
 **Status:** Phase 6 complete. M6.0–M6.7 delivered and tested. All invariants passing. Ready for tagging v0.6.0.
 
-**Tag:** v0.5.0 → v0.6.0 pending
+**Tag:** v0.6.0
 
 **Branch:** phase-6-0
 
@@ -720,7 +720,7 @@ python -m io_iii session import --snapshot <path>
 - `pytest` passing — **603 tests** ✓
 - Invariant validator passing — **5/5 PASS** ✓
 - SESSION_STATE.md updated with phase close state ✓
-- Repository tagged `v0.6.0` — pending
+- Repository tagged `v0.6.0` ✓
 
 ---
 

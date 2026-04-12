@@ -6,8 +6,8 @@ Content boundaries are enforced recursively at the logging level. Every signific
 architectural decision is documented in an ADR before it is implemented. The system
 knows what it will not do, and that refusal is structural rather than conventional.
 
-Built over five design generations. Phase 5 complete. Phase 6 active.
-Latest stable phase tag: `v0.5.0`.
+Built over six design generations. Phase 6 complete.
+Latest stable phase tag: `v0.6.0`.
 
 ---
 
@@ -40,8 +40,8 @@ The Python runtime intentionally demonstrates the architecture without expanding
 | 2 | Structural Consolidation | Complete | — |
 | 3 | Capability Layer | Complete | — |
 | 4 | Context Architecture Formalisation | Complete | `v0.4.0` |
-| 5 | Runtime Observability & Optimisation | Complete | `v0.5.0` |
-| *6* | *Memory Architecture* | **Active** | — |
+| 5 | Runtime Observability & Optimisation | **Complete** | `v0.5.0` |
+| 6 | Memory Architecture | **Complete** | `v0.6.0` |
 | *7* | *Open-Source Initialisation Layer* | *Planned* | — |
 | *8* | *Governed Dialogue Layer* | *Planned* | — |
 | *9* | *API & Integration Surface* | *Planned* | — |
@@ -415,18 +415,21 @@ Delivered capabilities:
 
 Phase 5 is complete. Tag: `v0.5.0`.
 
-### Phase 6 - Memory Architecture *(Planned)*
+### Phase 6 - Memory Architecture
 
-Phase 6 introduces governed, deterministic memory as a bounded input to context assembly. The execution stack remains frozen. No retrieval autonomy, no persistent session state, no dynamic routing.
+Phase 6 introduced governed, deterministic memory as a bounded input to context assembly. The execution stack remained frozen throughout. No retrieval autonomy, no persistent session state, no dynamic routing.
 
-Planned capabilities:
+Delivered capabilities:
 
-- governed memory store with atomic, scoped records
-- named memory pack system declared in runtime config
-- deterministic retrieval policy gated by route and capability allowlists
-- bounded memory injection into `ExecutionContext` via context assembly (requires M5.1)
-- user-confirmed write path — no runtime-initiated writes
-- content-safe memory logging (counts, keys, record sizes — no values)
+- **M6.1 Memory Store** — atomic, scoped, versioned records; local file store under configurable root
+- **M6.2 Memory Pack System** — named bundles declared in `memory_packs.yaml`; deterministic resolution
+- **M6.3 Memory Retrieval Policy** — route and capability allowlists; sensitivity-gated access
+- **M6.4 Memory Injection** — bounded injection into `ExecutionContext` via context assembly; budget-enforced; declaration-order deterministic
+- **M6.5 Memory Safety Invariants** — INV-005 enforces content-safe logging via invariant validator; `python_requires_pattern` and `python_forbids_pattern` assertion types added
+- **M6.6 Memory Write Contract** — user-confirmed atomic single-record write; `MEMORY_WRITE_FAILED` on any failure; no value logged
+- **M6.7 Session Snapshot Export/Import** — portable control-plane artefact; `SNAPSHOT_SCHEMA_INVALID` on validation failure; prerequisite for Phase 8 M8.3
+
+Phase 6 is complete. Tag: `v0.6.0`.
 
 Governing document: `docs/architecture/DOC-ARCH-014-phase-6-guide.md`.
 

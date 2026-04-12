@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-04-11"
+updated: "2026-04-12"
 tags:
   - "governance"
   - "adr"
@@ -89,3 +89,6 @@ architecture, implementation, and documentation.
 
 - **ADR-021 — Runtime Observability and Optimisation Contract**
   Path: `./ADR/ADR-021-runtime-observability-optimisation.md`
+
+- **ADR-022 — Memory Architecture Contract**
+  Path: `./ADR/ADR-022-memory-architecture-contract.md`
