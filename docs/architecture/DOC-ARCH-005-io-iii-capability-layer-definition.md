@@ -1,6 +1,6 @@
 ---
 id: DOC-ARCH-005
-title: IO-III Capability Layer Definition
+title: Phase 3 | Capability Layer Definition
 type: architecture
 status: active
 version: v1.0
@@ -8,7 +8,7 @@ canonical: true
 scope: io-iii
 audience: engineers
 created: "2026-03-04"
-updated: "2026-03-04"
+updated: "2026-04-12"
 tags:
   - architecture
   - capability-layer
@@ -19,7 +19,7 @@ roles_focus:
 provenance: human
 ---
 
-# IO-III Capability Layer Definition
+# Phase 3 | Capability Layer Definition
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 id: DOC-ARCH-012
-title: Phase 4 Guide — Post-Capability Architecture Layer
+title: Phase 4 Guide | Post-Capability Architecture Layer
 type: architecture
 status: active
 version: v0.3
@@ -8,7 +8,7 @@ canonical: true
 scope: phase-4
 audience: developer
 created: "2026-03-06"
-updated: "2026-04-03"
+updated: "2026-04-12"
 tags:
 - io-iii
 - phase-4
@@ -19,7 +19,7 @@ roles_focus:
 provenance: io-iii-runtime-development
 ---
 
-# Phase 4 Guide — Post-Capability Architecture Layer
+# Phase 4 Guide | Post-Capability Architecture Layer
 
 ## Purpose
 

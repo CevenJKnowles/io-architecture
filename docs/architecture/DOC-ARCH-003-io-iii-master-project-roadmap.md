@@ -191,7 +191,7 @@ Phase 8 M8.1 (implementation). ADR accepted. Phase 8 may begin.
 
 ## Phase 8 — Governed Dialogue Layer (Complete)
 
-**Status: Complete. Tagged v0.8.0.**
+**Status: Complete. Tagged v0.8.0. Governed by DOC-ARCH-016.**
 
 Phase 8 made IO-III conversational. It introduced a bounded dialogue loop above the frozen
 execution stack, using all prior infrastructure (memory, session snapshots, replay/resume,
@@ -217,9 +217,9 @@ Tagged: v0.8.0. Test count at close: 916 passing.
 
 ---
 
-## Phase 9 — API & Integration Surface (Planned)
+## Phase 9 — API & Integration Surface (Complete)
 
-**Status: Planned. ADR to be authored at M9.0.**
+**Status: Complete. Tagged v0.9.0. Governed by DOC-ARCH-017.**
 
 Phase 9 wraps the existing CLI and session layer in a thin, content-safe HTTP surface.
 No new execution semantics. All invariants preserved. The API is a transport adapter only.
