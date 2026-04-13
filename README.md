@@ -334,6 +334,12 @@ pip install -e ".[dev]"
 python -m io_iii run executor --prompt "Explain deterministic routing in one sentence."
 ```
 
+Add `--raw` to print only the model response with no metadata:
+
+```bash
+python -m io_iii run executor --raw --prompt "Explain deterministic routing in one sentence."
+```
+
 **Multi-turn session:**
 
 ```bash
