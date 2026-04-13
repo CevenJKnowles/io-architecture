@@ -76,8 +76,14 @@ def _build_gate(cfg_runtime: dict, session: DialogueSession) -> StewardGate:
     )
 
 
-def _emit_turn_result(turn_result: DialogueTurnResult) -> None:
-    """Print content-safe turn result summary."""
+def _emit_turn_result(turn_result: DialogueTurnResult, cfg_runtime: dict | None = None) -> None:
+    """
+    Print turn result summary.
+
+    When content_release is enabled in runtime.yaml (ADR-026), the model
+    response text is included as ``message``. Otherwise only structural
+    metadata is emitted (ADR-003 content-safe default).
+    """
     payload: dict = {
         "session_id": turn_result.session.session_id,
         "session_mode": turn_result.session.session_mode.value,
@@ -99,6 +105,11 @@ def _emit_turn_result(turn_result: DialogueTurnResult) -> None:
         ),
         "pause": _pause_summary(turn_result) if turn_result.pause_state else None,
     }
+    # ADR-026: include message when operator has opened the content release gate.
+    if cfg_runtime and cfg_runtime.get("content_release"):
+        msg = getattr(turn_result.result, "message", None)
+        if msg:
+            payload["message"] = msg
     _print(payload)
 
 
@@ -212,7 +223,7 @@ def cmd_session_start(args) -> int:
             return 1
 
         save_session(session, storage_root)
-        _emit_turn_result(turn_result)
+        _emit_turn_result(turn_result, cfg_runtime=cfg.runtime)
         return 0
 
     # No prompt — just initialise and save
@@ -321,7 +332,7 @@ def cmd_session_continue(args) -> int:
         return 1
 
     save_session(session, storage_root)
-    _emit_turn_result(turn_result)
+    _emit_turn_result(turn_result, cfg_runtime=cfg.runtime)
     return 0
 
 
