@@ -286,14 +286,15 @@ def cmd_session_continue(args) -> int:
                 })
                 return 0
         else:
-            # Paused with no valid action — surface pause state
+            # Paused with no valid action — surface pause state.
+            # Exit code 3: steward gate pause requires human action (ADR-025 §7).
             _print({
                 "session_id": session.session_id,
                 "status": session.status,
                 "message": "session_paused_awaiting_action",
                 "valid_actions": ["approve", "redirect", "close"],
             })
-            return 0
+            return 3
 
     prompt = getattr(args, "prompt", None)
     if not prompt:
