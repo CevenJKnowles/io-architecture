@@ -169,11 +169,19 @@ def _extract_response(raw_result: Dict[str, Any], release: bool) -> Dict[str, An
 
     ``_strip_content`` has already removed ``message``; we need the pre-strip
     value, so callers pass the raw CLI result before stripping.
+
+    Checks two locations:
+    - top-level ``message`` (session turn output from _emit_turn_result)
+    - nested ``result.message`` (cmd_run payload structure)
     """
     if not release:
         return {}
+    # Session turn path: top-level message key
     msg = raw_result.get("message")
+    # cmd_run path: nested under result dict
     if msg is None:
+        msg = (raw_result.get("result") or {}).get("message")
+    if not msg:
         return {}
     return {"response": msg}
 
