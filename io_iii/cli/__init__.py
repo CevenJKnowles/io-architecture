@@ -53,6 +53,7 @@ from ._session_shell import (
     cmd_session_status,
     cmd_session_close,
 )
+from io_iii.api.server import cmd_serve
 
 __all__ = [
     "main",
@@ -480,6 +481,13 @@ def main(argv=None) -> int:
         "--config-dir",
         default=None,
         help="Path to IO-III runtime config directory",
+    )
+    parser.add_argument(
+        "--output",
+        choices=["json"],
+        default="json",
+        dest="output_format",
+        help="Output format (default: json; all output is JSON — M9.4 / ADR-025 §7)",
     )
 
     sub = parser.add_subparsers(dest="cmd", required=True)

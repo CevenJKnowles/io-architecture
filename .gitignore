@@ -62,3 +62,6 @@ docs/overview/DOC-OVW-003-io-iii-session-state-2026-03-04.md
 # Allow documentation inside otherwise-ignored directory
 !/history/io-ii/tests/results/
 !/history/io-ii/tests/results/README.md
+
+# IO-III session runtime data (local-only)
+/.io_iii/

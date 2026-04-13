@@ -191,7 +191,7 @@ Phase 8 M8.1 (implementation). ADR accepted. Phase 8 may begin.
 
 ## Phase 8 — Governed Dialogue Layer (Complete)
 
-**Status: Complete. Tagged v0.8.0.**
+**Status: Complete. Tagged v0.8.0. Governed by DOC-ARCH-016.**
 
 Phase 8 made IO-III conversational. It introduced a bounded dialogue loop above the frozen
 execution stack, using all prior infrastructure (memory, session snapshots, replay/resume,
