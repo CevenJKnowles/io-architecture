@@ -25,6 +25,11 @@ import urllib.request
 from typing import Any, Dict, Optional
 
 
+# Event type constants (used by server.py)
+WEBHOOK_SESSION_COMPLETE = "SESSION_COMPLETE"
+WEBHOOK_RUNBOOK_COMPLETE = "RUNBOOK_COMPLETE"
+WEBHOOK_STEWARD_GATE_TRIGGERED = "STEWARD_GATE_TRIGGERED"
+
 _WEBHOOK_TIMEOUT_S = 5
 
 
@@ -71,3 +76,17 @@ def get_webhook_url(runtime_cfg: Dict[str, Any]) -> Optional[str]:
     """Extract webhook_url from runtime.yaml config dict (may be None)."""
     url = runtime_cfg.get("webhook_url")
     return url if isinstance(url, str) and url.strip() else None
+
+
+class WebhookDispatcher:
+    """Stateful webhook dispatcher bound to a URL from runtime config."""
+
+    def __init__(self, url: Optional[str]) -> None:
+        self._url = url
+
+    @classmethod
+    def from_runtime_config(cls, runtime_cfg: Dict[str, Any]) -> "WebhookDispatcher":
+        return cls(get_webhook_url(runtime_cfg))
+
+    def dispatch(self, event_type: str, payload: Dict[str, Any]) -> None:
+        dispatch(self._url, event_type, payload)

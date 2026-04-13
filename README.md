@@ -44,7 +44,7 @@ The result is a runtime that knows what it will not do — and enforces that str
 | 8 | Governed Dialogue Layer | **Complete** | `v0.8.0` |
 | 9 | API & Integration Surface | **Complete** | `v0.9.0` |
 
-25 Architecture Decision Records. 1046 passing tests.
+26 Architecture Decision Records. 1008 passing tests.
 
 ---
 
@@ -304,7 +304,8 @@ Core modules:
 | `core/dialogue_session.py` | governed multi-turn session (ADR-024) | 8 |
 | `core/session_mode.py` | work/steward mode + StewardGate | 8 |
 | `core/snapshot.py` | session snapshot export/import (M6.7/M8.3) | 8 |
-| `api/server.py` | HTTP server and path routing | 9 |
+| `api/server.py` | HTTP server and path routing (stdlib) | 9 |
+| `api/app.py` | FastAPI application (alternative transport layer) | 9 |
 | `api/_handlers.py` | request handlers — transport adapter only | 9 |
 | `api/_sse.py` | Server-Sent Events streaming | 9 |
 | `api/_webhooks.py` | best-effort webhook dispatcher | 9 |
@@ -315,24 +316,45 @@ Core modules:
 
 ## Quick Start
 
-Single run:
+**Prerequisites:** [Ollama](https://ollama.com) running locally with at least one model pulled (e.g. `ollama pull qwen2.5:14b-instruct`). Python 3.11+.
+
+**Setup:**
+
+```bash
+git clone https://github.com/CevenJKnowles/io-architecture.git
+cd io-architecture
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+**Single run:**
 
 ```bash
 python -m io_iii run executor --prompt "Explain deterministic routing in one sentence."
 ```
 
-Multi-turn session:
+**Multi-turn session:**
 
 ```bash
 python -m io_iii session start --mode work
-python -m io_iii session continue --session-id <id> --prompt "Next question."
+# copy the session_id UUID from the output, then:
+python -m io_iii session continue --session-id <uuid> --prompt "Next question."
 ```
 
-Serve the HTTP API and web UI:
+**Web UI (self-hosted chat interface):**
 
 ```bash
-python -m io_iii serve --host 127.0.0.1 --port 8080
-# then open http://127.0.0.1:8080 in a browser
+python -m io_iii serve                        # binds to 127.0.0.1:8080 by default
+python -m io_iii serve --host 0.0.0.0 --port 9000   # custom bind
+```
+
+Open `http://127.0.0.1:8080` in a browser. You will see a chat interface where you type prompts and receive responses as conversation bubbles.
+
+To enable model responses in the web UI, ensure `runtime.yaml` contains:
+
+```yaml
+content_release: true   # ADR-026 — operator opt-in to surface model output
 ```
 
 What happens on `run`:
@@ -399,7 +421,7 @@ sequenceDiagram
 ## Documentation Structure
 
 ```text
-ADR/            25 architectural decision records (ADR-001 through ADR-025)
+ADR/            26 architectural decision records (ADR-001 through ADR-026)
 
 docs/
   overview/     high-level system documentation (DOC-OVW-*)
@@ -421,7 +443,7 @@ docs/architecture/DOC-ARCH-003-io-iii-master-project-roadmap.md
 ## Repository Layout
 
 ```text
-ADR/                        architectural decision records (ADR-001–025)
+ADR/                        architectural decision records (ADR-001–026)
 
 docs/
   overview/                 high-level system documentation
@@ -542,7 +564,8 @@ Thin, content-safe HTTP surface wrapping the existing CLI and session layer. No 
 - **M9.2** Server-Sent Events on `GET /session/{id}/stream` — `turn_started`, `turn_output`, `turn_completed`, `steward_gate_triggered`, `turn_error`
 - **M9.3** Webhook dispatcher — best-effort delivery on `SESSION_COMPLETE`, `RUNBOOK_COMPLETE`, `STEWARD_GATE_TRIGGERED`; content-safe payloads; silent failure
 - **M9.4** CLI improvements — `--output json` flag formalised; `serve` subcommand; structured exit codes (0/1/2/3)
-- **M9.5** Self-hosted web UI — single static HTML file; no external dependencies; `EventSource` SSE; work/steward mode selector; steward pause controls
+- **M9.5** Self-hosted web UI — single static HTML file; no external dependencies; clean chat interface with prompt/response bubbles; steward pause controls
+- **ADR-026** Governed content release gate — `content_release: true` in `runtime.yaml` surfaces model output as a `response` field on `/run` and session turn responses; all other content-safety invariants (ADR-003) preserved; operator accepts responsibility for access control
 
 Tag: `v0.9.0`. Governing document: `DOC-ARCH-017`.
 
