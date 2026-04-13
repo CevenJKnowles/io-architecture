@@ -574,10 +574,10 @@ class TestWebUI:
         resp = client.get("/")
         assert "/session/start" in resp.text
 
-    def test_ui_references_sse_stream(self):
-        """UI must use the SSE stream endpoint."""
+    def test_ui_references_session_turn_endpoint(self):
+        """UI must reference the session turn endpoint."""
         resp = client.get("/")
-        assert "/stream" in resp.text
+        assert "/turn" in resp.text
 
     def test_ui_no_prompt_in_html(self):
         """Static HTML must not embed any prompt or model output content."""
