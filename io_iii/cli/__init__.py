@@ -270,7 +270,10 @@ def cmd_run(args) -> int:
             },
         )
 
-        _print(payload)
+        if getattr(args, "raw", False):
+            print(result.message)
+        else:
+            _print(payload)
         return 0
 
     except Exception as e:
@@ -503,6 +506,7 @@ def main(argv=None) -> int:
     p_run = sub.add_parser("run")
     p_run.add_argument("mode")
     p_run.add_argument("--prompt", type=str, default=None, help="Prompt text (or pipe via stdin)")
+    p_run.add_argument("--raw", action="store_true", help="Print only the model response, no metadata")
     p_run.add_argument("--audit", action="store_true", help="Enable challenger audit pass")
     p_run.add_argument(
         "--capability-id",
