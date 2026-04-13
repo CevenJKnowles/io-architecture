@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-03-03"
-updated: "2026-04-12"
+updated: "2026-04-13"
 tags:
   - "architecture"
   - "roadmap"
@@ -219,27 +219,30 @@ Tagged: v0.8.0. Test count at close: 916 passing.
 
 ## Phase 9 — API & Integration Surface (Complete)
 
-**Status: Complete. Tagged v0.9.0. Governed by DOC-ARCH-017.**
+**Status: Complete. Governing ADR: ADR-025.**
 
 Phase 9 wraps the existing CLI and session layer in a thin, content-safe HTTP surface.
 No new execution semantics. All invariants preserved. The API is a transport adapter only.
 
 Milestones:
 
-- M9.0 — Phase 9 ADR + milestone definition; API-as-transport-adapter contract established
-- M9.1 — HTTP API layer (`POST /run`, `POST /runbook`, `POST /session/start`,
-  `POST /session/{id}/turn`, `GET /session/{id}/state`, `DELETE /session/{id}`)
-- M9.2 — Event streaming (Server-Sent Events on `/session/{id}/stream`; content-safe
-  event schema; no raw model output in events)
-- M9.3 — External integration contracts (webhooks on `SESSION_COMPLETE`,
-  `RUNBOOK_COMPLETE`, `STEWARD_GATE_TRIGGERED`; content-safe payloads)
-- M9.4 — CLI surface improvements (`--output json` flag; structured exit codes;
-  machine-readable output for shell pipeline and CI/CD integration)
-- M9.5 — Self-hosted web UI (thin frontend over M9.1 API + M9.2 SSE streaming;
-  chat-style session interface; governed entry point only — all requests route
-  through the session layer; no execution bypass permitted)
+- M9.0 — ADR-025 authored: API-as-transport-adapter contract established. ✓
+- M9.1 — HTTP API layer implemented in `io_iii/api/`: `POST /run`, `POST /runbook`,
+  `POST /session/start`, `POST /session/{id}/turn`, `GET /session/{id}/state`,
+  `DELETE /session/{id}`, `GET /health`. CLI `serve` command added. ✓
+- M9.2 — SSE event streaming on `GET /session/{id}/stream`. Content-safe events:
+  `session_state`, `turn_started`, `turn_completed`, `steward_gate_triggered`,
+  `session_closed`, `keepalive`. In-process event bus (`io_iii/api/_bus.py`). ✓
+- M9.3 — Webhook dispatch (`io_iii/api/_webhooks.py`): fire-and-forget on
+  `SESSION_COMPLETE`, `RUNBOOK_COMPLETE`, `STEWARD_GATE_TRIGGERED`. Configurable
+  via `runtime.yaml: webhook_url`. Content-safe payloads (ADR-003). ✓
+- M9.4 — `--output json` flag formalised on `run`, `runbook`, `session start`,
+  `session continue`, `session status`, `session close`. Structured exit codes:
+  0 = success, 1 = error. ✓
+- M9.5 — Self-hosted web UI served at `GET /` (single HTML file, vanilla JS).
+  Chat-style session interface using SSE stream. All requests via session layer. ✓
 
-Target: v0.9.0.
+Tagged: v0.9.0. Test count at close: 982 passing (66 new Phase 9 tests).
 
 ---
 

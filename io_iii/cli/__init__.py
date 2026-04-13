@@ -455,6 +455,26 @@ def cmd_capability(args) -> int:
         raise
 
 
+def cmd_serve(args) -> int:
+    """
+    Start the IO-III HTTP API server (Phase 9 M9.1 / ADR-025 §7).
+
+    CLI:
+        python -m io_iii serve [--host HOST] [--port PORT]
+
+    Starts a uvicorn server hosting the FastAPI transport adapter.
+    All requests route through the existing session/engine layer.
+    Zero new execution semantics (ADR-025 §1).
+    """
+    import uvicorn
+    from io_iii.api import app
+
+    host = getattr(args, "host", "0.0.0.0")
+    port = int(getattr(args, "port", 8080))
+    uvicorn.run(app, host=host, port=port)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="io-iii")
     parser.add_argument(
@@ -508,6 +528,12 @@ def main(argv=None) -> int:
         dest="no_constellation_check",
         help="Skip constellation integrity guard (for offline/CI use; ADR-021).",
     )
+    p_run.add_argument(
+        "--output",
+        choices=["json"],
+        default="json",
+        help="Output format (default: json; M9.4 — formalises machine-readable contract).",
+    )
     p_run.set_defaults(func=cmd_run)
 
     p_caps = sub.add_parser("capabilities")
@@ -527,6 +553,10 @@ def main(argv=None) -> int:
     p_runbook = sub.add_parser("runbook")
     p_runbook.add_argument("json_file", type=str, help="Path to a JSON file containing a Runbook definition")
     p_runbook.add_argument("--audit", action="store_true", help="Enable challenger audit pass per step")
+    p_runbook.add_argument(
+        "--output", choices=["json"], default="json",
+        help="Output format (default: json; M9.4).",
+    )
     p_runbook.set_defaults(func=cmd_runbook)
 
     p_replay = sub.add_parser("replay")
@@ -602,6 +632,10 @@ def main(argv=None) -> int:
     )
     p_session_start.add_argument("--prompt", default=None, help="Optional first-turn prompt")
     p_session_start.add_argument("--audit", action="store_true", help="Enable challenger audit pass")
+    p_session_start.add_argument(
+        "--output", choices=["json"], default="json",
+        help="Output format (default: json; M9.4).",
+    )
     p_session_start.set_defaults(func=cmd_session_start)
 
     p_session_continue = p_session_sub.add_parser("continue")
@@ -616,25 +650,37 @@ def main(argv=None) -> int:
         "--action", default=None, choices=["approve", "redirect", "close"],
         help="Steward pause action (ADR-024 §6.3)",
     )
+    p_session_continue.add_argument(
+        "--output", choices=["json"], default="json",
+        help="Output format (default: json; M9.4).",
+    )
     p_session_continue.set_defaults(func=cmd_session_continue)
 
     p_session_status = p_session_sub.add_parser("status")
     p_session_status.add_argument("--session-id", required=True, dest="session_id", help="Session ID to query")
+    p_session_status.add_argument(
+        "--output", choices=["json"], default="json",
+        help="Output format (default: json; M9.4).",
+    )
     p_session_status.set_defaults(func=cmd_session_status)
 
     p_session_close = p_session_sub.add_parser("close")
     p_session_close.add_argument("--session-id", required=True, dest="session_id", help="Session ID to close")
+    p_session_close.add_argument(
+        "--output", choices=["json"], default="json",
+        help="Output format (default: json; M9.4).",
+    )
     p_session_close.set_defaults(func=cmd_session_close)
 
-    # Phase 9 M9.1 — HTTP API server (ADR-025 §8)
-    p_serve = sub.add_parser("serve")
+    # Phase 9 M9.1 — HTTP server (ADR-025 §7)
+    p_serve = sub.add_parser("serve", help="Start the IO-III HTTP API server (Phase 9)")
     p_serve.add_argument(
-        "--host", default="127.0.0.1",
-        help="Bind address (default: 127.0.0.1 — loopback only; ADR-025 §8)",
+        "--host", default="0.0.0.0",
+        help="Bind host (default: 0.0.0.0)",
     )
     p_serve.add_argument(
         "--port", type=int, default=8080,
-        help="Listen port (default: 8080)",
+        help="Bind port (default: 8080)",
     )
     p_serve.set_defaults(func=cmd_serve)
 

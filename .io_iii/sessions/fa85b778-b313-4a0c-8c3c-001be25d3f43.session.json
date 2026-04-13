@@ -1,0 +1,11 @@
+{
+  "schema_version": "v1",
+  "session_id": "fa85b778-b313-4a0c-8c3c-001be25d3f43",
+  "session_mode": "steward",
+  "turn_count": 0,
+  "max_turns": 50,
+  "status": "active",
+  "created_at": "2026-04-12T20:20:29Z",
+  "updated_at": "2026-04-12T20:20:29Z",
+  "turns": []
+}

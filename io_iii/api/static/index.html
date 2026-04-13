@@ -1,504 +1,534 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IO-III Session Interface</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IO-III Runtime</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --border: #2a2d3a;
-    --text: #d4d8e8;
-    --muted: #6b7280;
-    --accent: #5b8dee;
-    --accent-dim: #2a3a5c;
-    --error: #e05c5c;
-    --warn: #d97706;
-    --ok: #34d399;
-    --radius: 6px;
-    --font: "SF Mono", "Fira Code", "Consolas", monospace;
-  }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #0d1117;
+      color: #c9d1d9;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 13px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+    header {
+      padding: 12px 20px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
 
-  /* Header */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-  }
-  header h1 { font-size: 13px; color: var(--accent); letter-spacing: 0.05em; }
-  .badge {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 3px;
-    background: var(--accent-dim);
-    color: var(--accent);
-    border: 1px solid var(--accent);
-  }
+    header h1 {
+      font-size: 1rem;
+      color: #58a6ff;
+      letter-spacing: 0.05em;
+    }
 
-  /* Layout */
-  .layout {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
+    #status-pill {
+      font-size: 0.75rem;
+      padding: 2px 10px;
+      border-radius: 12px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #8b949e;
+    }
 
-  /* Sidebar */
-  aside {
-    width: 220px;
-    flex-shrink: 0;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    overflow-y: auto;
-  }
+    #status-pill.active   { background: #0f2a1a; border-color: #3fb950; color: #3fb950; }
+    #status-pill.paused   { background: #2a1a0f; border-color: #d29922; color: #d29922; }
+    #status-pill.closed   { background: #21262d; border-color: #6e7681; color: #6e7681; }
+    #status-pill.at_limit { background: #21262d; border-color: #6e7681; color: #6e7681; }
 
-  .sidebar-section { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 4px; }
+    #session-meta {
+      font-size: 0.72rem;
+      color: #8b949e;
+      margin-left: auto;
+    }
 
-  .meta-row { display: flex; justify-content: space-between; gap: 4px; }
-  .meta-label { color: var(--muted); }
-  .meta-value { color: var(--text); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-  .status-badge {
-    display: inline-block;
-    padding: 1px 6px;
-    border-radius: 3px;
-    font-size: 10px;
-  }
-  .status-active { background: #0d2e1f; color: var(--ok); }
-  .status-paused { background: #2e1f0d; color: var(--warn); }
-  .status-closed { background: #2e0d0d; color: var(--error); }
-  .status-none   { background: var(--border); color: var(--muted); }
+    #controls {
+      padding: 10px 20px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-  .btn {
-    width: 100%;
-    padding: 7px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 12px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-    text-align: left;
-  }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .btn-primary { border-color: var(--accent); color: var(--accent); }
-  .btn-danger:hover  { border-color: var(--error); color: var(--error); }
+    button {
+      padding: 5px 14px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #21262d;
+      color: #c9d1d9;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.8rem;
+    }
 
-  .pause-actions { display: flex; flex-direction: column; gap: 6px; }
+    button:hover { background: #30363d; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* Chat area */
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+    #btn-start { border-color: #388bfd; color: #58a6ff; }
+    #btn-start:hover { background: #1c2d4a; }
+    #btn-close { border-color: #da3633; color: #f85149; }
+    #btn-close:hover { background: #3d1717; }
 
-  #chat {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+    #mode-select {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 0.8rem;
+    }
 
-  .msg {
-    max-width: 78%;
-    padding: 10px 13px;
-    border-radius: var(--radius);
-    line-height: 1.55;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .msg-user { align-self: flex-end; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--text); }
-  .msg-assistant { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); }
-  .msg-system { align-self: center; background: transparent; border: none; color: var(--muted); font-size: 11px; font-style: italic; }
-  .msg-error { align-self: flex-start; color: var(--error); background: #2e0d0d; border: 1px solid var(--error); }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-  .thinking { color: var(--muted); font-style: italic; animation: pulse 1.4s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+    .msg {
+      max-width: 820px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
 
-  /* Input area */
-  .input-area {
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  #prompt-input {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 13px;
-    padding: 8px 11px;
-    resize: none;
-    min-height: 40px;
-    max-height: 120px;
-    transition: border-color 0.15s;
-  }
-  #prompt-input:focus { outline: none; border-color: var(--accent); }
-  #prompt-input:disabled { opacity: 0.4; }
+    .msg.user {
+      align-self: flex-end;
+      background: #1c2d4a;
+      border: 1px solid #388bfd;
+      color: #c9d1d9;
+    }
 
-  #send-btn {
-    padding: 8px 18px;
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    background: var(--accent-dim);
-    color: var(--accent);
-    font-family: var(--font);
-    font-size: 12px;
-    cursor: pointer;
-    transition: background 0.15s;
-    flex-shrink: 0;
-  }
-  #send-btn:hover { background: #3a5499; }
-  #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .msg.system {
+      align-self: flex-start;
+      background: #161b22;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      font-size: 0.78rem;
+    }
 
-  #persona-select {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 12px;
-    padding: 6px 8px;
-    border-radius: var(--radius);
-  }
-</style>
+    .msg.event {
+      align-self: center;
+      background: transparent;
+      border: 1px dashed #30363d;
+      color: #6e7681;
+      font-size: 0.72rem;
+      padding: 4px 12px;
+    }
+
+    .msg.error {
+      align-self: flex-start;
+      background: #3d1717;
+      border: 1px solid #da3633;
+      color: #f85149;
+    }
+
+    .msg.turn-meta {
+      align-self: flex-start;
+      background: #0f2a1a;
+      border: 1px solid #3fb950;
+      color: #3fb950;
+      font-size: 0.75rem;
+    }
+
+    .msg.assistant {
+      align-self: flex-start;
+      background: #161b22;
+      border: 1px solid #388bfd;
+      color: #c9d1d9;
+      max-width: 820px;
+    }
+
+    #input-area {
+      padding: 12px 20px;
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      display: flex;
+      gap: 8px;
+    }
+
+    #prompt-input {
+      flex: 1;
+      padding: 8px 12px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-family: inherit;
+      font-size: 0.85rem;
+      resize: none;
+      min-height: 38px;
+      max-height: 120px;
+    }
+
+    #prompt-input:focus { outline: none; border-color: #388bfd; }
+
+    #btn-send {
+      padding: 8px 18px;
+      background: #1f6feb;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    #btn-send:hover { background: #388bfd; }
+    #btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #pause-banner {
+      display: none;
+      padding: 10px 20px;
+      background: #2a1a0f;
+      border-top: 1px solid #d29922;
+      color: #d29922;
+      font-size: 0.8rem;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #pause-banner.visible { display: flex; }
+
+    #pause-banner button {
+      border-color: #d29922;
+      color: #d29922;
+      font-size: 0.75rem;
+    }
+
+    #pause-banner button:hover { background: #3b2608; }
+  </style>
 </head>
 <body>
 
 <header>
-  <h1>IO-III</h1>
-  <span class="badge">Session Interface · v0.9</span>
-  <span style="margin-left:auto;color:var(--muted);font-size:11px;">governed dialogue layer</span>
+  <h1>&#9632; IO-III Runtime</h1>
+  <span id="status-pill">no session</span>
+  <span id="session-meta"></span>
 </header>
 
-<div class="layout">
-  <aside id="sidebar">
-    <div>
-      <div class="sidebar-section">SESSION</div>
-      <div class="meta-row"><span class="meta-label">id</span><span class="meta-value" id="si-id">—</span></div>
-      <div class="meta-row"><span class="meta-label">mode</span><span class="meta-value" id="si-mode">—</span></div>
-      <div class="meta-row"><span class="meta-label">status</span><span id="si-status"><span class="status-badge status-none">none</span></span></div>
-      <div class="meta-row"><span class="meta-label">turns</span><span class="meta-value" id="si-turns">—</span></div>
-      <div class="meta-row"><span class="meta-label">remaining</span><span class="meta-value" id="si-remaining">—</span></div>
-    </div>
+<main>
+  <div id="controls">
+    <select id="mode-select" title="Session mode">
+      <option value="work">work</option>
+      <option value="steward">steward</option>
+    </select>
+    <button id="btn-start">Start session</button>
+    <button id="btn-close" disabled>Close session</button>
+    <button id="btn-events" disabled title="Subscribe to SSE event stream">Stream events</button>
+  </div>
 
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      <div class="sidebar-section">CONTROLS</div>
-      <select id="mode-select" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:12px;padding:6px 8px;border-radius:var(--radius);">
-        <option value="work">work mode</option>
-        <option value="steward">steward mode</option>
-      </select>
-      <button class="btn btn-primary" id="btn-new">+ New Session</button>
-      <button class="btn btn-danger" id="btn-close" disabled>Close Session</button>
-    </div>
+  <div id="chat">
+    <div class="msg system">IO-III Runtime API — self-hosted web UI (M9.5)
+Responses shown when content_release: true in runtime.yaml (ADR-026).
+Start a session to begin.</div>
+  </div>
 
-    <div id="pause-panel" style="display:none;">
-      <div class="sidebar-section" style="color:var(--warn);">STEWARD PAUSE</div>
-      <div style="color:var(--warn);margin-bottom:8px;font-size:11px;" id="pause-info"></div>
-      <div class="pause-actions">
-        <button class="btn" id="btn-approve">approve →</button>
-        <button class="btn" id="btn-redirect">redirect ↩</button>
-        <button class="btn btn-danger" id="btn-pause-close">close ✕</button>
-      </div>
-    </div>
-  </aside>
+  <div id="pause-banner">
+    &#9646;&#9646; Steward gate — session paused awaiting review.
+    <button id="btn-approve">Approve &amp; continue</button>
+    <button id="btn-redirect">Redirect</button>
+    <button id="btn-close-from-pause">Close session</button>
+  </div>
 
-  <main>
-    <div id="chat">
-      <div class="msg msg-system">No active session. Click "New Session" to begin.</div>
-    </div>
-    <div class="input-area">
-      <select id="persona-select">
-        <option value="executor">executor</option>
-        <option value="explorer">explorer</option>
-        <option value="draft">draft</option>
-      </select>
-      <textarea id="prompt-input" placeholder="Enter your prompt…" rows="1" disabled></textarea>
-      <button id="send-btn" disabled>Send</button>
-    </div>
-  </main>
-</div>
+  <div id="input-area">
+    <textarea id="prompt-input" placeholder="Enter prompt and press Send (or Ctrl+Enter)..." disabled rows="1"></textarea>
+    <button id="btn-send" disabled>Send</button>
+  </div>
+</main>
 
 <script>
-"use strict";
+(function () {
+  'use strict';
 
-// ── State ──────────────────────────────────────────────────────────────────
-const s = {
-  sessionId: null,
-  status: "none",
-  turnCount: 0,
-  maxTurns: 50,
-  mode: "work",
-  busy: false,
-};
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
+  let sessionId = null;
+  let sessionMode = 'work';
+  let sessionStatus = null;
+  let sse = null;
+  let sending = false;
 
-// ── DOM refs ───────────────────────────────────────────────────────────────
-const chat        = document.getElementById("chat");
-const promptInput = document.getElementById("prompt-input");
-const sendBtn     = document.getElementById("send-btn");
-const btnNew      = document.getElementById("btn-new");
-const btnClose    = document.getElementById("btn-close");
-const btnApprove  = document.getElementById("btn-approve");
-const btnRedirect = document.getElementById("btn-redirect");
-const btnPauseClose = document.getElementById("btn-pause-close");
-const pausePanel  = document.getElementById("pause-panel");
-const pauseInfo   = document.getElementById("pause-info");
-const modeSelect  = document.getElementById("mode-select");
-const personaSelect = document.getElementById("persona-select");
+  // ---------------------------------------------------------------------------
+  // DOM refs
+  // ---------------------------------------------------------------------------
+  const chat         = document.getElementById('chat');
+  const pill         = document.getElementById('status-pill');
+  const meta         = document.getElementById('session-meta');
+  const modeSelect   = document.getElementById('mode-select');
+  const btnStart     = document.getElementById('btn-start');
+  const btnClose     = document.getElementById('btn-close');
+  const btnEvents    = document.getElementById('btn-events');
+  const promptInput  = document.getElementById('prompt-input');
+  const btnSend      = document.getElementById('btn-send');
+  const pauseBanner  = document.getElementById('pause-banner');
+  const btnApprove   = document.getElementById('btn-approve');
+  const btnRedirect  = document.getElementById('btn-redirect');
+  const btnClosePause = document.getElementById('btn-close-from-pause');
 
-// ── Utilities ──────────────────────────────────────────────────────────────
-function apiBase() { return window.location.origin; }
-
-async function apiFetch(method, path, body) {
-  const opts = {
-    method,
-    headers: { "Content-Type": "application/json" },
-  };
-  if (body !== undefined) opts.body = JSON.stringify(body);
-  const resp = await fetch(apiBase() + path, opts);
-  const json = await resp.json();
-  return { status: resp.status, json };
-}
-
-function addMsg(cls, text) {
-  const div = document.createElement("div");
-  div.className = "msg " + cls;
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-  return div;
-}
-
-function addSystem(text) { return addMsg("msg-system", text); }
-function addUser(text)   { return addMsg("msg-user", text); }
-function addAssistant(text) { return addMsg("msg-assistant", text); }
-function addError(text)  { return addMsg("msg-error", text); }
-
-function updateSidebar() {
-  document.getElementById("si-id").textContent     = s.sessionId ? s.sessionId.slice(0,12)+"…" : "—";
-  document.getElementById("si-mode").textContent   = s.sessionId ? s.mode : "—";
-  document.getElementById("si-turns").textContent  = s.sessionId ? s.turnCount : "—";
-  document.getElementById("si-remaining").textContent = s.sessionId ? (s.maxTurns - s.turnCount) : "—";
-
-  const sEl = document.getElementById("si-status");
-  const cls = {active:"status-active", paused:"status-paused", closed:"status-closed"}[s.status] || "status-none";
-  sEl.innerHTML = `<span class="status-badge ${cls}">${s.status || "none"}</span>`;
-}
-
-function setInputEnabled(enabled) {
-  promptInput.disabled = !enabled;
-  sendBtn.disabled = !enabled;
-  if (enabled) promptInput.focus();
-}
-
-function setBusy(busy) {
-  s.busy = busy;
-  sendBtn.disabled = busy || !s.sessionId || s.status !== "active";
-  promptInput.disabled = busy || !s.sessionId || s.status !== "active";
-  btnNew.disabled = busy;
-  btnClose.disabled = busy || !s.sessionId;
-}
-
-function applyTurnMeta(data) {
-  if (data.turn_count !== undefined)  s.turnCount = data.turn_count;
-  if (data.session_status)            s.status = data.session_status;
-  if (data.max_turns !== undefined)   s.maxTurns = data.max_turns;
-  updateSidebar();
-}
-
-function showPause(pause) {
-  pausePanel.style.display = "block";
-  pauseInfo.textContent = `threshold: ${pause.threshold_key || "—"} · step ${pause.step_index}/${pause.steps_total}`;
-  s.status = "paused";
-  updateSidebar();
-  setInputEnabled(false);
-  addSystem("⚠ Steward gate triggered — choose an action in the sidebar.");
-}
-
-function hidePause() {
-  pausePanel.style.display = "none";
-}
-
-// ── New Session ────────────────────────────────────────────────────────────
-btnNew.addEventListener("click", async () => {
-  setBusy(true);
-  chat.innerHTML = "";
-  hidePause();
-
-  const mode = modeSelect.value;
-  const { status, json } = await apiFetch("POST", "/session/start", { mode });
-  if (status === 201 || status === 200) {
-    s.sessionId = json.session_id;
-    s.mode      = json.session_mode || mode;
-    s.turnCount = json.turn_count || 0;
-    s.maxTurns  = json.max_turns  || 50;
-    s.status    = json.status     || "active";
-    updateSidebar();
-    addSystem(`Session started · mode: ${s.mode}`);
-    btnClose.disabled = false;
-    setInputEnabled(true);
-  } else {
-    addError(`Failed to start session: ${json.error_code || "unknown"}`);
+  // ---------------------------------------------------------------------------
+  // UI helpers
+  // ---------------------------------------------------------------------------
+  function addMsg(text, cls) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + cls;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
   }
-  setBusy(false);
-});
 
-// ── Close Session ──────────────────────────────────────────────────────────
-async function closeSession() {
-  if (!s.sessionId) return;
-  setBusy(true);
-  const { status, json } = await apiFetch("DELETE", `/session/${s.sessionId}`);
-  if (status === 200) {
-    s.status = "closed";
-    updateSidebar();
-    addSystem("Session closed.");
-    hidePause();
-    setInputEnabled(false);
-    btnClose.disabled = true;
-  } else {
-    addError(`Close failed: ${json.error_code || "unknown"}`);
+  function setPill(status) {
+    sessionStatus = status;
+    pill.textContent = status || 'no session';
+    pill.className = '';
+    if (status) pill.classList.add(status.replace(/_/g, '-'));
   }
-  setBusy(false);
-}
-btnClose.addEventListener("click", closeSession);
 
-// ── Steward pause actions ──────────────────────────────────────────────────
-async function sendAction(action) {
-  if (!s.sessionId) return;
-  setBusy(true);
-  const { status, json } = await apiFetch("POST", `/session/${s.sessionId}/turn`, { action });
-  if (status === 200) {
-    hidePause();
-    s.status = json.status || "active";
-    updateSidebar();
-    if (action === "approve") {
-      addSystem("Approved — continue with next prompt.");
-      setInputEnabled(true);
-    } else if (action === "redirect") {
-      addSystem("Redirected — enter a new prompt.");
-      setInputEnabled(true);
-    } else if (action === "close") {
-      addSystem("Session closed via steward action.");
-      btnClose.disabled = true;
+  function setMeta(turnCount, maxTurns) {
+    if (turnCount == null) { meta.textContent = ''; return; }
+    meta.textContent = 'turn ' + turnCount + ' / ' + maxTurns;
+  }
+
+  function setControls() {
+    const hasSession = Boolean(sessionId);
+    const active = hasSession && sessionStatus === 'active';
+    const paused = hasSession && sessionStatus === 'paused';
+
+    btnStart.disabled  = hasSession;
+    btnClose.disabled  = !hasSession || sessionStatus === 'closed';
+    btnEvents.disabled = !hasSession;
+    promptInput.disabled = !active || sending;
+    btnSend.disabled     = !active || sending;
+
+    pauseBanner.classList.toggle('visible', paused);
+  }
+
+  // ---------------------------------------------------------------------------
+  // API calls
+  // ---------------------------------------------------------------------------
+  async function apiPost(path, body) {
+    const resp = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return resp.json();
+  }
+
+  async function apiGet(path) {
+    const resp = await fetch(path);
+    return resp.json();
+  }
+
+  async function apiDelete(path) {
+    const resp = await fetch(path, { method: 'DELETE' });
+    return resp.json();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Session start
+  // ---------------------------------------------------------------------------
+  btnStart.addEventListener('click', async () => {
+    const mode = modeSelect.value;
+    btnStart.disabled = true;
+    addMsg('Starting ' + mode + ' session…', 'system');
+    try {
+      const result = await apiPost('/session/start', { mode });
+      if (result.session_id) {
+        sessionId   = result.session_id;
+        sessionMode = mode;
+        setPill(result.status || result.session_status || 'active');
+        setMeta(result.turn_count, result.max_turns);
+        addMsg(
+          'Session started\n' +
+          'ID:   ' + sessionId + '\n' +
+          'mode: ' + mode + '\n' +
+          'max turns: ' + (result.max_turns || '?'),
+          'turn-meta'
+        );
+      } else {
+        addMsg('Failed to start session: ' + JSON.stringify(result), 'error');
+      }
+    } catch (e) {
+      addMsg('Error: ' + e.message, 'error');
     }
-  } else {
-    addError(`Action failed: ${json.error_code || "unknown"}`);
+    setControls();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Send turn
+  // ---------------------------------------------------------------------------
+  async function sendTurn(prompt, action) {
+    if (sending) return;
+    sending = true;
+    setControls();
+
+    if (prompt) addMsg(prompt, 'user');
+
+    const body = { persona_mode: 'executor' };
+    if (prompt) body.prompt = prompt;
+    if (action) body.action = action;
+
+    try {
+      const result = await apiPost('/session/' + sessionId + '/turn', body);
+      const newStatus = result.session_status || result.status;
+      setPill(newStatus);
+      setMeta(result.turn_count, null);
+
+      if (result.error_code) {
+        addMsg('Turn error: ' + result.error_code, 'error');
+      } else {
+        // Display model response when content release gate is open (ADR-026).
+        if (result.response) {
+          addMsg(result.response, 'assistant');
+        }
+        const info = [
+          'turn ' + result.turn_index + ' — ' + (result.status || '?'),
+          'latency: ' + (result.latency_ms != null ? result.latency_ms + ' ms' : '?'),
+          'session: ' + newStatus,
+        ].join('  ·  ');
+        addMsg(info, 'turn-meta');
+      }
+    } catch (e) {
+      addMsg('Error: ' + e.message, 'error');
+    }
+
+    sending = false;
+    setControls();
   }
-  setBusy(false);
-}
-btnApprove.addEventListener("click", () => sendAction("approve"));
-btnRedirect.addEventListener("click", () => sendAction("redirect"));
-btnPauseClose.addEventListener("click", () => sendAction("close"));
 
-// ── Send turn via SSE ──────────────────────────────────────────────────────
-async function sendTurn() {
-  const prompt = promptInput.value.trim();
-  if (!prompt || !s.sessionId || s.busy || s.status !== "active") return;
-
-  addUser(prompt);
-  promptInput.value = "";
-  setBusy(true);
-
-  const thinkingEl = addMsg("msg-assistant thinking", "thinking…");
-  let assistantEl = null;
-
-  const persona = personaSelect.value;
-  const url = `${apiBase()}/session/${s.sessionId}/stream`
-    + `?prompt=${encodeURIComponent(prompt)}`
-    + `&persona_mode=${encodeURIComponent(persona)}`;
-
-  const es = new EventSource(url);
-
-  es.addEventListener("turn_started", () => {
-    // already showing thinking indicator
+  btnSend.addEventListener('click', () => {
+    const text = promptInput.value.trim();
+    if (!text) return;
+    promptInput.value = '';
+    sendTurn(text, null);
   });
 
-  es.addEventListener("turn_output", (evt) => {
-    const data = JSON.parse(evt.data);
-    thinkingEl.remove();
-    assistantEl = addAssistant(data.output || "");
+  promptInput.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      btnSend.click();
+    }
   });
 
-  es.addEventListener("turn_completed", (evt) => {
-    const data = JSON.parse(evt.data);
-    applyTurnMeta(data);
-    es.close();
-    setBusy(false);
-    setInputEnabled(s.status === "active");
-  });
-
-  es.addEventListener("steward_gate_triggered", (evt) => {
-    const data = JSON.parse(evt.data);
-    applyTurnMeta({ session_status: "paused", turn_count: s.turnCount + 1 });
-    es.close();
-    showPause(data);
-    setBusy(false);
-  });
-
-  es.addEventListener("turn_error", (evt) => {
-    const data = JSON.parse(evt.data);
-    thinkingEl.remove();
-    addError(`Turn error: ${data.error_code || "unknown"}`);
-    es.close();
-    setBusy(false);
-    setInputEnabled(s.status === "active");
-  });
-
-  es.onerror = () => {
-    thinkingEl.remove();
-    addError("SSE connection error.");
-    es.close();
-    setBusy(false);
-    setInputEnabled(s.status === "active");
-  };
-}
-
-sendBtn.addEventListener("click", sendTurn);
-promptInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendTurn();
+  // ---------------------------------------------------------------------------
+  // Close session
+  // ---------------------------------------------------------------------------
+  async function closeSession() {
+    if (!sessionId) return;
+    try {
+      const result = await apiDelete('/session/' + sessionId);
+      setPill(result.status || 'closed');
+      addMsg('Session closed — turns: ' + (result.turn_count || '?'), 'system');
+    } catch (e) {
+      addMsg('Close error: ' + e.message, 'error');
+    }
+    if (sse) { sse.close(); sse = null; }
+    sessionId = null;
+    setControls();
+    setMeta(null, null);
   }
-});
 
-// ── Auto-resize textarea ───────────────────────────────────────────────────
-promptInput.addEventListener("input", () => {
-  promptInput.style.height = "auto";
-  promptInput.style.height = Math.min(promptInput.scrollHeight, 120) + "px";
-});
+  btnClose.addEventListener('click', closeSession);
 
-// ── Init ───────────────────────────────────────────────────────────────────
-updateSidebar();
+  // ---------------------------------------------------------------------------
+  // Steward pause actions
+  // ---------------------------------------------------------------------------
+  btnApprove.addEventListener('click', () => sendTurn(null, 'approve'));
+  btnRedirect.addEventListener('click', () => {
+    const p = promptInput.value.trim() || 'redirect';
+    promptInput.value = '';
+    sendTurn(p, 'redirect');
+  });
+  btnClosePause.addEventListener('click', closeSession);
+
+  // ---------------------------------------------------------------------------
+  // SSE event stream
+  // ---------------------------------------------------------------------------
+  btnEvents.addEventListener('click', () => {
+    if (!sessionId) return;
+    if (sse) { sse.close(); sse = null; btnEvents.textContent = 'Stream events'; return; }
+
+    sse = new EventSource('/session/' + sessionId + '/stream');
+    btnEvents.textContent = 'Stop stream';
+
+    const eventTypes = [
+      'session_state', 'turn_started', 'turn_completed',
+      'steward_gate_triggered', 'session_closed', 'keepalive',
+    ];
+
+    eventTypes.forEach(type => {
+      sse.addEventListener(type, (e) => {
+        let data;
+        try { data = JSON.parse(e.data); } catch { data = e.data; }
+
+        if (type === 'keepalive') return; // silent
+
+        if (type === 'session_state') {
+          setPill(data.status);
+        } else if (type === 'turn_completed') {
+          setPill(data.session_status || sessionStatus);
+        } else if (type === 'session_closed') {
+          setPill(data.session_status || 'closed');
+        } else if (type === 'steward_gate_triggered') {
+          setPill('paused');
+        }
+
+        const label = {
+          session_state:          '&#x25CE; session state',
+          turn_started:           '&#x25BA; turn started',
+          turn_completed:         '&#x25A0; turn completed',
+          steward_gate_triggered: '&#x23F8; steward gate triggered',
+          session_closed:         '&#x25A1; session closed',
+        }[type] || type;
+
+        const el = document.createElement('div');
+        el.className = 'msg event';
+        el.innerHTML = label + ' &mdash; ' + JSON.stringify(data);
+        chat.appendChild(el);
+        chat.scrollTop = chat.scrollHeight;
+
+        setControls();
+      });
+    });
+
+    sse.onerror = () => {
+      addMsg('SSE stream error or closed.', 'system');
+      sse.close(); sse = null;
+      btnEvents.textContent = 'Stream events';
+    };
+  });
+
+  // ---------------------------------------------------------------------------
+  // Init
+  // ---------------------------------------------------------------------------
+  setControls();
+})();
 </script>
 </body>
 </html>

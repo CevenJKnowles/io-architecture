@@ -22,3 +22,10 @@ context_limit_chars: 32000
 #   step_count: 5          # pause every N cumulative steps (from session start)
 #   token_budget: 50000    # pause when cumulative session tokens exceed N
 #   capability_classes: [] # pause when any listed capability class is invoked
+
+# Content release gate (ADR-026).
+# When true, model response text is included as a `response` field in
+# /run and /session/{id}/turn API responses. Off by default (content-safe).
+# Operators enabling this accept responsibility for API access control and
+# log retention implications. SSE events remain structural metadata only.
+content_release: true

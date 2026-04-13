@@ -1,6 +1,13 @@
 """
-io_iii.api — HTTP transport adapter (Phase 9, ADR-025).
+io_iii.api — Phase 9 HTTP transport adapter (ADR-025).
 
-Wraps the existing session and execution layers in a thin HTTP surface.
-No new execution semantics. All Phase 1–8 invariants preserved.
+Exports the FastAPI application instance for use by the serve command
+and by test clients.
+
+Usage:
+    from io_iii.api import app          # FastAPI app
+    from io_iii.api.app import app      # equivalent
 """
+from io_iii.api.app import app
+
+__all__ = ["app"]
