@@ -112,7 +112,7 @@ def _build_system_prompt(
     session_state: SessionState,
     persona_contract: str,
     route_metadata: Mapping[str, Any],
-    injected_memory: List[MemoryRecord],
+    injected_memory: List[MemoryRecord] | None = None,
 ) -> str:
     """
     Canonical system prompt layout (stable ordering, no randomness).
@@ -184,6 +184,9 @@ def _build_system_prompt(
 
     sections += [boundaries_section.strip(), envelope_section.strip()]
 
+    if injected_memory is None:
+        injected_memory = []
+
     if injected_memory:
         sections.append(_format_memory_section(injected_memory).strip())
 
@@ -252,7 +255,7 @@ def _build_assembly_metadata(
     system_prompt: str,
     user_prompt: str,
     messages: Sequence[Mapping[str, str]],
-    injected_memory: List[MemoryRecord],
+    injected_memory: List[MemoryRecord] | None = None,
 ) -> Dict[str, Any]:
     """
     Non-content metrics only.
@@ -263,6 +266,8 @@ def _build_assembly_metadata(
     - memory_total_chars: total chars of injected values
     Memory values are never included.
     """
+    if injected_memory is None:
+        injected_memory = []
     # Char counts only (no content)
     sys_len = len(system_prompt)
     user_len = len(user_prompt)

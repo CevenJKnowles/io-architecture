@@ -325,6 +325,8 @@
   let attachedFileRef = null;
   let attachedFileName = null;
 
+  const BASE = window.location.origin;
+
   const chat           = document.getElementById('chat');
   const pill           = document.getElementById('status-pill');
   const modeSelect     = document.getElementById('mode-select');
@@ -342,6 +344,301 @@
   const fileChip       = document.getElementById('file-chip');
   const fileChipName   = document.getElementById('file-chip-name');
   const btnDismissFile = document.getElementById('btn-dismiss-file');
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+
+  function clearAttachment() {
+    attachedFileRef = null;
+    attachedFileName = null;
+    filePicker.value = '';
+    fileChip.style.display = 'none';
+    fileChipName.textContent = '';
+  }
+
+  function bubble(text, cls) {
+    const d = document.createElement('div');
+    d.className = 'bubble ' + cls;
+    d.textContent = text;
+    chat.appendChild(d);
+    chat.scrollTop = chat.scrollHeight;
+    return d;
+  }
+
+  function showThinking() {
+    const d = document.createElement('div');
+    d.className = 'thinking';
+    d.innerHTML =
+      '<div class="thinking-dots"><span></span><span></span><span></span></div>' +
+      '<span class="thinking-label">Io is thinking\u2026</span>';
+    chat.appendChild(d);
+    chat.scrollTop = chat.scrollHeight;
+    // After 10 s without a response, signal "still working"
+    const t = setTimeout(() => {
+      const lbl = d.querySelector('.thinking-label');
+      if (lbl) { lbl.textContent = 'Still working\u2026'; lbl.classList.add('slow'); }
+    }, 10000);
+    d._slowTimer = t;
+    return d;
+  }
+
+  function removeThinking(el) {
+    if (el._slowTimer) clearTimeout(el._slowTimer);
+    el.remove();
+  }
+
+  function setPill(status) {
+    sessionStatus = status;
+    pill.textContent = status || 'no session';
+    pill.className = '';
+    if (status) pill.classList.add(status.replace(/_/g, '-'));
+  }
+
+  function setControls() {
+    const has    = Boolean(sessionId);
+    const active = has && sessionStatus === 'active';
+    const paused = has && sessionStatus === 'paused';
+    btnStart.disabled    = has;
+    btnClose.disabled    = !has || sessionStatus === 'closed';
+    promptInput.disabled = !active || sending;
+    btnSend.disabled     = !active || sending;
+    pauseBanner.classList.toggle('visible', paused);
+    btnAttach.disabled   = !has || sending;
+    fileRow.classList.toggle('hidden', !has);
+  }
+
+  // ── API ───────────────────────────────────────────────────────────────────
+
+  async function post(path, body) {
+    const r = await fetch(BASE + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return r.json();
+  }
+
+  async function del(path) {
+    const r = await fetch(BASE + path, { method: 'DELETE' });
+    return r.json();
+  }
+
+  // ── session start ─────────────────────────────────────────────────────────
+
+  btnStart.addEventListener('click', async () => {
+    btnStart.disabled = true;
+    const mode = modeSelect.value;
+    try {
+      const res = await post('/session/start', { mode });
+      if (res.session_id) {
+        sessionId = res.session_id;
+        setPill(res.status || res.session_status || 'active');
+        bubble('Session started \u00b7 ' + mode + ' mode', 'system');
+        bubble('Hello! My name is Io. How can I help you today?', 'assistant');
+      } else {
+        bubble('Failed to start: ' + (res.error_code || JSON.stringify(res)), 'error');
+      }
+    } catch (e) {
+      bubble('Error: ' + e.message, 'error');
+    }
+    setControls();
+  });
+
+  // ── send turn (SSE stream for normal prompts; POST for actions / file turns)
+
+  async function sendTurnPost(prompt, action) {
+    const body = { persona_mode: 'executor' };
+    if (prompt)          body.prompt   = prompt;
+    if (action)          body.action   = action;
+    if (attachedFileRef) body.file_ref = attachedFileRef;
+
+    const res = await post('/session/' + sessionId + '/turn', body);
+    const newStatus = res.session_status || res.status;
+    setPill(newStatus || 'active');
+    clearAttachment();
+
+    if (res.error_code === 'FILE_REF_EXPIRED') {
+      bubble('File expired — server was restarted. Please re-upload the file.', 'error');
+      clearAttachment();
+    } else if (res.error_code) {
+      bubble('Error: ' + res.error_code, 'error');
+    } else if (res.response) {
+      bubble(res.response, 'assistant');
+    }
+  }
+
+  function sendTurnStream(prompt) {
+    const params = new URLSearchParams({ prompt, persona_mode: 'executor' });
+    const es = new EventSource(BASE + '/session/' + sessionId + '/stream?' + params.toString());
+    let outputHandled = false;
+
+    es.addEventListener('turn_started', function () {
+      // acknowledged; thinking indicator already visible
+    });
+
+    es.addEventListener('turn_output', function (e) {
+      if (!outputHandled) {
+        outputHandled = true;
+        removeThinking(window._thinking);
+      }
+      try {
+        const data = JSON.parse(e.data);
+        if (data.output) bubble(data.output, 'assistant');
+      } catch (_) {}
+    });
+
+    es.addEventListener('turn_completed', function (e) {
+      if (!outputHandled) removeThinking(window._thinking);
+      try {
+        const data = JSON.parse(e.data);
+        setPill(data.session_status || 'active');
+      } catch (_) { setPill('active'); }
+      es.close();
+      sending = false;
+      setControls();
+    });
+
+    es.addEventListener('steward_gate_triggered', function (e) {
+      if (!outputHandled) removeThinking(window._thinking);
+      try {
+        const data = JSON.parse(e.data);
+        setPill(data.session_status || 'paused');
+      } catch (_) { setPill('paused'); }
+      es.close();
+      sending = false;
+      setControls();
+    });
+
+    es.addEventListener('turn_error', function (e) {
+      if (!outputHandled) removeThinking(window._thinking);
+      try {
+        const data = JSON.parse(e.data);
+        bubble('Error: ' + (data.error_code || 'unknown'), 'error');
+      } catch (_) { bubble('Stream error.', 'error'); }
+      es.close();
+      sending = false;
+      setControls();
+    });
+
+    es.onerror = function () {
+      if (!outputHandled) removeThinking(window._thinking);
+      bubble('Stream connection lost.', 'error');
+      es.close();
+      sending = false;
+      setControls();
+    };
+  }
+
+  async function sendTurn(prompt, action) {
+    if (sending) return;
+    sending = true;
+    setControls();
+
+    if (prompt) bubble(prompt, 'user');
+    const thinking = showThinking();
+    window._thinking = thinking;
+
+    // Steward actions and file-attached turns use POST; plain prompts use SSE.
+    if (action || attachedFileRef) {
+      try {
+        await sendTurnPost(prompt, action);
+      } catch (e) {
+        bubble('Error: ' + e.message, 'error');
+      }
+      removeThinking(thinking);
+      sending = false;
+      setControls();
+    } else {
+      sendTurnStream(prompt);
+      // Control is returned to the caller; SSE handlers manage sending/controls.
+    }
+  }
+
+  btnSend.addEventListener('click', () => {
+    const text = promptInput.value.trim();
+    if (!text) return;
+    promptInput.value = '';
+    sendTurn(text, null);
+  });
+
+  promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); btnSend.click(); }
+  });
+
+  promptInput.addEventListener('input', () => {
+    promptInput.style.height = 'auto';
+    promptInput.style.height = Math.min(promptInput.scrollHeight, 120) + 'px';
+  });
+
+  // ── close session ─────────────────────────────────────────────────────────
+
+  async function closeSession() {
+    if (!sessionId) return;
+    try {
+      const res = await del('/session/' + sessionId);
+      setPill(res.status || 'closed');
+      bubble('Session closed.', 'system');
+    } catch (e) {
+      bubble('Close error: ' + e.message, 'error');
+    }
+    sessionId = null;
+    setControls();
+  }
+
+  btnClose.addEventListener('click', closeSession);
+
+  // ── steward pause ─────────────────────────────────────────────────────────
+
+  btnApprove.addEventListener('click', () => sendTurn(null, 'approve'));
+  btnRedirect.addEventListener('click', () => {
+    const p = promptInput.value.trim() || 'redirect';
+    promptInput.value = '';
+    sendTurn(p, 'redirect');
+  });
+  btnClosePause.addEventListener('click', closeSession);
+
+  // ── file attachment ───────────────────────────────────────────────────────
+
+  btnAttach.addEventListener('click', () => filePicker.click());
+
+  filePicker.addEventListener('change', async () => {
+    const f = filePicker.files[0];
+    if (!f || !sessionId) return;
+
+    const MAX = 2 * 1024 * 1024;
+    if (f.size > MAX) {
+      bubble('File too large (2 MB limit).', 'error');
+      filePicker.value = '';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', f);
+    formData.append('session_id', sessionId);
+
+    try {
+      const r = await fetch(BASE + '/upload', { method: 'POST', body: formData });
+      const res = await r.json();
+      if (res.error) {
+        bubble('Upload failed: ' + res.error.message, 'error');
+        filePicker.value = '';
+        return;
+      }
+      attachedFileRef  = res.file_ref;
+      attachedFileName = res.filename;
+      fileChipName.textContent = res.filename + ' (' + res.chars.toLocaleString() + ' chars)';
+      fileChip.style.display = 'inline-flex';
+    } catch (e) {
+      bubble('Upload error: ' + e.message, 'error');
+      filePicker.value = '';
+    }
+  });
+
+  btnDismissFile.addEventListener('click', clearAttachment);
+
+  // ── init ──────────────────────────────────────────────────────────────────
+  setControls();
+})();
+</script>
 
   // ── helpers ──────────────────────────────────────────────────────────────
 

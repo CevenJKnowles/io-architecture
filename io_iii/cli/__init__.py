@@ -40,7 +40,12 @@ from ._shared import (
 # ---- Domain submodules ----
 from ._run import cmd_capabilities, cmd_config_show, cmd_route, cmd_about
 from ._runbook import cmd_runbook
-from ._replay import cmd_replay, cmd_resume, _emit_replay_resume_result
+from ._replay import _emit_replay_resume_result
+from io_iii.core.replay_resume import (
+    replay as _replay,
+    resume as _resume,
+    DEFAULT_STORAGE_ROOT,
+)
 from ._memory import (
     cmd_memory_write,
     cmd_session_export,
@@ -86,6 +91,56 @@ __all__ = [
 # (also defined in _shared.py; re-declared here so patches to cli.MAX_* work)
 MAX_AUDIT_PASSES = 1
 MAX_REVISION_PASSES = 1
+
+
+def cmd_replay(args) -> int:
+    """
+    Re-execute a prior runbook run from step 0 (Phase 4 M4.11 / ADR-020 §8.1).
+
+    Defined here (not in _replay.py) so that integration tests can patch
+    io_iii.cli._replay and have the patch take effect.
+    """
+    source_run_id = getattr(args, "run_id")
+    cfg_dir = _get_cfg_dir(args)
+    cfg = load_io3_config(cfg_dir)
+    deps = RuntimeDependencies(
+        ollama_provider_factory=OllamaProvider.from_config,
+        challenger_fn=None,
+        capability_registry=builtin_registry(),
+    )
+    result = _replay(
+        source_run_id,
+        cfg=cfg,
+        deps=deps,
+        audit=bool(getattr(args, "audit", False)),
+        storage_root=DEFAULT_STORAGE_ROOT,
+    )
+    return _emit_replay_resume_result(result)
+
+
+def cmd_resume(args) -> int:
+    """
+    Continue a prior runbook run from the first incomplete step (ADR-020 §8.1).
+
+    Defined here (not in _replay.py) so that integration tests can patch
+    io_iii.cli._resume and have the patch take effect.
+    """
+    source_run_id = getattr(args, "run_id")
+    cfg_dir = _get_cfg_dir(args)
+    cfg = load_io3_config(cfg_dir)
+    deps = RuntimeDependencies(
+        ollama_provider_factory=OllamaProvider.from_config,
+        challenger_fn=None,
+        capability_registry=builtin_registry(),
+    )
+    result = _resume(
+        source_run_id,
+        cfg=cfg,
+        deps=deps,
+        audit=bool(getattr(args, "audit", False)),
+        storage_root=DEFAULT_STORAGE_ROOT,
+    )
+    return _emit_replay_resume_result(result)
 
 
 def cmd_run(args) -> int:

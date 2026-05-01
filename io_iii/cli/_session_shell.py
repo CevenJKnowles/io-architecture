@@ -345,6 +345,9 @@ def cmd_session_continue(args) -> int:
 
     save_session(session, storage_root)
     _emit_turn_result(turn_result, cfg_runtime=cfg.runtime)
+    # Exit code 3: steward gate pause triggered by this turn (ADR-025 §7).
+    if turn_result.pause_state is not None:
+        return 3
     return 0
 
 
