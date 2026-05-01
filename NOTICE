@@ -1,0 +1,54 @@
+I0³ — Deterministic AI Runtime
+https://github.com/CevenJKnowles/io-architecture
+
+Copyright (c) 2024–2026 Ceven Knowles. All rights reserved.
+
+---
+
+This software is released under the MIT Licence. The full licence text is in
+the LICENSE file in the root of this repository.
+
+---
+
+AUTHORSHIP
+
+The I0³ runtime, architecture, and the Io assistant identity are original works
+by Ceven Knowles. This includes:
+
+  - the deterministic routing model (ADR-002)
+  - the bounded execution and audit gate architecture (ADR-008, ADR-009)
+  - the context assembly layer and system prompt contract (ADR-010)
+  - the persona governance model (ADR-006)
+  - the memory architecture (ADR-022)
+  - the full ADR corpus (ADR-001 through ADR-033 and subsequent)
+  - the Io persona: name, identity, governance posture, and communication design
+  - the I0³ brand identity, visual assets, and documentation
+
+---
+
+ATTRIBUTION REQUEST
+
+The MIT Licence permits use, modification, and redistribution, including in
+commercial products, subject to inclusion of the copyright notice and licence
+text. In the spirit of open-source collaboration, derivative works and products
+built on I0³ are encouraged — but not required — to credit their origins.
+
+If your product or service is built on I0³, a credit such as the following is
+appreciated:
+
+  "Built on I0³ by Ceven Knowles — github.com/CevenJKnowles/io-architecture"
+
+This is not a legal requirement under the MIT Licence. It is a request made in
+good faith to the community.
+
+---
+
+RUNTIME ATTRIBUTION
+
+Every system prompt assembled by the I0³ runtime includes the following line:
+
+  I0³ io-architecture · https://github.com/CevenJKnowles/io-architecture · © Ceven Knowles
+
+This line is non-configurable and is injected by the context assembly layer
+(io_iii/core/context_assembly.py). It does not affect model behaviour.
+Removing it from source constitutes deliberate stripping of attribution.

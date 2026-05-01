@@ -20,6 +20,7 @@ from io_iii.metadata_logging import append_metadata, make_request_id
 from io_iii.config import load_io3_config, default_config_dir
 from io_iii.routing import resolve_route
 from io_iii.providers.ollama_provider import OllamaProvider
+from io_iii.providers.provider_contract import ProviderError
 from io_iii.persona_contract import PERSONA_CONTRACT_VERSION
 from io_iii.core.engine import run as engine_run
 from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState, validate_session_state
@@ -39,7 +40,12 @@ from ._shared import (
 # ---- Domain submodules ----
 from ._run import cmd_capabilities, cmd_config_show, cmd_route, cmd_about
 from ._runbook import cmd_runbook
-from ._replay import cmd_replay, cmd_resume, _emit_replay_resume_result
+from ._replay import _emit_replay_resume_result
+from io_iii.core.replay_resume import (
+    replay as _replay,
+    resume as _resume,
+    DEFAULT_STORAGE_ROOT,
+)
 from ._memory import (
     cmd_memory_write,
     cmd_session_export,
@@ -85,6 +91,56 @@ __all__ = [
 # (also defined in _shared.py; re-declared here so patches to cli.MAX_* work)
 MAX_AUDIT_PASSES = 1
 MAX_REVISION_PASSES = 1
+
+
+def cmd_replay(args) -> int:
+    """
+    Re-execute a prior runbook run from step 0 (Phase 4 M4.11 / ADR-020 §8.1).
+
+    Defined here (not in _replay.py) so that integration tests can patch
+    io_iii.cli._replay and have the patch take effect.
+    """
+    source_run_id = getattr(args, "run_id")
+    cfg_dir = _get_cfg_dir(args)
+    cfg = load_io3_config(cfg_dir)
+    deps = RuntimeDependencies(
+        ollama_provider_factory=OllamaProvider.from_config,
+        challenger_fn=None,
+        capability_registry=builtin_registry(),
+    )
+    result = _replay(
+        source_run_id,
+        cfg=cfg,
+        deps=deps,
+        audit=bool(getattr(args, "audit", False)),
+        storage_root=DEFAULT_STORAGE_ROOT,
+    )
+    return _emit_replay_resume_result(result)
+
+
+def cmd_resume(args) -> int:
+    """
+    Continue a prior runbook run from the first incomplete step (ADR-020 §8.1).
+
+    Defined here (not in _replay.py) so that integration tests can patch
+    io_iii.cli._resume and have the patch take effect.
+    """
+    source_run_id = getattr(args, "run_id")
+    cfg_dir = _get_cfg_dir(args)
+    cfg = load_io3_config(cfg_dir)
+    deps = RuntimeDependencies(
+        ollama_provider_factory=OllamaProvider.from_config,
+        challenger_fn=None,
+        capability_registry=builtin_registry(),
+    )
+    result = _resume(
+        source_run_id,
+        cfg=cfg,
+        deps=deps,
+        audit=bool(getattr(args, "audit", False)),
+        storage_root=DEFAULT_STORAGE_ROOT,
+    )
+    return _emit_replay_resume_result(result)
 
 
 def cmd_run(args) -> int:
@@ -275,6 +331,43 @@ def cmd_run(args) -> int:
         else:
             _print(payload)
         return 0
+
+    except ProviderError as e:
+        # M10.2: intercept before generic handler to emit plain-language hint on 404.
+        import sys as _sys
+        _is_404 = "404" in e.detail
+        _error_code = "PROVIDER_MODEL_NOT_FOUND" if _is_404 else e.code
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        append_metadata(
+            cfg.logging,
+            {
+                "request_id": request_id,
+                "mode": getattr(selection, "mode", None),
+                "provider": getattr(selection, "selected_provider", None),
+                "model": None,
+                "status": "error",
+                "latency_ms": latency_ms,
+                "error_code": _error_code,
+                "failure_kind": None,
+                "fallback_used": getattr(selection, "fallback_used", None),
+                "fallback_reason": getattr(selection, "fallback_reason", None),
+                "selected_primary": getattr(selection, "primary_target", None),
+                "capability_id": cap_id,
+                "capability_ok": False if cap_id else None,
+                "capability_error_code": _error_code if cap_id else None,
+            },
+        )
+        if _is_404:
+            print(
+                f"\nModel not found in Ollama: {e.detail}\n\n"
+                "Check which models are available:\n"
+                "  ollama list\n\n"
+                "Then update architecture/runtime/config/routing_table.yaml "
+                "to use a model name that appears in that list.\n",
+                file=_sys.stderr,
+            )
+            _sys.exit(1)
+        raise
 
     except Exception as e:
         # Metadata logging (error case; NO prompt/response content)

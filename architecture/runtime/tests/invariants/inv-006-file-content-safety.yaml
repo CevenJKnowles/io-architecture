@@ -1,0 +1,109 @@
+schema: "io-iii-invariant-spec"
+version: "v1.0"
+
+id: "INV-006"
+title: "File Content Safety (ADR-033 §3)"
+status: "active"
+source_of_truth:
+  - "./ADR/ADR-029-file-upload-input-surface-contract.md"
+  - "./ADR/ADR-033-context-assembly-extension-file-input-lane.md"
+  - "./io_iii/core/file_store.py"
+  - "./io_iii/core/content_safety.py"
+  - "./io_iii/api/app.py"
+
+assertions:
+
+  # ---------------------------------------------------------------------------
+  # file_store module exists with required interface
+  # ---------------------------------------------------------------------------
+
+  - name: "file_store.py defines store() function"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/file_store.py"
+    pattern: "def store"
+
+  - name: "file_store.py defines resolve() function"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/file_store.py"
+    pattern: "def resolve"
+
+  - name: "file_store.py defines delete() function"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/file_store.py"
+    pattern: "def delete"
+
+  - name: "file_store.py defines FileRefNotFound"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/file_store.py"
+    pattern: "class FileRefNotFound"
+
+  - name: "file_store.py defines FileRefExpiredError"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/file_store.py"
+    pattern: "class FileRefExpiredError"
+
+  # ---------------------------------------------------------------------------
+  # Content safety: forbidden keys enforced
+  # ---------------------------------------------------------------------------
+
+  - name: "content_safety.py forbids file_content key"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/content_safety.py"
+    pattern: "\"file_content\""
+
+  - name: "content_safety.py forbids file_text key"
+    type: "python_requires_pattern"
+    glob: "./io_iii/core/content_safety.py"
+    pattern: "\"file_text\""
+
+  # ---------------------------------------------------------------------------
+  # Upload endpoint exists with correct error codes
+  # ---------------------------------------------------------------------------
+
+  - name: "api/app.py defines POST /upload route"
+    type: "python_requires_pattern"
+    glob: "./io_iii/api/app.py"
+    pattern: "@app.post.*upload"
+
+  - name: "api/app.py enforces FILE_TOO_LARGE error code"
+    type: "python_requires_pattern"
+    glob: "./io_iii/api/app.py"
+    pattern: "FILE_TOO_LARGE"
+
+  - name: "api/app.py enforces UNSUPPORTED_FILE_TYPE error code"
+    type: "python_requires_pattern"
+    glob: "./io_iii/api/app.py"
+    pattern: "UNSUPPORTED_FILE_TYPE"
+
+  - name: "api/app.py enforces FILE_NO_EXTRACTABLE_TEXT error code"
+    type: "python_requires_pattern"
+    glob: "./io_iii/api/app.py"
+    pattern: "FILE_NO_EXTRACTABLE_TEXT"
+
+  # ---------------------------------------------------------------------------
+  # Content never logged: api/app.py must not log extracted text
+  # ---------------------------------------------------------------------------
+
+  - name: "Forbidden log field 'file_content' never used in api layer"
+    type: "python_forbids_pattern"
+    glob: "./io_iii/api/*.py"
+    pattern: "\"file_content\""
+
+  - name: "Forbidden log field 'file_text' never used in api layer"
+    type: "python_forbids_pattern"
+    glob: "./io_iii/api/*.py"
+    pattern: "\"file_text\""
+
+  # ---------------------------------------------------------------------------
+  # Session close triggers file store cleanup
+  # ---------------------------------------------------------------------------
+
+  - name: "cli/_session_shell.py calls file store delete on close"
+    type: "python_requires_pattern"
+    glob: "./io_iii/cli/_session_shell.py"
+    pattern: "_fs_delete"
+
+  - name: "api/app.py calls file store delete on session close"
+    type: "python_requires_pattern"
+    glob: "./io_iii/api/app.py"
+    pattern: "_fs_delete"

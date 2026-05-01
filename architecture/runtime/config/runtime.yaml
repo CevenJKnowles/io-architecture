@@ -11,6 +11,11 @@ version: "v1.0"
 # Set to 0 to disable the check (not recommended for production use).
 context_limit_chars: 32000
 
+# File content token budget (ADR-033 §2).
+# Maximum characters of extracted file content injected per turn.
+# Defaults to 50% of context_limit_chars when absent.
+file_content_limit_chars: 16000
+
 # Steward threshold configuration (ADR-024 §5, Phase 8 M8.1).
 # Declares conditions under which a steward-mode session pauses at a step
 # boundary and waits for explicit user action (approve / redirect / close).

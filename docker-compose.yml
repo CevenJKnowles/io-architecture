@@ -1,0 +1,77 @@
+# Io³ — Deterministic AI Runtime
+# ADR-032: Container Deployment Surface Contract
+#
+# Usage paths:
+#
+# 1. Host Ollama (default — Ollama running on your machine):
+#    docker compose up
+#
+# 2. Ollama sidecar (Ollama runs inside Docker):
+#    Uncomment the `ollama` service block below.
+#    Change io3.environment.OLLAMA_HOST to http://ollama:11434
+#    docker compose up
+#
+# 3. Custom config volume:
+#    Edit the volumes.io3 bind-mount source to point at your config directory.
+#    docker compose up
+#
+# GPU passthrough for the Ollama sidecar is the operator's responsibility
+# and is out of scope for this project (ADR-032 §4).
+#
+# For full documentation, see docs/user-guide/DOCKER.md.
+
+services:
+
+  io3:
+    build: .
+    ports:
+      - "8080:8080"
+
+    # Bind-mount your config directory so you can edit routing_table.yaml,
+    # providers.yaml, and runtime.yaml without rebuilding the image.
+    # The source path is relative to this docker-compose.yml file.
+    volumes:
+      - ./architecture/runtime/config:/app/config
+
+    environment:
+      # Points at Ollama running on the Docker host.
+      # host-gateway resolves to the host machine via extra_hosts below.
+      #
+      # If using the Ollama sidecar instead, change this to:
+      #   OLLAMA_HOST: http://ollama:11434
+      OLLAMA_HOST: http://host-gateway:11434
+
+    # Makes `host-gateway` resolve to the Docker host IP on Linux.
+    # Required for OLLAMA_HOST to reach a host-side Ollama instance.
+    extra_hosts:
+      - "host-gateway:host-gateway"
+
+    restart: unless-stopped
+
+
+  # ─── Optional: Ollama sidecar ────────────────────────────────────────────
+  # Uncomment this block to run Ollama inside Docker alongside Io³.
+  # When enabled, also update io3.environment.OLLAMA_HOST above to:
+  #   OLLAMA_HOST: http://ollama:11434
+  # and remove (or ignore) the extra_hosts block in the io3 service.
+  #
+  # GPU passthrough is NOT configured here. If you need GPU access,
+  # add the appropriate `deploy.resources` block for your hardware.
+  # See https://docs.docker.com/compose/gpu-support/
+  #
+  # ollama:
+  #   image: ollama/ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+  #
+  # ─────────────────────────────────────────────────────────────────────────
+
+
+# ─── Named volumes ──────────────────────────────────────────────────────────
+# Uncomment if using the Ollama sidecar (persists downloaded models).
+#
+# volumes:
+#   ollama_data:

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "io-iii"
-version = "0.9.0"
-description = "IO-III deterministic local LLM runtime (governance-first control-plane)."
+version = "1.0.0"
+description = "Io³ — Deterministic AI Runtime"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
@@ -20,6 +20,9 @@ dependencies = [
   "PyYAML>=6.0",
   "fastapi>=0.100",
   "uvicorn>=0.24",
+  "pypdf>=4.0",
+  "python-docx>=1.0",
+  "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]

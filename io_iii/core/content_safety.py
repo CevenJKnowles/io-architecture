@@ -14,6 +14,8 @@ DEFAULT_FORBIDDEN_KEYS: Set[str] = {
     "draft",
     "revision",
     "content",
+    "file_content",   # INV-006 (ADR-033 §3)
+    "file_text",      # INV-006 (ADR-033 §3)
 }
 
 

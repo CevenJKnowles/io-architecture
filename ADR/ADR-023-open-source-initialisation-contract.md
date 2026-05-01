@@ -3,14 +3,14 @@ id: ADR-023
 title: Open-Source Initialisation Contract
 type: adr
 status: accepted
-version: v1.0
+version: v1.1
 canonical: true
 scope: io-iii-phase-7
 audience:
   - developer
   - maintainer
 created: "2026-04-12"
-updated: "2026-04-12"
+updated: "2026-05-01"
 tags:
   - io-iii
   - adr
@@ -170,6 +170,9 @@ skips the relevant feature:
   injection is skipped for all routes (ADR-022 §4.4)
 - `architecture/runtime/config/runtime.yaml` — absence means default context limit
   applies (`32000` chars)
+- `architecture/runtime/config/user_profile.yaml` — absence means the `=== User Profile
+  ===` section is omitted from the system prompt; no default user context is injected
+  (ADR-006 §8)
 
 ---
 
@@ -215,7 +218,8 @@ author's personal configuration. They are the starting point a new user copies a
 
 | Template | Path | Purpose |
 |---|---|---|
-| Persona definition | `architecture/runtime/config/persona.yaml` | Default persona demonstrating the format |
+| Persona definition | `architecture/runtime/config/persona.yaml` | Default persona demonstrating the format, including the `identity:` block |
+| User profile | `architecture/runtime/config/user_profile.yaml` | User context template demonstrating all supported fields with example values |
 | Starter memory pack | already exists: `pack.default.starter` in `memory_packs.yaml` | Demonstrates pack config format |
 | Annotated providers | already exists: `providers.yaml` | Already sufficiently annotated |
 | Annotated routing table | already exists: `routing_table.yaml` | Model names are the user-owned surface |
@@ -234,9 +238,20 @@ The `chat_session.yaml` runbook template demonstrates a 3-step bounded session u
 
 `persona.yaml` must declare:
 
-- `persona.name` — a placeholder name (e.g. `"io-user"`)
+- `identity.name` — Io's conversational name (e.g. `"Io"`)
+- `identity.description` — one-sentence description, shown as a working example
+- `identity.style` — communication style preference, shown as a working example
+- `persona.name` — a stable operator identifier (e.g. `"io-user"`)
 - `persona.modes` — at least one mode definition demonstrating the schema
 - inline comments explaining each field
+
+### 5.5 User profile template
+
+`user_profile.yaml` must declare all supported fields with working example values
+so an operator can see a functional result immediately and edit in place. Required
+content: `user.name`, `user.role`, `user.expertise`, `user.preferences`, `user.notes`.
+All fields must be annotated with inline comments. See ADR-006 §8 for the full field
+contract.
 
 ---
 
@@ -414,3 +429,12 @@ machine-verifiable confirmation of correct initialisation. Default templates —
 a `chat_session.yaml` bounded runbook — provide a concrete starting point. The Work
 Mode / Steward Mode ADR (ADR-024) is authored in Phase 7 as the governance prerequisite
 for Phase 8. The frozen Phase 1–6 execution stack is not modified.
+
+---
+
+## Changelog
+
+| Version | Date       | Change                                                                        |
+|---------|------------|-------------------------------------------------------------------------------|
+| v1.0    | 2026-04-12 | Initial open-source initialisation contract                                   |
+| v1.1    | 2026-05-01 | Added `user_profile.yaml` to optional config surface (§3.3), templates (§5.2), and §5.5; updated §5.4 to reference `identity:` block |

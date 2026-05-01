@@ -2,13 +2,12 @@
 id: "ARCH-001"
 title: "ARCHITECTURE"
 type: "architecture"
-status: "locked"
+status: "active"
 version: "1.3"
 canonical: true
 scope: "repo"
-audience: "portfolio"
 created: "2026-01-08"
-updated: "2026-04-12"
+updated: "2026-05-01"
 tags:
   - "io"
   - "architecture"
@@ -202,8 +201,6 @@ Canonical documents define architectural truth.
 Implementation artifacts must conform to them.
 
 Divergence triggers an Architecture Decision Record.
-
-Only canonical material is referenced from the external portfolio repository.
 
 ***
 

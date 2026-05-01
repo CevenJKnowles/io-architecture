@@ -49,6 +49,7 @@ from io_iii.memory.session_continuity import (
     load_session_memory,
 )
 from io_iii.memory.store import MemoryRecord, MemoryStore
+from io_iii.core.file_store import FileRefExpiredError, delete as _fs_delete
 from io_iii.metadata_logging import append_metadata
 from io_iii.providers.ollama_provider import OllamaProvider
 
@@ -321,7 +322,17 @@ def cmd_session_continue(args) -> int:
             audit=audit,
             session_memory=sm_records if sm_records else None,
             memory_context=sm_context,
+            file_ref=getattr(args, "file_ref", None),   # ADR-029
         )
+    except FileRefExpiredError as e:
+        _print({
+            "session_id": session.session_id,
+            "status": "error",
+            "error_code": "FILE_REF_EXPIRED",
+            "session_status": session.status,
+        })
+        save_session(session, storage_root)
+        return 1
     except ValueError as e:
         code = str(e).split(":")[0]
         print(str(e), file=sys.stderr)
@@ -334,6 +345,9 @@ def cmd_session_continue(args) -> int:
 
     save_session(session, storage_root)
     _emit_turn_result(turn_result, cfg_runtime=cfg.runtime)
+    # Exit code 3: steward gate pause triggered by this turn (ADR-025 §7).
+    if turn_result.pause_state is not None:
+        return 3
     return 0
 
 
@@ -405,6 +419,8 @@ def _close_session(session: DialogueSession, storage_root: Path) -> int:
     import datetime as _dt
     session.updated_at = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     save_session(session, storage_root)
+    # ADR-033 §6: clean up in-memory file store on session close.
+    _fs_delete(session.session_id)
     _print({
         "session_id": session.session_id,
         "status": SESSION_STATUS_CLOSED,

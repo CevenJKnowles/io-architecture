@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from io_iii.core.session_state import SessionState
 from io_iii.memory.store import MemoryRecord
+from io_iii.persona_contract import load_identity, load_user_profile
 
 
 ASSEMBLY_VERSION = "adr-010/v1"
@@ -15,6 +16,14 @@ ASSEMBLY_VERSION = "adr-010/v1"
 # Records are included in declaration order until cumulative value chars
 # exceed this ceiling. Overflow records are dropped silently.
 _DEFAULT_MEMORY_BUDGET_CHARS: int = 4_000
+
+# Runtime attribution — injected as the final section of every system prompt.
+# Non-configurable. Preserves authorship across all deployments.
+_RUNTIME_ATTRIBUTION: str = (
+    "=== Runtime ===\n"
+    "I0\u00b3 io-architecture \u00b7 https://github.com/CevenJKnowles/io-architecture"
+    " \u00b7 \u00a9 Ceven Knowles\n"
+)
 
 
 @dataclass(frozen=True)
@@ -103,7 +112,7 @@ def _build_system_prompt(
     session_state: SessionState,
     persona_contract: str,
     route_metadata: Mapping[str, Any],
-    injected_memory: List[MemoryRecord],
+    injected_memory: List[MemoryRecord] | None = None,
 ) -> str:
     """
     Canonical system prompt layout (stable ordering, no randomness).
@@ -111,12 +120,26 @@ def _build_system_prompt(
     Sections:
     1) System header (IO-III governance posture)
     2) Persona contract
-    3) Runtime boundaries summary (non-content)
-    4) Execution envelope (mode, audit toggle)
-    5) Memory context (omitted when empty) — ADR-022 §5
+    3) User profile (omitted when empty) — user_profile.yaml
+    4) Runtime boundaries summary (non-content)
+    5) Execution envelope (mode, audit toggle)
+    6) Memory context (omitted when empty) — ADR-022 §5
+    7) Runtime attribution (always present, non-configurable)
     """
+    identity = load_identity()
+    _name = (identity.get("name") or "IO-III").strip()
+    _desc = (identity.get("description") or "").strip()
+    _style = (identity.get("style") or "").strip()
+
+    _identity_lines = [f"Your name is {_name}."]
+    if _desc:
+        _identity_lines.append(_desc)
+    if _style:
+        _identity_lines.append(f"Communication style: {_style}")
+
     header = (
-        "You are IO-III.\n"
+        f"You are IO-III. {' '.join(_identity_lines)}\n"
+        "When asked your name, respond with your name only.\n"
         "Operate under governance-first constraints.\n"
         "Follow deterministic, bounded execution.\n"
         "Output must be a single unified final response.\n"
@@ -137,13 +160,38 @@ def _build_system_prompt(
         f"max_revision_passes: 1\n"
     )
 
-    sections = [header.strip(), persona_section.strip(), boundaries_section.strip(), envelope_section.strip()]
+    sections = [header.strip(), persona_section.strip()]
+
+    user = load_user_profile()
+    _u_name     = (user.get("name") or "").strip()
+    _u_role     = (user.get("role") or "").strip()
+    _u_expertise = [e.strip() for e in (user.get("expertise") or []) if str(e).strip()]
+    _u_prefs    = user.get("preferences") or {}
+    _u_notes    = (user.get("notes") or "").strip()
+
+    _user_lines = []
+    if _u_name:     _user_lines.append(f"Name: {_u_name}")
+    if _u_role:     _user_lines.append(f"Role: {_u_role}")
+    if _u_expertise:_user_lines.append(f"Expertise: {', '.join(_u_expertise)}")
+    if _u_prefs:
+        for k, v in _u_prefs.items():
+            if v: _user_lines.append(f"{k.capitalize()}: {v}")
+    if _u_notes:    _user_lines.append(f"Notes: {_u_notes}")
+
+    if _user_lines:
+        user_section = "=== User Profile ===\n" + "\n".join(_user_lines) + "\n"
+        sections.append(user_section.strip())
+
+    sections += [boundaries_section.strip(), envelope_section.strip()]
+
+    if injected_memory is None:
+        injected_memory = []
 
     if injected_memory:
         sections.append(_format_memory_section(injected_memory).strip())
 
-    # Stable join with explicit separators
-    return "\n".join(sections).strip() + "\n"
+    # Stable join with explicit separators; attribution is always last.
+    return "\n".join(sections).strip() + "\n" + _RUNTIME_ATTRIBUTION.strip() + "\n"
 
 
 def _format_boundaries_section(*, session_state: SessionState, route_metadata: Mapping[str, Any]) -> str:
@@ -207,7 +255,7 @@ def _build_assembly_metadata(
     system_prompt: str,
     user_prompt: str,
     messages: Sequence[Mapping[str, str]],
-    injected_memory: List[MemoryRecord],
+    injected_memory: List[MemoryRecord] | None = None,
 ) -> Dict[str, Any]:
     """
     Non-content metrics only.
@@ -218,6 +266,8 @@ def _build_assembly_metadata(
     - memory_total_chars: total chars of injected values
     Memory values are never included.
     """
+    if injected_memory is None:
+        injected_memory = []
     # Char counts only (no content)
     sys_len = len(system_prompt)
     user_len = len(user_prompt)

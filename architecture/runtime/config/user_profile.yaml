@@ -1,0 +1,47 @@
+# IO-III User Profile
+# ADR-006 (persona binding and mode governance)
+#
+# ABOUT THIS FILE
+# ---------------
+# This file tells Io about the person it is working with.
+# It is injected into the system prompt as a user context section — separate
+# from Io's own identity and governance contracts.
+#
+# It does not affect routing, audit gates, or execution semantics.
+# It influences how Io addresses the user and calibrates response depth.
+#
+# All fields are optional. Omit any field you do not want injected.
+#
+# Fields:
+#   user.name         — how Io addresses the user by name
+#   user.role         — the user's professional role or context
+#   user.expertise    — list of domains; informs vocabulary and depth
+#   user.preferences  — communication preferences (language, style, etc.)
+#   user.notes        — any additional free-text context Io should be aware of
+
+schema: "io-iii-user-profile"
+version: "v1.0"
+
+user:
+  # How Io addresses you. Replace with your own name.
+  name: "Ceven"
+
+  # Your role or context. Helps Io pitch responses at the right level.
+  role: "Software architect and AI systems designer"
+
+  # Domains you are comfortable with. Io will not over-explain these.
+  expertise:
+    - "AI governance and safety"
+    - "Deterministic AI runtime design"
+    - "Python"
+    - "Software architecture"
+
+  preferences:
+    # Written language standard.
+    language: "British English"
+    # Preferred response register.
+    style: "Direct, technically precise, no unnecessary preamble"
+
+  # Free-text notes — additional context Io should hold in mind.
+  # Leave blank or remove if not needed.
+  notes: ""

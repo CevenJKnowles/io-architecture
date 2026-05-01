@@ -24,19 +24,25 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import io
+import io as _io
 import json
 import os
 import time
 from argparse import Namespace
-from pathlib import Path
+from pathlib import Path, Path as _Path
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from io_iii.api import _bus as bus
 from io_iii.api import _webhooks as webhooks
+
+_UPLOAD_MAX_BYTES = 2 * 1024 * 1024  # 2 MB (ADR-029 §3)
+_ALLOWED_EXTENSIONS = frozenset(
+    {".txt", ".md", ".csv", ".json", ".yaml", ".py", ".pdf", ".docx"}
+)
 
 # ---------------------------------------------------------------------------
 # App factory
@@ -136,6 +142,7 @@ class SessionTurnRequest(BaseModel):
     audit: bool = False
     action: Optional[str] = None
     config_dir: Optional[str] = None
+    file_ref: Optional[str] = None          # ADR-029
 
 
 # ---------------------------------------------------------------------------
@@ -298,6 +305,7 @@ def api_session_turn(session_id: str, req: SessionTurnRequest) -> JSONResponse:
         audit=req.audit,
         action=req.action,
         config_dir=str(_cfg_dir(req.config_dir)) if req.config_dir else None,
+        file_ref=req.file_ref,
     )
 
     # Publish turn_started before execution.
@@ -392,6 +400,9 @@ def api_session_close(session_id: str, config_dir: Optional[str] = None) -> JSON
     )
     exit_code, result = _invoke(_cli().cmd_session_close, args)
     result = _strip_content(result)
+    # ADR-033 §6: clean up in-memory file store on session close.
+    from io_iii.core.file_store import delete as _fs_delete
+    _fs_delete(session_id)
 
     if exit_code == 0:
         bus.publish(session_id, "session_closed", {
@@ -487,6 +498,81 @@ def _sse(event_type: str, data: Dict[str, Any]) -> str:
 def api_health() -> JSONResponse:
     """Liveness probe.  No execution; no content-plane access."""
     return JSONResponse({"status": "ok", "runtime": "io-iii"})
+
+
+# ---------------------------------------------------------------------------
+# Routes: POST /upload  — server-side file upload (ADR-029, M10.5)
+# ---------------------------------------------------------------------------
+
+def _extract_file_text(filename: str, data: bytes) -> str:
+    """
+    Extract plain text from uploaded file bytes.
+    Raises ValueError with a structured error code on failure.
+    Content-safe: never logs extracted text.
+    """
+    ext = _Path(filename).suffix.lower()
+    if ext in {".txt", ".md", ".csv", ".json", ".yaml", ".py"}:
+        return data.decode("utf-8", errors="replace")
+    if ext == ".pdf":
+        import pypdf
+        reader = pypdf.PdfReader(_io.BytesIO(data))
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+        if not text.strip():
+            raise ValueError("FILE_NO_EXTRACTABLE_TEXT")
+        return text
+    if ext == ".docx":
+        import docx
+        doc = docx.Document(_io.BytesIO(data))
+        return "\n".join(p.text for p in doc.paragraphs if p.text)
+    raise ValueError("UNSUPPORTED_FILE_TYPE")
+
+
+@app.post("/upload")
+async def api_upload(
+    file: UploadFile,
+    session_id: str = Form(...),
+) -> JSONResponse:
+    """
+    Accept a multipart file upload, extract text, store session-scoped.
+    Returns {file_ref, filename, chars} on success.
+    Content-safe: extracted text is never logged (ADR-029 §4, ADR-033 §3).
+    """
+    from io_iii.core import file_store
+
+    data = await file.read()
+
+    if len(data) > _UPLOAD_MAX_BYTES:
+        return JSONResponse(
+            {"error": {"code": "FILE_TOO_LARGE", "message": "File exceeds 2 MB limit."}},
+            status_code=422,
+        )
+
+    filename = file.filename or "upload"
+    ext = _Path(filename).suffix.lower()
+    if ext not in _ALLOWED_EXTENSIONS:
+        return JSONResponse(
+            {
+                "error": {
+                    "code": "UNSUPPORTED_FILE_TYPE",
+                    "message": f"File type '{ext}' is not supported. "
+                    f"Accepted: .txt .md .csv .json .yaml .py .pdf .docx",
+                }
+            },
+            status_code=422,
+        )
+
+    try:
+        text = _extract_file_text(filename, data)
+    except ValueError as exc:
+        code = str(exc)
+        return JSONResponse(
+            {"error": {"code": code, "message": "Could not extract text from file."}},
+            status_code=422,
+        )
+
+    file_ref = file_store.store(session_id, text, filename)
+    # Return structural metadata only — never the extracted text.
+    return JSONResponse({"file_ref": file_ref, "filename": filename, "chars": len(text)})
 
 
 # ---------------------------------------------------------------------------
