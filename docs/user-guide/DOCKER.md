@@ -3,7 +3,7 @@
 </p>
 # Docker Deployment
 
-Io³ ships a `Dockerfile` and `docker-compose.yml` for container-based deployment.
+I0³ ships a `Dockerfile` and `docker-compose.yml` for container-based deployment.
 The container packages the Phase 9 HTTP server without introducing any new execution
 semantics, API endpoints, or changes to the governance contract (ADR-032).
 
@@ -18,7 +18,7 @@ semantics, API endpoints, or changes to the governance contract (ADR-032).
 
 ## Usage path 1 — Host Ollama (recommended starting point)
 
-This is the default configuration. Ollama runs on your machine; Io³ runs in Docker
+This is the default configuration. Ollama runs on your machine; I0³ runs in Docker
 and calls out to it.
 
 **Build and start:**
@@ -46,7 +46,7 @@ explicit IP shown by `ip route | grep default`.
 
 ## Usage path 2 — Full Compose with Ollama sidecar
 
-This runs both Io³ and Ollama inside Docker. Useful when you want a fully
+This runs both I0³ and Ollama inside Docker. Useful when you want a fully
 self-contained deployment or are running on a server without a local Ollama install.
 
 Open `docker-compose.yml` and make two changes:
@@ -68,7 +68,7 @@ docker compose up --build
 ```
 
 The first start will be slow while Ollama initialises. You will need to pull models
-into the sidecar before Io³ can route requests:
+into the sidecar before I0³ can route requests:
 
 ```bash
 docker compose exec ollama ollama pull mistral
@@ -132,7 +132,7 @@ docker run -p 8080:8080 \
 |---|---|---|
 | `OLLAMA_HOST` | `http://host-gateway:11434` | Address of the Ollama instance to use. Override at runtime. |
 
-No other environment variables are read by Io³ at startup. All runtime behaviour is
+No other environment variables are read by I0³ at startup. All runtime behaviour is
 governed by the config files in the mounted volume.
 
 ---

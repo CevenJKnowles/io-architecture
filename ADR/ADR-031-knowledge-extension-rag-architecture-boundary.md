@@ -40,7 +40,7 @@ infrastructure is introduced in Phase 10.
 
 ## 1. Context
 
-A common question from operators and users is: how do I give Io³ access to knowledge
+A common question from operators and users is: how do I give I0³ access to knowledge
 beyond the model's training cutoff, or to domain-specific information not present in
 the base model?
 

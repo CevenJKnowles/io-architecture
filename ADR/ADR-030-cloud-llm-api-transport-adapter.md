@@ -40,14 +40,14 @@ in Phase 10.
 
 ## 1. Context
 
-The Phase 9 HTTP API exposes Io³-native endpoints (`POST /run`, `POST /session/start`,
+The Phase 9 HTTP API exposes I0³-native endpoints (`POST /run`, `POST /session/start`,
 etc.). Users and organisations already using cloud LLM provider SDKs or compatible
-client libraries cannot point their existing code at Io³ without rewriting their API
-calls to the Io³ request shape.
+client libraries cannot point their existing code at I0³ without rewriting their API
+calls to the I0³ request shape.
 
 A transport adapter endpoint that accepts an established cloud LLM API request format
 would allow drop-in adoption: existing client code, tooling, and integrations can
-target Io³ without modification. The `POST /v1/chat/completions` surface is the
+target I0³ without modification. The `POST /v1/chat/completions` surface is the
 appropriate initial target. Although it originated with one provider, it has since
 been adopted as a de facto interchange format across the broader ecosystem — including
 Mistral, Groq, Together AI, Ollama, and others — making it a vendor-neutral transport
@@ -61,14 +61,14 @@ transport-only contract and require their own supplementary ADR before implement
 The endpoint is architecturally viable as a transport adapter only. The execution
 semantics, governance invariants, and content safety rules established in Phases 1–9
 are not affected by the shape of the incoming request. Any supported cloud LLM API
-request format is translated into the existing Io³ session and engine pipeline at the
+request format is translated into the existing I0³ session and engine pipeline at the
 API boundary.
 
 The implementation is deferred to Phase 11 because it pairs naturally with cloud
 provider adapter delivery (ADR-028 Phase 11, Option C). Shipping the compatibility
 endpoint in Phase 10 without a real cloud provider backend would require users to
 already have Ollama configured — limiting the adoption benefit. Phase 11 delivers
-both simultaneously: an operator can point an existing cloud LLM client at Io³ backed
+both simultaneously: an operator can point an existing cloud LLM client at I0³ backed
 by either Ollama or a real cloud provider adapter.
 
 ---
@@ -81,7 +81,7 @@ Phase 11 introduces `POST /v1/chat/completions` as the first transport adapter
 endpoint in the Phase 9 API layer. The endpoint:
 
 - Translates the `messages` array into an assembled prompt string
-- Maps the `model` field to an Io³ routing mode via `cloud_llm_model_map` in
+- Maps the `model` field to an I0³ routing mode via `cloud_llm_model_map` in
   `runtime.yaml`
 - Routes the request through the existing session and engine layer
 - Returns a response in the `/v1/chat/completions` response shape
@@ -110,7 +110,7 @@ Silent ignore of unsupported fields is explicitly prohibited.
 ### §3 Model mapping
 
 A new `cloud_llm_model_map` key in `runtime.yaml` maps incoming model identifier
-strings to Io³ routing modes. The map is provider-agnostic: any model string from
+strings to I0³ routing modes. The map is provider-agnostic: any model string from
 any supported cloud provider API can be listed. Example:
 
 ```yaml

@@ -38,7 +38,7 @@ Accepted
 ## 1. Context
 
 Phase 10 ships a Dockerfile and `docker-compose.yml` to enable container-based
-deployment. The primary use case is operators who want to run Io³ without configuring
+deployment. The primary use case is operators who want to run I0³ without configuring
 a local Python environment, and gateway deployments (internet-facing, home automation
 integration, etc.) where the runtime is accessed over a network.
 
@@ -125,7 +125,7 @@ server is added to support the container deployment.
 
 ## 3. Consequences
 
-- Operators can deploy Io³ without a local Python environment.
+- Operators can deploy I0³ without a local Python environment.
 - Configuration remains fully operator-controlled via volume mount.
 - Gateway and home automation deployments (Home Assistant, etc.) are supported via
   the standard Phase 9 HTTP API exposed on port 8080.

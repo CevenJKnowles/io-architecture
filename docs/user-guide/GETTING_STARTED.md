@@ -58,7 +58,7 @@ python -m io_iii run executor --audit --prompt "Draft a product announcement."
 
 ## Model configuration
 
-Io³ routes every request through `architecture/runtime/config/routing_table.yaml`. Each mode maps to a specific model name. The name must exactly match what Ollama has installed.
+I0³ routes every request through `architecture/runtime/config/routing_table.yaml`. Each mode maps to a specific model name. The name must exactly match what Ollama has installed.
 
 Check what you have:
 
@@ -163,7 +163,7 @@ Open the address in a browser. Requires `content_release: true` in `runtime.yaml
 
 ## Docker
 
-If you prefer not to configure a local Python environment, Io³ runs as a container.
+If you prefer not to configure a local Python environment, I0³ runs as a container.
 Ollama still needs to be available — either running on your host or as a Docker sidecar.
 
 **Quick start (Ollama on host):**

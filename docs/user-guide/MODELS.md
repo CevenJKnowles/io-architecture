@@ -7,7 +7,7 @@ This document covers tested configurations by hardware tier, how the routing tab
 
 ---
 
-## How Io³ maps modes to models
+## How I0³ maps modes to models
 
 Every request specifies a mode (e.g. `executor`, `fast`, `data`). The routing layer resolves that mode to exactly one `provider:model` entry in `routing_table.yaml`. There is no dynamic selection, no fallback chain based on output, and no arbitration between models.
 
@@ -98,7 +98,7 @@ Confirm it is available:
 ollama list
 ```
 
-The name in the `ollama list` output is what you put in `routing_table.yaml`. If they do not match exactly, Io³ will return `PROVIDER_OLLAMA_FAILED: HTTP Error 404`.
+The name in the `ollama list` output is what you put in `routing_table.yaml`. If they do not match exactly, I0³ will return `PROVIDER_OLLAMA_FAILED: HTTP Error 404`.
 
 ---
 

@@ -2,17 +2,17 @@
   <img src="assets/logo/io_iii_256.png" alt="I0³ logo" width="50%" />
 </p>
 
-# Io³ — Deterministic AI Runtime
+# I0³ — Deterministic AI Runtime
 
-Most AI tooling is permissive by default: you send a prompt, you get a response, and the model decides the rest. Io³ is built the other way around. Every request passes through explicit routing, hard execution limits, and structural content boundaries before anything reaches the model, and before any output reaches you. The result is a runtime that knows what it will not do, and enforces that in code rather than in documentation.
+Most AI tooling is permissive by default: you send a prompt, you get a response, and the model decides the rest. I0³ is built the other way around. Every request passes through explicit routing, hard execution limits, and structural content boundaries before anything reaches the model, and before any output reaches you. The result is a runtime that knows what it will not do, and enforces that in code rather than in documentation.
 
-**For engineers:** Io³ is a local, provider-agnostic LLM control plane. Deterministic routing, bounded orchestration, governed dialogue sessions, a content-safe HTTP API, and a steward supervision layer. The execution engine, routing layer, and telemetry are frozen after Phase 1; subsequent phases add surface area without modifying the core.
+**For engineers:** I0³ is a local, provider-agnostic LLM control plane. Deterministic routing, bounded orchestration, governed dialogue sessions, a content-safe HTTP API, and a steward supervision layer. The execution engine, routing layer, and telemetry are frozen after Phase 1; subsequent phases add surface area without modifying the core.
 
 **For senior architects:** A deterministic LLM control plane with a frozen execution core, ADR-governed structural change, content-safe telemetry, and bounded orchestration semantics. All governance is code-enforced, not conventional. 26 Architecture Decision Records. 1182+ passing tests.
 
 ---
 
-## What Io³ enforces
+## What I0³ enforces
 
 - **Deterministic routing**: every request resolves to exactly one provider via a static routing table; no dynamic model selection
 - **Bounded execution**: hard limits on audit passes (1), revision passes (1), capability invocations, and session turn counts
@@ -116,7 +116,7 @@ flowchart TB
 
 ## Non-goals
 
-Io³ is explicitly not an agent framework, autonomous reasoning pipeline, dynamic tool orchestrator, retrieval or embedding system, multi-model arbitration system, or cloud deployment platform. These exclusions are structural: each is governed by an ADR.
+I0³ is explicitly not an agent framework, autonomous reasoning pipeline, dynamic tool orchestrator, retrieval or embedding system, multi-model arbitration system, or cloud deployment platform. These exclusions are structural: each is governed by an ADR.
 
 ---
 
@@ -125,7 +125,7 @@ Io³ is explicitly not an agent framework, autonomous reasoning pipeline, dynami
 | | |
 |---|---|
 | Getting started | [docs/user-guide/GETTING_STARTED.md](docs/user-guide/GETTING_STARTED.md) |
-| Why Io³ exists | [docs/user-guide/WHY-IO3.md](docs/user-guide/WHY-IO3.md) |
+| Why I0³ exists | [docs/user-guide/WHY-IO3.md](docs/user-guide/WHY-IO3.md) |
 | Model configuration | [docs/user-guide/MODELS.md](docs/user-guide/MODELS.md) |
 | Architecture decision records | [ADR/](ADR/) |
 | Worked examples | [examples/](examples/) |

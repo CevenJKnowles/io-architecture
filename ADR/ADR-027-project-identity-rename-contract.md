@@ -38,7 +38,7 @@ Accepted
 
 Phase 10 formalises the public identity of the project prior to open-source release. The
 project has been developed internally as IO-III. The public display identity adopts the
-notation Io³, which preserves full semantic continuity — Io as the project name, ³ as the
+notation I0³, which preserves full semantic continuity — Io as the project name, ³ as the
 third generation expressed as an exponent rather than Roman numerals — while producing a
 more distinctive and typographically precise mark.
 
@@ -52,7 +52,7 @@ any ADR governance contract is permitted under this ADR.
 
 ### §1 Display name
 
-The public display name of the project is **Io³** (Unicode: Io followed by U+00B3
+The public display name of the project is **I0³** (Unicode: Io followed by U+00B3
 SUPERSCRIPT THREE). This name is used in the README, all user-facing documentation,
 the pyproject.toml description field, and all new marketing or positioning content
 produced from Phase 10 onward.
@@ -67,9 +67,9 @@ No file or directory in `io_iii/` is renamed under this ADR.
 
 The following changes are in scope and may be made without a new ADR:
 
-- `README.md` title and header updated to Io³
-- `pyproject.toml` description field updated to `Io³ — Deterministic AI Runtime`
-- All user-facing documentation updated to use the Io³ display name
+- `README.md` title and header updated to I0³
+- `pyproject.toml` description field updated to `I0³ — Deterministic AI Runtime`
+- All user-facing documentation updated to use the I0³ display name
 - Logo assets added to `assets/logo/` (PNG exports at standard sizes)
 - `ARCHITECTURE.md` frontmatter updated: `audience: portfolio` removed, `status` corrected
 
@@ -81,7 +81,7 @@ The following are explicitly out of scope and require a separate ADR if pursued:
 
 ### §4 Logo and visual identity
 
-The canonical logo mark is Io³ rendered in Impact (letterforms) and Lexend Exa (subtitle
+The canonical logo mark is I0³ rendered in Impact (letterforms) and Lexend Exa (subtitle
 wordmark) against the primary palette: #ff6700 (orange) and #010f1d (deep navy). Both
 orange-field and dark-field variants are provided. All variants meet WCAG AAA contrast
 (7.03:1 minimum). The master source file is kept locally and is not committed to the
@@ -90,13 +90,13 @@ repository. PNG exports are committed to `assets/logo/`.
 ### §5 Subtitle
 
 The canonical subtitle is **Deterministic AI Runtime**. This subtitle appears beneath the
-Io³ mark in the logo, in the README header, and in all positioning and documentation
+I0³ mark in the logo, in the README header, and in all positioning and documentation
 contexts where a subtitle is used.
 
 ### §6 ADR record governance
 
 ADR-001 through ADR-026 remain authoritative and are not amended by this record.
-References within those documents to IO-III or io-iii are considered equivalent to Io³
+References within those documents to IO-III or io-iii are considered equivalent to I0³
 for all governance purposes. No retroactive editing of prior ADRs is required.
 
 ---
@@ -105,8 +105,8 @@ for all governance purposes. No retroactive editing of prior ADRs is required.
 
 - The pyproject.toml version is bumped to `1.0.0-rc.1` at M10.1 close and to `1.0.0`
   at M10.7 tag.
-- All new ADRs from ADR-027 onward use Io³ in their title and scope fields.
-- External references to the project (GitHub, PyPI, documentation) use Io³ as the
+- All new ADRs from ADR-027 onward use I0³ in their title and scope fields.
+- External references to the project (GitHub, PyPI, documentation) use I0³ as the
   display name. The GitHub repository URL path remains `io-architecture` until a
   repository rename is explicitly decided in a future ADR.
 

@@ -1,6 +1,6 @@
 # Changelog
 
-All structural milestones for Io³. Detailed architecture documentation lives in `docs/architecture/`.
+All structural milestones for I0³. Detailed architecture documentation lives in `docs/architecture/`.
 
 ---
 

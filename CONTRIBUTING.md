@@ -3,7 +3,7 @@
 </p>
 # Contributing
 
-Io³ is a governance-first deterministic AI runtime. It is intentionally minimal and bounded. Contributions are welcome within those constraints.
+I0³ is a governance-first deterministic AI runtime. It is intentionally minimal and bounded. Contributions are welcome within those constraints.
 
 ---
 
@@ -17,9 +17,9 @@ Changes that do not require an ADR: documentation updates, test fixes for pre-ex
 
 ---
 
-## What Io³ will not accept
+## What I0³ will not accept
 
-Io³ will not accept contributions that introduce autonomous behaviour, dynamic routing, output-driven model selection, tool planning, recursive orchestration, multi-step agent loops, or any execution path that does not have a hard bound. These are structural non-goals, each governed by an ADR.
+I0³ will not accept contributions that introduce autonomous behaviour, dynamic routing, output-driven model selection, tool planning, recursive orchestration, multi-step agent loops, or any execution path that does not have a hard bound. These are structural non-goals, each governed by an ADR.
 
 ---
 
