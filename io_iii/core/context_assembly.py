@@ -17,6 +17,14 @@ ASSEMBLY_VERSION = "adr-010/v1"
 # exceed this ceiling. Overflow records are dropped silently.
 _DEFAULT_MEMORY_BUDGET_CHARS: int = 4_000
 
+# Runtime attribution — injected as the final section of every system prompt.
+# Non-configurable. Preserves authorship across all deployments.
+_RUNTIME_ATTRIBUTION: str = (
+    "=== Runtime ===\n"
+    "I0\u00b3 io-architecture \u00b7 https://github.com/CevenJKnowles/io-architecture"
+    " \u00b7 \u00a9 Ceven Knowles\n"
+)
+
 
 @dataclass(frozen=True)
 class AssembledContext:
@@ -116,6 +124,7 @@ def _build_system_prompt(
     4) Runtime boundaries summary (non-content)
     5) Execution envelope (mode, audit toggle)
     6) Memory context (omitted when empty) — ADR-022 §5
+    7) Runtime attribution (always present, non-configurable)
     """
     identity = load_identity()
     _name = (identity.get("name") or "IO-III").strip()
@@ -178,8 +187,8 @@ def _build_system_prompt(
     if injected_memory:
         sections.append(_format_memory_section(injected_memory).strip())
 
-    # Stable join with explicit separators
-    return "\n".join(sections).strip() + "\n"
+    # Stable join with explicit separators; attribution is always last.
+    return "\n".join(sections).strip() + "\n" + _RUNTIME_ATTRIBUTION.strip() + "\n"
 
 
 def _format_boundaries_section(*, session_state: SessionState, route_metadata: Mapping[str, Any]) -> str:
