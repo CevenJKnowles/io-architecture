@@ -20,6 +20,7 @@ from io_iii.metadata_logging import append_metadata, make_request_id
 from io_iii.config import load_io3_config, default_config_dir
 from io_iii.routing import resolve_route
 from io_iii.providers.ollama_provider import OllamaProvider
+from io_iii.providers.provider_contract import ProviderError
 from io_iii.persona_contract import PERSONA_CONTRACT_VERSION
 from io_iii.core.engine import run as engine_run
 from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState, validate_session_state
@@ -275,6 +276,43 @@ def cmd_run(args) -> int:
         else:
             _print(payload)
         return 0
+
+    except ProviderError as e:
+        # M10.2: intercept before generic handler to emit plain-language hint on 404.
+        import sys as _sys
+        _is_404 = "404" in e.detail
+        _error_code = "PROVIDER_MODEL_NOT_FOUND" if _is_404 else e.code
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+        append_metadata(
+            cfg.logging,
+            {
+                "request_id": request_id,
+                "mode": getattr(selection, "mode", None),
+                "provider": getattr(selection, "selected_provider", None),
+                "model": None,
+                "status": "error",
+                "latency_ms": latency_ms,
+                "error_code": _error_code,
+                "failure_kind": None,
+                "fallback_used": getattr(selection, "fallback_used", None),
+                "fallback_reason": getattr(selection, "fallback_reason", None),
+                "selected_primary": getattr(selection, "primary_target", None),
+                "capability_id": cap_id,
+                "capability_ok": False if cap_id else None,
+                "capability_error_code": _error_code if cap_id else None,
+            },
+        )
+        if _is_404:
+            print(
+                f"\nModel not found in Ollama: {e.detail}\n\n"
+                "Check which models are available:\n"
+                "  ollama list\n\n"
+                "Then update architecture/runtime/config/routing_table.yaml "
+                "to use a model name that appears in that list.\n",
+                file=_sys.stderr,
+            )
+            _sys.exit(1)
+        raise
 
     except Exception as e:
         # Metadata logging (error case; NO prompt/response content)

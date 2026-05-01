@@ -1,4 +1,34 @@
 # FILE: architecture/runtime/config/routing_table.yaml
+#
+# ============================================================
+# IO-III Routing Table — configuration guide
+# ============================================================
+#
+# Each entry under `models:` and `modes:` maps a named mode to
+# a specific Ollama model. The `name` value must exactly match
+# a model that Ollama has pulled and can serve locally.
+#
+# Check what you have:
+#   ollama list
+#
+# Minimum single-model setup (use one model for every mode):
+#   models:
+#     data:
+#       provider: ollama
+#       name: "mistral:latest"    # replace with any name from ollama list
+#     reasoning:
+#       provider: ollama
+#       name: "mistral:latest"
+#     # ... repeat for challenger, draft, fast
+#
+# To pull a model:
+#   ollama pull <model-name>
+#
+# If io_iii reports "Model not found", the name here does not
+# match what Ollama has installed. Run `ollama list` to verify.
+#
+# Reference: ADR-002 (routing and fallback policy)
+# ============================================================
 
 routing_table:
   rules:

@@ -13,21 +13,24 @@ providers:
     base_url: "http://localhost:11434"
     notes: "Local-first runtime"
 
-  # Cloud providers (default OFF)
+  # Cloud providers (default OFF — stub adapters only, see ADR-028)
   openai:
     enabled: false
+    status: stub
     env_key_name: "OPENAI_API_KEY"
-    notes: "Explicit opt-in only; never auto-enable"
+    notes: "Explicit opt-in only; never auto-enable. Stub adapter — see ROADMAP.md."
 
   anthropic:
     enabled: false
+    status: stub
     env_key_name: "ANTHROPIC_API_KEY"
-    notes: "Explicit opt-in only; never auto-enable"
+    notes: "Explicit opt-in only; never auto-enable. Stub adapter — see ROADMAP.md."
 
   google:
     enabled: false
+    status: stub
     env_key_name: "GOOGLE_API_KEY"
-    notes: "Explicit opt-in only; never auto-enable"
+    notes: "Explicit opt-in only; never auto-enable. No adapter module — see ROADMAP.md."
 
 policies:
   # No automatic local → cloud fallback, ever.
