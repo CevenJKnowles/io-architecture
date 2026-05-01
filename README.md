@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/logo/io_iii_256.png" alt="I0³ logo" width="96" />
+</p>
 # Io³ — Deterministic AI Runtime
 
 Most AI tooling is permissive by default: you send a prompt, you get a response, and the model decides the rest. Io³ is built the other way around. Every request passes through explicit routing, hard execution limits, and structural content boundaries before anything reaches the model, and before any output reaches you. The result is a runtime that knows what it will not do, and enforces that in code rather than in documentation.

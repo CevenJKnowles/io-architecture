@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="../../assets/logo/io_iii_256.png" alt="I0³ logo" width="96" />
+</p>
 # Configuration — Identity and User Profile
 
 This document covers the two user-configurable surfaces added in Phase 10:

@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="../../assets/logo/io_iii_256.png" alt="I0³ logo" width="96" />
+</p>
 # Docker Deployment
 
 Io³ ships a `Dockerfile` and `docker-compose.yml` for container-based deployment.

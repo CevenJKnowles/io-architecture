@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="assets/logo/io_iii_256.png" alt="I0³ logo" width="96" />
+</p>
 # Contributing
 
 Io³ is a governance-first deterministic AI runtime. It is intentionally minimal and bounded. Contributions are welcome within those constraints.

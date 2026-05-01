@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="../../assets/logo/io_iii_256.png" alt="I0³ logo" width="96" />
+</p>
 # Getting Started
 
 This guide covers installation, first run, model configuration, the available modes, and common error messages.
