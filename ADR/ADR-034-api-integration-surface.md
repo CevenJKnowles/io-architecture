@@ -1,3 +1,5 @@
+> Renumbered from ADR-025 on 2026-05-01. Original ADR-025 number was a duplicate.
+
 ---
 id: ADR-025
 title: API & Integration Surface — Transport Adapter Contract

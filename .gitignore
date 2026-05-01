@@ -70,3 +70,12 @@ docs/overview/DOC-OVW-003-io-iii-session-state-2026-03-04.md
 **/.pytest_cache
 .venv
 *.egg-info
+
+# Local Claude Code working rules — not for version control
+CLAUDE.md
+
+# IO-III runtime persistence (local-only)
+memory_store/
+
+# IO-III project history (local-only)
+history/

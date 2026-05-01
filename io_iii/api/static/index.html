@@ -325,6 +325,7 @@
   let sending = false;
   let attachedFileRef = null;
   let attachedFileName = null;
+  let pendingFile = null;
 
   const BASE = window.location.origin;
 
@@ -351,6 +352,7 @@
   function clearAttachment() {
     attachedFileRef = null;
     attachedFileName = null;
+    pendingFile = null;
     filePicker.value = '';
     fileChip.style.display = 'none';
     fileChipName.textContent = '';
@@ -471,9 +473,38 @@
   }
 
   function sendTurnStream(prompt) {
-    const params = new URLSearchParams({ prompt, persona_mode: 'executor' });
-    const es = new EventSource(BASE + '/session/' + sessionId + '/stream?' + params.toString());
+    const es = new EventSource(BASE + '/session/' + sessionId + '/stream');
     let outputHandled = false;
+
+    // Wait for the stream to open before POSTing the turn.
+    // This prevents a race where a fast turn publishes turn_completed before
+    // the EventSource is listening.
+    es.onopen = function () {
+      post('/session/' + sessionId + '/turn', { prompt: prompt, persona_mode: 'executor' })
+        .then(function (res) {
+          if (!outputHandled) {
+            outputHandled = true;
+            removeThinking(window._thinking);
+          }
+          if (res.error_code === 'FILE_REF_EXPIRED') {
+            bubble('File expired — server was restarted. Please re-upload the file.', 'error');
+          } else if (res.error_code) {
+            bubble('Error: ' + res.error_code, 'error');
+          } else if (res.response) {
+            bubble(res.response, 'assistant');
+          }
+        })
+        .catch(function (e) {
+          if (!outputHandled) {
+            outputHandled = true;
+            removeThinking(window._thinking);
+          }
+          bubble('Error: ' + e.message, 'error');
+          es.close();
+          sending = false;
+          setControls();
+        });
+    };
 
     es.addEventListener('turn_started', function () {
       // acknowledged; thinking indicator already visible
@@ -541,6 +572,17 @@
     const thinking = showThinking();
     window._thinking = thinking;
 
+    // Upload the file now, just before sending — deferred from file selection.
+    if (pendingFile && !attachedFileRef) {
+      const ok = await doUpload(pendingFile);
+      if (!ok) {
+        removeThinking(thinking);
+        sending = false;
+        setControls();
+        return;
+      }
+    }
+
     // Steward actions and file-attached turns use POST; plain prompts use SSE.
     if (action || attachedFileRef) {
       try {
@@ -604,7 +646,7 @@
 
   btnAttach.addEventListener('click', () => filePicker.click());
 
-  filePicker.addEventListener('change', async () => {
+  filePicker.addEventListener('change', () => {
     const f = filePicker.files[0];
     if (!f || !sessionId) return;
 
@@ -615,27 +657,33 @@
       return;
     }
 
+    pendingFile = f;
+    fileChipName.textContent = f.name;
+    fileChip.style.display = 'inline-flex';
+  });
+
+  async function doUpload(f) {
     const formData = new FormData();
     formData.append('file', f);
     formData.append('session_id', sessionId);
-
     try {
       const r = await fetch(BASE + '/upload', { method: 'POST', body: formData });
       const res = await r.json();
       if (res.error) {
-        bubble('Upload failed: ' + res.error.message, 'error');
-        filePicker.value = '';
-        return;
+        bubble('Upload failed: ' + res.error.message + ' [' + res.error.code + ']', 'error');
+        clearAttachment();
+        return false;
       }
       attachedFileRef  = res.file_ref;
       attachedFileName = res.filename;
       fileChipName.textContent = res.filename + ' (' + res.chars.toLocaleString() + ' chars)';
-      fileChip.style.display = 'inline-flex';
+      return true;
     } catch (e) {
       bubble('Upload error: ' + e.message, 'error');
-      filePicker.value = '';
+      clearAttachment();
+      return false;
     }
-  });
+  }
 
   btnDismissFile.addEventListener('click', clearAttachment);
 
