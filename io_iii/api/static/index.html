@@ -163,6 +163,46 @@
     #pause-banner .btn { border-color: #d29922; color: #d29922; font-size: 0.75rem; }
     #pause-banner .btn:hover { background: #3b2608; }
 
+    #file-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px 0;
+    }
+    #file-row.hidden { display: none; }
+
+    #file-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-family: 'Courier New', monospace;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 2px 10px;
+      color: #8b949e;
+    }
+    #file-chip .dismiss {
+      cursor: pointer;
+      color: #6e7681;
+      font-size: 0.9rem;
+      line-height: 1;
+    }
+    #file-chip .dismiss:hover { color: #f85149; }
+
+    .btn-attach {
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #21262d;
+      color: #8b949e;
+      cursor: pointer;
+    }
+    .btn-attach:hover { background: #30363d; color: #c9d1d9; }
+    .btn-attach:disabled { opacity: 0.35; cursor: not-allowed; }
+
     #input-area {
       padding: 12px 20px;
       background: #161b22;
@@ -228,6 +268,14 @@
   <button id="btn-close-pause" class="btn btn-danger">Close</button>
 </div>
 
+<input type="file" id="file-picker" accept=".txt,.md,.csv,.json,.yaml,.py,.pdf,.docx" style="display:none" />
+<div id="file-row" class="hidden">
+  <button class="btn-attach" id="btn-attach" disabled>📎 Attach file</button>
+  <span id="file-chip" style="display:none">
+    <span id="file-chip-name"></span>
+    <span class="dismiss" id="btn-dismiss-file" title="Remove file">×</span>
+  </span>
+</div>
 <div id="input-area">
   <textarea id="prompt-input" placeholder="Message IO-III… (Enter to send)" disabled rows="1"></textarea>
   <button id="btn-send" disabled>Send</button>
@@ -240,6 +288,8 @@
   let sessionId = null;
   let sessionStatus = null;
   let sending = false;
+  let attachedFileRef = null;
+  let attachedFileName = null;
 
   const chat        = document.getElementById('chat');
   const pill        = document.getElementById('status-pill');
@@ -252,8 +302,22 @@
   const btnApprove  = document.getElementById('btn-approve');
   const btnRedirect = document.getElementById('btn-redirect');
   const btnClosePause = document.getElementById('btn-close-pause');
+  const filePicker      = document.getElementById('file-picker');
+  const btnAttach       = document.getElementById('btn-attach');
+  const fileRow         = document.getElementById('file-row');
+  const fileChip        = document.getElementById('file-chip');
+  const fileChipName    = document.getElementById('file-chip-name');
+  const btnDismissFile  = document.getElementById('btn-dismiss-file');
 
   // ── helpers ──────────────────────────────────────────────────────────────
+
+  function clearAttachment() {
+    attachedFileRef = null;
+    attachedFileName = null;
+    filePicker.value = '';
+    fileChip.style.display = 'none';
+    fileChipName.textContent = '';
+  }
 
   function bubble(text, cls) {
     const d = document.createElement('div');
@@ -289,6 +353,8 @@
     promptInput.disabled     = !active || sending;
     btnSend.disabled         = !active || sending;
     pauseBanner.classList.toggle('visible', paused);
+    btnAttach.disabled = !has || sending;
+    fileRow.classList.toggle('hidden', !has);
   }
 
   // ── API ───────────────────────────────────────────────────────────────────
@@ -341,6 +407,7 @@
     const body = { persona_mode: 'executor' };
     if (prompt) body.prompt = prompt;
     if (action) body.action = action;
+    if (attachedFileRef) body.file_ref = attachedFileRef;
 
     try {
       const res = await post('/session/' + sessionId + '/turn', body);
@@ -349,7 +416,12 @@
       const newStatus = res.session_status || res.status;
       setPill(newStatus);
 
-      if (res.error_code) {
+      clearAttachment();
+
+      if (res.error_code === 'FILE_REF_EXPIRED') {
+        bubble('File expired — server was restarted. Please re-upload the file.', 'error');
+        clearAttachment();
+      } else if (res.error_code) {
         bubble('Error: ' + res.error_code, 'error');
       } else if (res.response) {
         bubble(res.response, 'assistant');
@@ -411,6 +483,45 @@
     sendTurn(p, 'redirect');
   });
   btnClosePause.addEventListener('click', closeSession);
+
+  // ── file attachment ───────────────────────────────────────────────────────
+
+  btnAttach.addEventListener('click', () => filePicker.click());
+
+  filePicker.addEventListener('change', async () => {
+    const f = filePicker.files[0];
+    if (!f || !sessionId) return;
+
+    const MAX = 2 * 1024 * 1024;
+    if (f.size > MAX) {
+      bubble('File too large (2 MB limit).', 'error');
+      filePicker.value = '';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', f);
+    formData.append('session_id', sessionId);
+
+    try {
+      const r = await fetch('/upload', { method: 'POST', body: formData });
+      const res = await r.json();
+      if (res.error) {
+        bubble('Upload failed: ' + res.error.message, 'error');
+        filePicker.value = '';
+        return;
+      }
+      attachedFileRef = res.file_ref;
+      attachedFileName = res.filename;
+      fileChipName.textContent = res.filename + ' (' + res.chars.toLocaleString() + ' chars)';
+      fileChip.style.display = 'inline-flex';
+    } catch (e) {
+      bubble('Upload error: ' + e.message, 'error');
+      filePicker.value = '';
+    }
+  });
+
+  btnDismissFile.addEventListener('click', clearAttachment);
 
   // ── init ──────────────────────────────────────────────────────────────────
   setControls();

@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import io_iii.core.orchestrator as _orchestrator
 from io_iii.core.dependencies import RuntimeDependencies
+from io_iii.core.file_store import FileRefExpiredError, FileRefNotFound, resolve as _fs_resolve
 from io_iii.core.engine import ExecutionResult
 from io_iii.memory.store import MemoryRecord
 from io_iii.memory.session_continuity import SessionMemoryContext
@@ -234,6 +235,7 @@ def run_turn(
     audit: bool = False,
     session_memory: Optional[List[MemoryRecord]] = None,
     memory_context: Optional[SessionMemoryContext] = None,
+    file_ref: Optional[str] = None,
 ) -> DialogueTurnResult:
     """
     Execute one bounded turn of the dialogue session loop (Phase 8 M8.2).
@@ -294,6 +296,36 @@ def run_turn(
     turn_index = session.turn_count
     import time as _time
     turn_start_ns = _time.monotonic_ns()
+
+    # File content injection (ADR-029/ADR-033).
+    # Resolve file_ref to text and prepend to user_prompt before TaskSpec.
+    # engine.py is frozen and cannot receive file_ref directly; injecting here
+    # is semantically equivalent to the ADR-033 formal lane model.
+    if file_ref is not None:
+        try:
+            _filename, _file_text = _fs_resolve(session.session_id, file_ref)
+        except FileRefNotFound:
+            raise FileRefExpiredError()
+        # Apply budget from cfg.runtime; fall back to 16000.
+        _budget = int((getattr(cfg, "runtime", {}) or {}).get("file_content_limit_chars", 16000))
+        _file_truncated = False
+        if len(_file_text) > _budget:
+            _truncated = _file_text[:_budget]
+            # Seek last sentence boundary in the second half of the budget.
+            for _punct in (".", "\n", "!", "?"):
+                _idx = _truncated.rfind(_punct, _budget // 2)
+                if _idx > 0:
+                    _truncated = _truncated[: _idx + 1]
+                    break
+            _file_text = (
+                _truncated
+                + f"\n[File content truncated at context limit — "
+                f"{len(_truncated)} characters shown of {len(_file_text)}]"
+            )
+            _file_truncated = True
+        user_prompt = (
+            f"[Attached file: {_filename}]\n---\n{_file_text}\n---\n\n{user_prompt}"
+        )
 
     # Build a TaskSpec for this turn (content-plane: user_prompt is not stored
     # in TurnRecord or DialogueSession — it is consumed by the engine only).

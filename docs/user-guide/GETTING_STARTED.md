@@ -212,3 +212,21 @@ A config file contains a local absolute path or a field that will not work on an
 
 **`context_limit_chars` exceeded**
 The assembled prompt exceeds the character ceiling in `runtime.yaml`. Raise `context_limit_chars` or reduce memory pack size.
+
+---
+
+## File upload
+
+The web UI supports attaching a file to any session turn. Click the **📎 Attach file** button that appears in an active session, select a file, and the server extracts its text and holds it session-scoped. The file content is prepended to your prompt before the model sees it.
+
+**Supported types:** `.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.py`, `.pdf`, `.docx`
+
+**Size limit:** 2 MB. Files over this limit are rejected before upload.
+
+**PDF notes:** Text-based PDFs only. Scanned or image-only PDFs are rejected with a clear error. OCR is not supported.
+
+**Content safety:** File content is never written to logs or metadata records.
+
+**File expiry:** Files are held in memory for the duration of the server process. If the server restarts, any attached `file_ref` expires. The UI will prompt you to re-upload.
+
+**Context limit:** File content counts toward the total context window (`context_limit_chars` in `runtime.yaml`). The file content budget is controlled separately by `file_content_limit_chars` (default: 16 000 characters). Content beyond this is truncated with a notice appended to the injected text.

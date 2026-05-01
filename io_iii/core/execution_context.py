@@ -32,4 +32,4 @@ class ExecutionContext:
     prompt_hash: Optional[str]
     assembled_context: Optional[AssembledContext]
     memory: tuple[MemoryRecord, ...] = field(default_factory=tuple)
-    
+    file_ref: Optional[str] = None
