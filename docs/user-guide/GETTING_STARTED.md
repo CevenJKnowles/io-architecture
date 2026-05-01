@@ -19,8 +19,8 @@ This guide covers installation, first run, model configuration, the available mo
 ## Installation
 
 ```bash
-git clone https://github.com/CevenJKnowles/io-architecture.git
-cd io-architecture
+git clone https://github.com/CevenJKnowles/io-iii-runtime.git
+cd io-iii-runtime
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
@@ -170,8 +170,8 @@ Ollama still needs to be available — either running on your host or as a Docke
 **Quick start (Ollama on host):**
 
 ```bash
-git clone https://github.com/CevenJKnowles/io-architecture.git
-cd io-architecture
+git clone https://github.com/CevenJKnowles/io-iii-runtime.git
+cd io-iii-runtime
 docker compose up --build
 ```
 

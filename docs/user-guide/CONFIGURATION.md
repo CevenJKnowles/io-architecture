@@ -117,7 +117,7 @@ unreadable, the section is silently omitted.
 
 ### How the user profile appears in the system prompt
 
-For the example above (with `notes` empty), the injected section reads:
+For a completed profile (with `notes` empty), the injected section reads:
 
 ```
 === User Profile ===
@@ -148,5 +148,4 @@ Both files are read at request time. There is no cache and no restart required â
 edit the file, then send your next prompt. The updated values will appear in the
 system prompt on the next execution.
 
-To verify what is being injected, run the context assembly diagnostic (when
-available) or inspect the `--debug` output of any `run` command.
+To verify what is being injected, inspect the `--debug` output of any `run` command.

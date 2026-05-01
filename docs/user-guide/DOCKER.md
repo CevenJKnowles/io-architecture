@@ -101,8 +101,7 @@ to the config baked into the image at build time.
 
 ## Invariant validation inside the container
 
-Before Phase 10 ships, `validate_invariants.py` must pass inside the built container.
-To run it manually:
+To verify the container is correctly configured, run `validate_invariants.py` inside it:
 
 ```bash
 docker compose run --rm io3 python architecture/runtime/scripts/validate_invariants.py

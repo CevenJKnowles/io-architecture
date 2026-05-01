@@ -30,7 +30,7 @@ The model is one component in the pipeline. It does not decide the routing, the 
 
 **You want human supervision at configurable gates.** Steward mode pauses a session when it reaches a threshold (step count, token budget, capability class) and waits for a human to approve before continuing. The pause is structural: the session cannot proceed without it.
 
-**You are evaluating AI governance patterns.** I0³ is a reference implementation of a deterministic control plane. Its 26 Architecture Decision Records document every structural choice, including what was explicitly ruled out and why. It is a concrete answer to the question of what governed AI tooling looks like in practice.
+**You are evaluating AI governance patterns.** I0³ is a reference implementation of a deterministic control plane. Its 34 Architecture Decision Records document every structural choice, including what was explicitly ruled out and why. It is a concrete answer to the question of what governed AI tooling looks like in practice.
 
 ---
 
