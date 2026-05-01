@@ -72,7 +72,7 @@ routing_table:
 
   modes:
     executor:
-      primary: "local:qwen2.5:14b-instruct"
+      primary: "local:mistral:latest"
       secondary: "local:mistral:latest"
 
     explorer:
