@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../../assets/logo/io_iii_256.png" alt="I0³ logo" width="96" />
+  <img src="../../assets/logo/io_iii_256.png" alt="I0³ logo" width="100%" />
 </p>
 # Why Io³ exists
 
