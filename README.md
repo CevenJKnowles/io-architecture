@@ -1,4 +1,4 @@
-# IO-III — Governed LLM Runtime
+# Io³ — Deterministic AI Runtime
 
 IO-III is a Python runtime that wraps a local language model in a structured governance layer. Rather than calling a model directly, every request passes through deterministic routing, bounded execution controls, an optional audit gate, and a human-supervised session layer — before any output reaches the user.
 

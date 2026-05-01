@@ -7,8 +7,8 @@ version: v0.3.2
 canonical: true
 scope: repository
 audience: developer
-created: "2026-03-06"
-updated: "2026-04-12"
+created: "2026-05-01"
+updated: "2026-05-01"
 tags:
 - io-iii
 - runtime
