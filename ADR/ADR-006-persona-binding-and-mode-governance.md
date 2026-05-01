@@ -3,12 +3,12 @@ id: "ADR-006"
 title: "Persona Binding and Mode Governance"
 type: "adr"
 status: "active"
-version: "v1.0"
+version: "v1.1"
 canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-05-01"
 tags:
   - "persona"
   - "modes"
@@ -16,6 +16,8 @@ tags:
   - "routing"
   - "behavior"
   - "policy"
+  - "identity"
+  - "user-profile"
 roles_focus:
   - "governance"
   - "executor"
@@ -151,9 +153,75 @@ Suggested artifacts (paths are suggestions; create later as needed):
   - explicit mode transitions only
   - precedence order enforcement
 
+## Amendment — Phase 10 (v1.1)
+
+### 7) Io identity configuration surface
+
+A new `identity:` block in `persona.yaml` provides the user-configurable surface for
+Io's conversational presentation. It is injected into the system prompt header by
+`context_assembly.py` as the opening section, before the persona contract.
+
+Governed fields:
+
+| Field | Purpose | Default |
+|---|---|---|
+| `identity.name` | The name Io uses in conversation | `IO-III` |
+| `identity.description` | One-sentence description of what this assistant does | _(empty)_ |
+| `identity.style` | Preferred communication style | _(empty)_ |
+
+All fields are optional. If the `identity:` block is absent or unparseable, the runtime
+falls back to defaults silently — a missing block never raises and never causes a
+governance failure.
+
+The identity block does not affect routing, audit gates, execution semantics, or any
+invariant established in §1–§6. It is a presentation layer only.
+
+### 8) User profile configuration surface
+
+A new `user_profile.yaml` in `architecture/runtime/config/` provides an operator-
+configurable surface for the user's context. It is injected into the system prompt as
+a `=== User Profile ===` section, positioned after the persona contract and before
+runtime boundaries.
+
+Governed fields:
+
+| Field | Purpose |
+|---|---|
+| `user.name` | How Io addresses the user |
+| `user.role` | User's professional role or context |
+| `user.expertise` | List of domains; informs vocabulary and response depth |
+| `user.preferences` | Communication preferences (language, style, etc.) |
+| `user.notes` | Free-text context |
+
+All fields are optional. If `user_profile.yaml` is absent or the `user:` block is empty,
+the section is omitted from the system prompt entirely — no default text is injected.
+The runtime never raises on a missing or malformed user profile.
+
+The user profile does not affect routing, audit gates, execution semantics, or any
+invariant established in §1–§6. It is a context layer only.
+
+### Implementation
+
+Both surfaces are loaded by `load_identity()` and `load_user_profile()` in
+`io_iii/persona_contract.py`. Both are consumed exclusively in
+`io_iii/core/context_assembly.py` — `_build_system_prompt()`. No other module is
+affected.
+
+---
+
 ## Related
 
 - `./ADR/ADR-002-model-routing-and-fallback-policy.md`
 - `./ADR/ADR-005-evaluation-and-regression-testing-policy.md`
+- `./ADR/ADR-023-open-source-initialisation-contract.md`
 - `./IO-III/strategy/io-ii-v1-4-strategy-1.md`
 - `./docs/governance/adr-policy.md`
+
+---
+
+## Changelog
+
+| Version | Date       | Change                                                              |
+|---------|------------|---------------------------------------------------------------------|
+| v1.0    | 2026-01-09 | Initial persona binding and mode governance contract                |
+| v1.1    | 2026-05-01 | Added §7 identity config surface and §8 user profile config surface |
