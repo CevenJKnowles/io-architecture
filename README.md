@@ -4,7 +4,7 @@ Most AI tooling is permissive by default: you send a prompt, you get a response,
 
 **For engineers:** Io³ is a local, provider-agnostic LLM control plane. Deterministic routing, bounded orchestration, governed dialogue sessions, a content-safe HTTP API, and a steward supervision layer. The execution engine, routing layer, and telemetry are frozen after Phase 1; subsequent phases add surface area without modifying the core.
 
-**For senior architects:** A deterministic LLM control plane with a frozen execution core, ADR-governed structural change, content-safe telemetry, and bounded orchestration semantics. All governance is code-enforced, not conventional. 26 Architecture Decision Records. 1008+ passing tests.
+**For senior architects:** A deterministic LLM control plane with a frozen execution core, ADR-governed structural change, content-safe telemetry, and bounded orchestration semantics. All governance is code-enforced, not conventional. 26 Architecture Decision Records. 1182+ passing tests.
 
 ---
 

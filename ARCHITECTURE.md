@@ -202,8 +202,6 @@ Implementation artifacts must conform to them.
 
 Divergence triggers an Architecture Decision Record.
 
-Only canonical material is referenced from the external portfolio repository.
-
 ***
 
 ## Closing Note
