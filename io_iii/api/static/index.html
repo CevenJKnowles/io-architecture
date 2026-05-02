@@ -501,12 +501,12 @@
       if (!outputHandled) {
         outputHandled = true;
         removeThinking(window._thinking);
-        bubble('No response received after 60 seconds. The model may be under load — please try again.', 'error');
+        bubble('No response received after 120 seconds. The model may be under load — please try again.', 'error');
         es.close();
         sending = false;
         setControls();
       }
-    }, 60000);
+    }, 120000);
 
     // Wait for the stream to open before POSTing the turn.
     // This prevents a race where a fast turn publishes turn_completed before
