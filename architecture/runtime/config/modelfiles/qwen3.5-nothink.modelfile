@@ -1,0 +1,8 @@
+# Qwen3.5 9B — thinking mode disabled
+# Used for: executor, draft, synthesizer
+# Creates model: qwen3.5:9b-nothink
+#
+# Usage:
+#   ollama create qwen3.5:9b-nothink -f architecture/runtime/config/modelfiles/qwen3.5-nothink.Modelfile
+FROM qwen3.5:9b
+PARAMETER think false

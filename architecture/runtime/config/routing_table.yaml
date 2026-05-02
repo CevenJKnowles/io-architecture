@@ -11,18 +11,18 @@
 # Check what you have:
 #   ollama list
 #
-# Minimum single-model setup (use one model for every mode):
-#   models:
-#     data:
-#       provider: ollama
-#       name: "mistral:latest"    # replace with any name from ollama list
-#     reasoning:
-#       provider: ollama
-#       name: "mistral:latest"
-#     # ... repeat for challenger, draft, fast
+# This constellation uses two Qwen3.5 model variants created via
+# Ollama Modelfiles. See docs/user-guide/MODELS.md for setup.
 #
-# To pull a model:
-#   ollama pull <model-name>
+#   qwen3.5:9b-think   — deep reasoning, challenger audit, exploration
+#   qwen3.5:9b-nothink — executor, drafting, synthesis (fast path)
+#   qwen3.5:4b         — lightweight transforms, gate evaluation, data
+#
+# To pull and create the variants:
+#   ollama pull qwen3.5:9b
+#   ollama pull qwen3.5:4b
+#   ollama create qwen3.5:9b-think   -f architecture/runtime/config/modelfiles/qwen3.5-think.Modelfile
+#   ollama create qwen3.5:9b-nothink -f architecture/runtime/config/modelfiles/qwen3.5-nothink.Modelfile
 #
 # If io_iii reports "Model not found", the name here does not
 # match what Ollama has installed. Run `ollama list` to verify.
@@ -56,53 +56,53 @@ routing_table:
   models:
     data:
       provider: ollama
-      name: "gemma:latest"
+      name: "qwen3.5:4b"
     reasoning:
       provider: ollama
-      name: "qwen2.5:14b-instruct"
+      name: "qwen3.5:9b-think"
     challenger:
       provider: ollama
-      name: "deepseek-r1:latest"
+      name: "qwen3.5:9b-think"
     draft:
       provider: ollama
-      name: "qwen3:8b"
+      name: "qwen3.5:9b-nothink"
     fast:
       provider: ollama
-      name: "mistral:latest"
+      name: "qwen3.5:4b"
 
   modes:
     executor:
-      primary: "local:qwen2.5:14b-instruct"
-      secondary: "local:mistral:latest"
+      primary: "local:qwen3.5:9b-nothink"
+      secondary: "local:qwen3.5:4b"
 
     explorer:
-      primary: "local:qwen2.5:14b-instruct"
-      secondary: "local:qwen3:8b"
+      primary: "local:qwen3.5:9b-think"
+      secondary: "local:qwen3.5:9b-nothink"
 
     challenger:
-      primary: "local:deepseek-r1:latest"
-      secondary: "local:deepseek-r1:latest"
+      primary: "local:qwen3.5:9b-think"
+      secondary: "local:qwen3.5:9b-think"
 
     synthesizer:
-      primary: "local:qwen3:8b"
-      secondary: "local:mistral:latest"
+      primary: "local:qwen3.5:9b-nothink"
+      secondary: "local:qwen3.5:4b"
 
     visionary:
-      primary: "local:qwen3:8b"
-      secondary: "local:deepseek-r1:latest"
+      primary: "local:qwen3.5:9b-think"
+      secondary: "local:qwen3.5:9b-nothink"
 
     fast:
-      primary: "local:mistral:latest"
-      secondary: "local:qwen3:8b"
+      primary: "local:qwen3.5:4b"
+      secondary: "local:qwen3.5:4b"
 
     draft:
-      primary: "local:qwen2.5:14b-instruct"
-      secondary: "local:mistral:latest"
+      primary: "local:qwen3.5:9b-nothink"
+      secondary: "local:qwen3.5:4b"
 
     data:
-      primary: "local:Qwen3:8b"
-      secondary: "local:Qwen3:8b"
+      primary: "local:qwen3.5:4b"
+      secondary: "local:qwen3.5:4b"
 
     steward:
-      primary: "local:mistral:latest"
-      secondary: "local:mistral:latest"
+      primary: "local:qwen3.5:4b"
+      secondary: "local:qwen3.5:4b"

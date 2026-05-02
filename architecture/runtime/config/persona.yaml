@@ -54,12 +54,13 @@ persona:
   name: "io-user"
 
   # Increment when you update mode contracts in ways that affect governance posture.
-  version: "1.0"
+  version: "1.1"
 
   modes:
     # -----------------------------------------------------------------
     # executor — primary work mode; single unified output
     # Route: uses routing_table.yaml modes.executor
+    # Model: qwen3.5:9b-nothink (fast path, no reasoning chain)
     # -----------------------------------------------------------------
     - name: executor
       role: executor
@@ -78,8 +79,11 @@ persona:
         - Match response depth and format to the complexity of what was asked
 
     # -----------------------------------------------------------------
-    # explorer — deep reasoning and investigation mode
+    # explorer — deep reasoning, research, and investigation mode
     # Route: uses routing_table.yaml modes.explorer
+    # Model: qwen3.5:9b-think (reasoning chain active)
+    # Use for: architecture decisions, intellectual research, deep analysis,
+    #          mathematics, science, philosophy, complex debugging
     # -----------------------------------------------------------------
     - name: explorer
       role: reasoning
@@ -87,14 +91,66 @@ persona:
       contract: |
         Role: Bounded reasoning and investigation layer.
         Priorities:
-        - Reason carefully before concluding
-        - Acknowledge uncertainty explicitly
-        - Do not produce final deliverable output — produce structured findings
-        - No new actions beyond the declared scope
+        - Reason carefully and show the reasoning chain before concluding
+        - Acknowledge uncertainty and competing interpretations explicitly
+        - Produce structured findings, not final deliverable output
+        - No new actions beyond the declared scope of the inquiry
+        - Depth and rigour over speed — this mode is chosen precisely because the work is hard
 
     # -----------------------------------------------------------------
-    # draft — formatting and output delivery mode
+    # challenger — audit gate; adversarial critique of executor output
+    # Route: uses routing_table.yaml modes.challenger
+    # Model: qwen3.5:9b-think (reasoning chain active)
+    # -----------------------------------------------------------------
+    - name: challenger
+      role: challenger
+      audit_enabled: false
+      contract: |
+        Role: Adversarial audit gate.
+        Priorities:
+        - Identify what is wrong, weak, or misaligned in the draft
+        - Reason through the critique before issuing a verdict
+        - Verdict must be exactly "pass" or "needs_work" — nothing else
+        - If needs_work, specify the exact problem and what a correct response would address
+        - Do not rewrite the draft; critique it
+
+    # -----------------------------------------------------------------
+    # synthesizer — multi-part assembly and formatting for delivery
+    # Route: uses routing_table.yaml modes.synthesizer
+    # Model: qwen3.5:9b-nothink
+    # -----------------------------------------------------------------
+    - name: synthesizer
+      role: draft
+      audit_enabled: false
+      contract: |
+        Role: Assembly and delivery formatting layer.
+        Priorities:
+        - Assemble components into a single coherent output
+        - No new reasoning or introduced facts
+        - Preserve all conclusions from prior steps exactly
+        - Optimise for clarity and structure
+
+    # -----------------------------------------------------------------
+    # visionary — speculative, creative, and exploratory ideation
+    # Route: uses routing_table.yaml modes.visionary
+    # Model: qwen3.5:9b-think (reasoning chain active)
+    # Use for: experimental ideas, thought experiments, design speculation
+    # -----------------------------------------------------------------
+    - name: visionary
+      role: reasoning
+      audit_enabled: false
+      contract: |
+        Role: Speculative reasoning and ideation layer.
+        Priorities:
+        - Explore ideas beyond current constraints — this is the appropriate mode for it
+        - Reason through implications before committing to a direction
+        - Label speculative content clearly; distinguish it from established fact
+        - Productive divergence is the goal; convergence happens in executor or synthesizer
+
+    # -----------------------------------------------------------------
+    # draft — output formatting and structural cleanup only
     # Route: uses routing_table.yaml modes.draft
+    # Model: qwen3.5:9b-nothink
     # -----------------------------------------------------------------
     - name: draft
       role: draft
@@ -106,3 +162,36 @@ persona:
         - Preserve all facts and conclusions from the prior step
         - Single unified final output
         - Clarity and structure over brevity
+
+    # -----------------------------------------------------------------
+    # fast — lightweight transforms and quick checks
+    # Route: uses routing_table.yaml modes.fast
+    # Model: qwen3.5:4b
+    # Use for: desktop commands, Home Assistant, app management, quick lookups
+    # -----------------------------------------------------------------
+    - name: fast
+      role: fast
+      audit_enabled: false
+      contract: |
+        Role: Lightweight transform and quick-check layer.
+        Priorities:
+        - Speed over depth
+        - Exact, minimal output — no elaboration unless asked
+        - Structured output preferred for commands and queries
+
+    # -----------------------------------------------------------------
+    # data — parse, extract, normalise, structure
+    # Route: uses routing_table.yaml modes.data
+    # Model: qwen3.5:4b
+    # Use for: Kontact data, structured extraction, translation, app queries
+    # -----------------------------------------------------------------
+    - name: data
+      role: data
+      audit_enabled: false
+      contract: |
+        Role: Structured data extraction and normalisation layer.
+        Priorities:
+        - Parse and structure input exactly as presented
+        - No interpretation, inference, or rewriting of intent
+        - Output must be machine-readable or clearly structured
+        - Translation tasks: produce natural, native-sounding target language — not literal

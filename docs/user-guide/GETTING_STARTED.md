@@ -67,20 +67,42 @@ Check what you have:
 ollama list
 ```
 
-Open `routing_table.yaml` and update each entry under `modes:` to match a model from that list. Example minimal setup using a single model for every mode:
+**Recommended constellation (RTX 2060 / 6GB VRAM + 32GB RAM)**
+
+This configuration uses Qwen3.5 throughout — a single model family with thinking and non-thinking variants. Thinking mode activates a full reasoning chain and is used for modes where depth matters (explorer, challenger, visionary). Non-thinking mode is the fast path for routine work.
+
+Step 1 — pull the base models:
+
+```bash
+ollama pull qwen3.5:9b
+ollama pull qwen3.5:4b
+```
+
+Step 2 — create the thinking mode variants from the included Modelfiles:
+
+```bash
+ollama create qwen3.5:9b-think   -f architecture/runtime/config/modelfiles/qwen3.5-think.Modelfile
+ollama create qwen3.5:9b-nothink -f architecture/runtime/config/modelfiles/qwen3.5-nothink.Modelfile
+```
+
+The `routing_table.yaml` shipped with this repo already references these variant names. No further changes needed.
+
+**Minimal single-model setup**
+
+If you want to get started quickly with one model, you can point every mode at the same model temporarily:
 
 ```yaml
 modes:
   executor:
-    primary: "local:mistral:latest"
+    primary: "local:qwen3.5:9b"
   challenger:
-    primary: "local:mistral:latest"
-  drafter:
-    primary: "local:mistral:latest"
+    primary: "local:qwen3.5:9b"
+  explorer:
+    primary: "local:qwen3.5:9b"
   fast:
-    primary: "local:mistral:latest"
+    primary: "local:qwen3.5:4b"
   data:
-    primary: "local:mistral:latest"
+    primary: "local:qwen3.5:4b"
 ```
 
 See [MODELS.md](MODELS.md) for tested configurations by hardware tier and instructions for adding a new model.
@@ -164,7 +186,7 @@ The web UI exposes the following controls in the header:
 
 **Mode selector** — chooses the session mode (`work` or `steward`). Set before starting a session; has no effect during an active session.
 
-**Audit toggle** — when checked, every turn runs the challenger gate on the draft before the response is shown to you. The challenger (`deepseek-r1` by default) reviews the executor's draft and, if it finds the response weak or misaligned, prompts the executor to revise. Default: off. Enable it when response quality matters more than speed — for example, when drafting client-facing content or reasoning through a complex problem. Expect noticeably higher latency per turn when audit is on, since two or three model calls may run instead of one.
+**Audit toggle** — when checked, every turn runs the challenger gate on the draft before the response is shown to you. The challenger (`qwen3.5:9b-think` by default) reviews the executor's draft and, if it finds the response weak or misaligned, prompts the executor to revise. Default: off. Enable it when response quality matters more than speed — for example, when drafting client-facing content or reasoning through a complex problem. Expect noticeably higher latency per turn when audit is on, since two or three model calls may run instead of one.
 
 **Attach file** — appears after a session starts. Accepts `.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.py`, `.pdf`, and `.docx`. The server extracts the text and prepends it to your next prompt. The file is held session-scoped and discarded when the session closes.
 

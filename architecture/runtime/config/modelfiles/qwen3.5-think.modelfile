@@ -1,0 +1,8 @@
+# Qwen3.5 9B — thinking mode enabled
+# Used for: challenger audit gate, explorer (deep research), visionary
+# Creates model: qwen3.5:9b-think
+#
+# Usage:
+#   ollama create qwen3.5:9b-think -f architecture/runtime/config/modelfiles/qwen3.5-think.Modelfile
+FROM qwen3.5:9b
+PARAMETER think true
